@@ -1,14 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "openssl"]
-
-[phases.install]
-cmds = ["cd backend && npm install", "cd admin-panel && npm install"]
-
-[phases.build]
-cmds = [
-  "cd backend && npm run prisma:generate && npm run build",
-  "cd admin-panel && npm run build"
-]
+nixPkgs = ["nodejs_20", "openssl"]
 
 [start]
 cmd = "cd backend && sh startup.sh"
