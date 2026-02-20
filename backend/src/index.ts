@@ -9,6 +9,22 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const app = express();
 
+// IMPORTANTE: Habilitar trust proxy para que Express confíe en el proxy de Railway
+// y maneje correctamente las redirecciones y protocolos (HTTP vs HTTPS)
+app.enable('trust proxy');
+
+// Middleware de logging para todas las peticiones - MOVIDO AL PRINCIPIO
+app.use((req, res, next) => {
+  console.log(`📥 [${req.method}] ${req.path}`, {
+    ip: req.ip,
+    forwarded: req.headers['x-forwarded-for'],
+    host: req.headers.host,
+    origin: req.headers.origin,
+    ua: req.headers['user-agent']
+  });
+  next();
+});
+
 // Ruta raíz para health checks de plataformas que prueban "/"
 app.get('/', (req, res) => {
   console.log('🏠 [ROOT] Root check llamado');
@@ -25,8 +41,8 @@ app.get('/health', (req, res) => {
   console.log('🏥 [HEALTH] Request URL:', req.url);
   console.log('🏥 [HEALTH] Request path:', req.path);
   console.log('🏥 [HEALTH] Request method:', req.method);
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     message: 'Backend is running',
     port: process.env.PORT || '3001',
@@ -39,7 +55,7 @@ app.get('/test-logging', (req, res) => {
   console.log('🧪 [TEST] Endpoint de prueba de logging llamado');
   console.log('🧪 [TEST] Headers:', JSON.stringify(req.headers, null, 2));
   console.log('🧪 [TEST] Query:', req.query);
-  res.json({ 
+  res.json({
     success: true,
     message: 'Logging funciona correctamente',
     timestamp: new Date().toISOString(),
@@ -65,6 +81,15 @@ allowedOrigins.push('https://naorifas.netlify.app');
 allowedOrigins.push('http://localhost:3000');
 allowedOrigins.push('http://localhost:5173');
 
+// Agregar dinámicamente el host actual (Railway)
+if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+  allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+}
+// También permitir cualquier subdominio de railway.app en producción como fallback
+if (process.env.NODE_ENV === 'production') {
+  allowedOrigins.push(/\.railway\.app$/ as any);
+}
+
 console.log('🌐 Orígenes permitidos:', allowedOrigins);
 
 // Configuración simplificada de CORS (solo para frontend externo)
@@ -74,18 +99,18 @@ const corsOptions = {
     if (!origin) {
       return callback(null, true);
     }
-    
+
     // Si el origen está en la lista permitida, permitirlo
     if (allowedOrigins.includes(origin)) {
       console.log(`✅ CORS: Origen permitido: ${origin}`);
       return callback(null, true);
     }
-    
+
     // En desarrollo, permitir todos los orígenes
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
-    
+
     // En producción, solo permitir orígenes específicos
     console.log(`⚠️  CORS: Origen no permitido: ${origin}`);
     callback(new Error('Not allowed by CORS'));
@@ -108,26 +133,14 @@ console.log('✅ CORS configurado correctamente');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware de logging para todas las peticiones
-app.use((req, res, next) => {
-  console.log(`📥 [${req.method}] ${req.path}`, {
-    url: req.url,
-    originalUrl: req.originalUrl,
-    baseUrl: req.baseUrl,
-    origin: req.headers.origin,
-    host: req.headers.host,
-    'content-type': req.headers['content-type'],
-    body: req.method === 'POST' ? (req.path.includes('/login') ? { email: req.body?.email, passwordLength: req.body?.password?.length } : '***') : undefined,
-  });
-  next();
-});
+// (Middleware de logging movido arriba)
 
 // Cargar configuración y rutas con manejo de errores
 try {
   console.log('📦 Cargando configuración...');
   const env = require('./config/env').default;
   console.log('✅ Configuración cargada');
-  
+
   console.log('📦 Cargando rutas...');
   // Routes
   const raffleRoutes = require('./routes/raffles.routes').default;
@@ -178,15 +191,30 @@ try {
 const adminPath = path.join(__dirname, 'admin');
 console.log('📁 Ruta del admin panel:', adminPath);
 
+// Verificar existencia del directorio al arrancar
+import fs from 'fs';
+if (fs.existsSync(adminPath)) {
+  console.log('✅ Directorio admin encontrado');
+  if (fs.existsSync(path.join(adminPath, 'index.html'))) {
+    console.log('✅ index.html del admin encontrado');
+  } else {
+    console.warn('❌ index.html del admin NO encontrado en:', adminPath);
+  }
+} else {
+  console.warn('❌ Directorio admin NO encontrado en:', adminPath);
+}
+
 // Servir archivos estáticos (JS, CSS, imágenes, etc.)
+// "index: false" para evitar conflictos con el catch-all manual
 app.use('/admin', express.static(adminPath, {
   maxAge: '1y',
   etag: true,
+  index: ['index.html']
 }));
 
 // Catch-all para SPA: todas las rutas /admin/* que no sean archivos estáticos
 // deben servir index.html para que React Router funcione
-app.get('/admin/*', (req, res) => {
+app.get(['/admin', '/admin/*'], (req, res) => {
   const indexPath = path.join(adminPath, 'index.html');
   console.log('📄 Sirviendo index.html del admin para:', req.path);
   res.sendFile(indexPath, (err) => {
@@ -196,6 +224,7 @@ app.get('/admin/*', (req, res) => {
       res.status(404).json({
         success: false,
         error: 'Admin panel no encontrado. Asegúrate de que el build del admin panel se haya ejecutado.',
+        path: indexPath
       });
     }
   });
