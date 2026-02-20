@@ -1,0 +1,258 @@
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { FEATURED_RAFFLE, CONTACT_INFO } from './constants.ts';
+import TicketSelector from './components/TicketSelector.tsx';
+import RaffleDetails from './components/RaffleDetails.tsx';
+import CheckoutModal from './components/CheckoutModal.tsx';
+import VerifyTickets from './components/VerifyTickets.tsx';
+import TermsAndConditions from './components/TermsAndConditions.tsx';
+import SupportChat from './components/SupportChat.tsx';
+import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
+import { soundService } from './services/soundService.ts';
+import { apiService } from './services/apiService.ts';
+import { Raffle } from './types.ts';
+
+const App: React.FC = () => {
+  const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms'>('raffle');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
+  const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number[]>([]);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
+
+  useEffect(() => {
+    const loadRaffle = async () => {
+      try {
+        const raffles = await apiService.getRaffles('active');
+        if (raffles && raffles.length > 0) {
+          // Usar la primera rifa activa o la rifa con id específico si existe
+          const raffle = raffles.find((r: any) => r.id === '1') || raffles[0];
+          setFeaturedRaffle(raffle as Raffle);
+        } else {
+          // Fallback a la constante si no hay rifas en la API
+          setFeaturedRaffle(FEATURED_RAFFLE);
+        }
+      } catch (error) {
+        console.error('Error loading raffle:', error);
+        // Fallback a la constante en caso de error
+        setFeaturedRaffle(FEATURED_RAFFLE);
+      } finally {
+        setTimeout(() => {
+          setIsAppLoading(false);
+        }, 1200);
+      }
+    };
+    loadRaffle();
+  }, []);
+
+  const toggleMute = () => {
+    const newMute = !isMuted;
+    setIsMuted(newMute);
+    soundService.setMute(newMute);
+  };
+
+  const handleCheckout = useCallback((tickets: number[]) => {
+    setSelectedTicketsToBuy(tickets);
+    setIsCheckoutOpen(true);
+  }, []);
+
+  const handleViewChange = (view: 'raffle' | 'verify' | 'terms') => {
+    if (view === activeView) return;
+    
+    setIsAppLoading(true);
+    window.scrollTo({ top: 0, behavior: 'instant' as any }); 
+    
+    setTimeout(() => {
+      setActiveView(view);
+      setIsAppLoading(false);
+    }, 400);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">
+      {/* Header Estilo "Liquid Glass" */}
+      <div className="fixed top-0 left-0 right-0 z-50 px-4 py-4 md:py-6 flex justify-center pointer-events-none">
+        <nav className="pointer-events-auto relative overflow-hidden bg-white/50 backdrop-blur-[20px] border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] px-4 h-14 md:h-16 flex items-center justify-between gap-4 md:gap-8 max-w-7xl w-full transition-all duration-300">
+          
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
+
+          <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
+            <div className="relative">
+              <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300">
+                <span className="text-white font-black text-xl italic tracking-tighter">N</span>
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse shadow-sm"></div>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black text-sm md:text-lg tracking-tighter text-slate-800 leading-none">RIFAS NAO</span>
+              <span className="text-[8px] font-bold text-blue-500 uppercase tracking-[0.2em] leading-none mt-1 hidden md:block">Sorteos Certificados</span>
+            </div>
+          </div>
+          
+          <div className="relative flex bg-white/40 p-1 rounded-2xl border border-white/80 z-10 shadow-inner">
+            <button 
+              onClick={() => handleViewChange('raffle')}
+              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'raffle' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+              Sorteo
+            </button>
+            <button 
+              onClick={() => handleViewChange('verify')}
+              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'verify' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+              Verificar
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4 z-10">
+            {/* Toggle de Sonido Arcade - Único elemento en la derecha para minimalismo */}
+            <button 
+              onClick={toggleMute}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90
+                ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white text-blue-600 shadow-sm'}`}
+              title={isMuted ? "Activar Sonido" : "Silenciar Sonido"}
+            >
+              {isMuted ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11.707 5.293L7 10H4a1 1 0 00-1 1v2a1 1 0 001 1h3l4.707 4.707A1 1 0 0013 18V6a1 1 0 00-1.293-.707z" /></svg>
+              )}
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      <div className="h-20 md:h-28"></div>
+
+      <main className="flex-grow max-w-7xl mx-auto px-4 py-6 md:py-10 w-full">
+        {activeView === 'raffle' ? (
+          <div className="space-y-12">
+            {isAppLoading ? (
+              <div className="animate-in fade-in duration-300">
+                <RaffleSkeleton />
+                <TicketSkeleton />
+              </div>
+            ) : (
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {featuredRaffle ? (
+                  <>
+                    <div className="text-center max-w-4xl mx-auto space-y-3 mb-8">
+                      <div className="inline-block px-4 py-1.5 bg-white shadow-sm border border-slate-100 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                        Edición Especial Raptor 2024
+                      </div>
+                      <h1 className="text-4xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
+                        {featuredRaffle.title}
+                      </h1>
+                      <h2 className="text-slate-400 text-base md:text-xl font-medium max-w-2xl mx-auto mt-4">
+                        {featuredRaffle.subtitle}
+                      </h2>
+                    </div>
+
+                    <div className="relative rounded-[3rem] overflow-hidden shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] bg-white border-[6px] border-white group will-change-transform">
+                      <img 
+                        src={featuredRaffle.prizeImage} 
+                        alt={featuredRaffle.title}
+                        className="w-full h-72 sm:h-96 md:h-[650px] object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
+                        loading="eager"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
+                      <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
+                        <div className="bg-white/95 backdrop-blur-md p-6 rounded-[2.5rem] shadow-2xl border border-white text-center min-w-[160px] animate-in slide-in-from-top-4 duration-500 delay-200">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-3">Costo Boleto</p>
+                            <p className="text-4xl font-black text-blue-600 tracking-tighter">${featuredRaffle.ticketPrice}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative pt-4">
+                      <TicketSelector 
+                        raffleId={featuredRaffle.id}
+                        totalTickets={featuredRaffle.totalTickets} 
+                        pricePerTicket={featuredRaffle.ticketPrice} 
+                        onCheckout={handleCheckout}
+                      />
+                    </div>
+
+                    <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} />
+                  </>
+                ) : (
+                  <div className="text-center py-20">
+                    <p className="text-slate-400">No hay rifas disponibles en este momento.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col items-center justify-center pt-8 pb-4 border-t border-slate-100">
+              <button 
+                onClick={() => handleViewChange('terms')}
+                className="group flex items-center gap-3 text-slate-400 hover:text-blue-600 transition-all duration-300 py-2"
+              >
+                <span className="w-8 h-[1px] bg-slate-200 group-hover:bg-blue-200 transition-colors"></span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Términos y Condiciones</span>
+                <span className="w-8 h-[1px] bg-slate-200 group-hover:bg-blue-200 transition-colors"></span>
+              </button>
+              <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest mt-3">Al participar aceptas nuestras políticas de legalidad.</p>
+            </div>
+          </div>
+        ) : activeView === 'verify' ? (
+          <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <VerifyTickets />
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <TermsAndConditions onBack={() => handleViewChange('raffle')} />
+          </div>
+        )}
+      </main>
+
+      {featuredRaffle && (
+        <CheckoutModal 
+          isOpen={isCheckoutOpen} 
+          onClose={() => setIsCheckoutOpen(false)}
+          selectedTickets={selectedTicketsToBuy}
+          raffleId={featuredRaffle.id}
+          pricePerTicket={featuredRaffle.ticketPrice}
+        />
+      )}
+
+      <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
+
+      <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10">
+        <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 justify-center cursor-pointer" onClick={() => handleViewChange('raffle')}>
+              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                <span className="text-white font-black text-lg italic">N</span>
+              </div>
+              <span className="font-black text-xl tracking-tighter text-slate-800">RIFAS NAO</span>
+            </div>
+            <p className="text-slate-400 text-[10px] font-medium uppercase tracking-widest">
+              Seguridad y transparencia total en México.
+            </p>
+          </div>
+
+          <div className="w-full space-y-3">
+            <button 
+              onClick={() => setIsSupportChatOpen(true)}
+              className="w-full flex items-center justify-center gap-3 bg-[#25D366] text-white py-3.5 px-6 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:brightness-105 transition-all shadow-lg active:scale-95"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z"/></svg>
+              Chat de Soporte
+            </button>
+            <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{CONTACT_INFO.email}</p>
+          </div>
+
+          <div className="pt-6 border-t border-slate-50 w-full">
+            <p className="text-slate-300 text-[8px] font-black uppercase tracking-[0.3em]">
+              © 2024 RIFAS NAO MÉXICO
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;

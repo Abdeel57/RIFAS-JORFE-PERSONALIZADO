@@ -1,0 +1,13 @@
+INSTRUCCIONES PARA CREAR EL ARCHIVO .env:
+
+1. Ve a Railway → DATABASE → "Variables"
+2. Copia la DATABASE_URL completa
+3. Crea un archivo llamado ".env" en la carpeta backend/
+4. Pega este contenido y reemplaza DATABASE_URL_DE_RAILWAY con la URL que copiaste:
+
+DATABASE_URL="DATABASE_URL_DE_RAILWAY"
+JWT_SECRET="b4068b28f0cc85e50c962ba40edc59e436b4bc0cd4fb15d786bb33ead442a03c"
+NODE_ENV="development"
+PORT=3001
+FRONTEND_URL="http://localhost:3000"
+

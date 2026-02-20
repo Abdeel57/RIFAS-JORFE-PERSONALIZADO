@@ -1,0 +1,7 @@
+{
+  "name": "Rifas Nao - Sorteos y Herramientas AI",
+  "description": "Una plataforma moderna para sorteos y rifas con herramientas integradas de IA para edición y análisis de imágenes.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

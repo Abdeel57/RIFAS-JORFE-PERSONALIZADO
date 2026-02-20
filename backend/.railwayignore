@@ -1,0 +1,4 @@
+# Railway ignore - solo archivos innecesarios
+*.md
+*.ps1
+.env.local
