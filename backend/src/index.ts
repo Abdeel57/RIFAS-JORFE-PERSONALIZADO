@@ -2,23 +2,33 @@ import express from 'express';
 import path from 'path';
 
 const app = express();
-// Railway suele asignar un puerto dinámico. Si no lo hay, usamos 8080.
-const PORT = process.env.PORT || 8080;
+// Limpiamos el puerto por si Railway envía espacios o caracteres raros
+const RAW_PORT = process.env.PORT || '8080';
+const PORT = parseInt(String(RAW_PORT).trim(), 10);
 
-console.log('--- DIAGNOSTIC START ---');
-console.log('Env variables found:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
-console.log('Target PORT:', PORT);
+console.log('--- DEEP DIAGNOSTIC START ---');
+console.log(`RAW_PORT variable: "${RAW_PORT}"`);
+console.log(`Parsed PORT: ${PORT}`);
+console.log(`Node Version: ${process.version}`);
 
-// 1. Health check inmediato - sin middleware
+// 1. Health check con info de red
 app.get('/health', (req, res) => {
-    console.log(`💚 [HEALTH] Hit from ${req.ip} at ${new Date().toISOString()}`);
-    res.status(200).json({
+    const info = {
         status: 'ok',
-        alive: true,
-        port_used: PORT,
-        timestamp: new Date().toISOString()
-    });
+        timestamp: new Date().toISOString(),
+        protocol: req.protocol,
+        host: req.get('host'),
+        remoteIp: req.ip,
+        headers: req.headers
+    };
+    console.log('💚 [HEALTH] Serving request:', info);
+    res.status(200).json(info);
 });
+
+// 2. Heartbeat para confirmar que el proceso NO está colgado
+setInterval(() => {
+    console.log(`💓 [HEARTBEAT] Server still alive at ${new Date().toISOString()} on port ${PORT}`);
+}, 30000);
 
 app.get('/diag', (req, res) => {
     res.json({
