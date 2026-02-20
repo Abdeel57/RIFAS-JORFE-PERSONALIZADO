@@ -7,9 +7,7 @@ const Users = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  useEffect(() => {
-    loadUsers();
-  }, [searchTerm]);
+  useEffect(() => { loadUsers(); }, [searchTerm]);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -19,7 +17,7 @@ const Users = () => {
       const data = await adminService.getUsers(params);
       setUsers(data);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -30,144 +28,183 @@ const Users = () => {
       const user = await adminService.getUserById(id);
       setSelectedUser(user);
     } catch (error) {
-      console.error('Error loading user details:', error);
+      console.error(error);
     }
   };
 
+  const getInitials = (name: string) => {
+    return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+  };
+
+  const getStatusBadge = (status: string) => {
+    if (status === 'paid') return <span className="badge-green">Pagado</span>;
+    if (status === 'pending') return <span className="badge-amber">Pendiente</span>;
+    return <span className="badge-red">Cancelado</span>;
+  };
+
+  const avatarColors = [
+    'from-indigo-400 to-violet-500',
+    'from-emerald-400 to-teal-500',
+    'from-amber-400 to-orange-500',
+    'from-pink-400 to-rose-500',
+    'from-blue-400 to-cyan-500',
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
       <div>
-        <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Usuarios</h2>
-        <p className="text-slate-400 mt-1">Gestiona los usuarios registrados</p>
+        <h2 className="section-title">Usuarios</h2>
+        <p className="section-sub">Clientes registrados</p>
       </div>
 
-      {/* Search */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+      {/* Search bar */}
+      <div className="relative">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </div>
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar por nombre, teléfono o email..."
-          className="w-full px-4 py-2 border border-slate-200 rounded-xl"
+          className="admin-input pl-9"
         />
       </div>
 
+      {/* User cards */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+        <div className="flex flex-col items-center justify-center h-48 gap-3">
+          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-sm text-slate-400 font-medium">Cargando usuarios...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Teléfono</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Compras</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Registro</th>
-                  <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-800">{user.name}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600">{user.phone}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600">{user.email}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600">{user.state || '-'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-slate-800">{user._count?.purchases || 0}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-xs text-slate-400">
-                        {new Date(user.createdAt).toLocaleDateString('es-MX')}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleViewDetails(user.id)}
-                        className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100"
-                      >
-                        Ver Detalles
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-3">
+          {users.length === 0 ? (
+            <div className="admin-card p-10 text-center">
+              <p className="text-slate-400 text-sm">
+                {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+              </p>
+            </div>
+          ) : (
+            users.map((user, i) => (
+              <div key={user.id} className="list-card">
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className={`w-11 h-11 bg-gradient-to-br ${avatarColors[i % avatarColors.length]} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                    <span className="text-white font-black text-sm">{getInitials(user.name)}</span>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 text-sm">{user.name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{user.phone}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                  </div>
+                  {/* Stats */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-lg font-black text-indigo-600">{user._count?.purchases || 0}</p>
+                    <p className="text-[10px] text-slate-400">compras</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                  <div className="flex items-center gap-2">
+                    {user.state && (
+                      <span className="px-2 py-1 bg-slate-100 rounded-lg text-[10px] font-semibold text-slate-500">
+                        {user.state}
+                      </span>
+                    )}
+                    <p className="text-[10px] text-slate-400">
+                      Desde {new Date(user.createdAt).toLocaleDateString('es-MX')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleViewDetails(user.id)}
+                    className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Ver detalles
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* User detail modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-xl font-black text-slate-800">Detalles de Usuario</h3>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Información Personal</p>
-                <div className="bg-slate-50 p-4 rounded-xl space-y-2">
-                  <p className="font-bold text-slate-800">{selectedUser.name}</p>
-                  <p className="text-sm text-slate-600">Teléfono: {selectedUser.phone}</p>
-                  <p className="text-sm text-slate-600">Email: {selectedUser.email}</p>
-                  {selectedUser.state && <p className="text-sm text-slate-600">Estado: {selectedUser.state}</p>}
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-black text-sm">{getInitials(selectedUser.name)}</span>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">{selectedUser.name}</h3>
+                  <p className="text-xs text-slate-400">{selectedUser.phone}</p>
                 </div>
               </div>
+              <button onClick={() => setSelectedUser(null)} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500">✕</button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Info card */}
+              <div className="admin-card p-4 space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Información Personal</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-[10px] text-slate-400">Email</p>
+                    <p className="font-semibold text-slate-700 text-xs break-all">{selectedUser.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400">Teléfono</p>
+                    <p className="font-semibold text-slate-700 text-xs">{selectedUser.phone}</p>
+                  </div>
+                  {selectedUser.state && (
+                    <div>
+                      <p className="text-[10px] text-slate-400">Estado</p>
+                      <p className="font-semibold text-slate-700 text-xs">{selectedUser.state}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[10px] text-slate-400">Registro</p>
+                    <p className="font-semibold text-slate-700 text-xs">{new Date(selectedUser.createdAt).toLocaleDateString('es-MX')}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase history */}
               <div>
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Historial de Compras</p>
-                <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                  Historial de Compras ({selectedUser.purchases?.length || 0})
+                </p>
+                <div className="space-y-3">
                   {selectedUser.purchases && selectedUser.purchases.length > 0 ? (
                     selectedUser.purchases.map((purchase: any) => (
-                      <div key={purchase.id} className="bg-slate-50 p-4 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-bold text-slate-800">{purchase.raffle.title}</p>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
-                              purchase.status === 'paid'
-                                ? 'bg-green-100 text-green-600'
-                                : purchase.status === 'pending'
-                                ? 'bg-amber-100 text-amber-600'
-                                : 'bg-red-100 text-red-600'
-                            }`}
-                          >
-                            {purchase.status === 'paid' ? 'Pagado' : purchase.status === 'pending' ? 'Pendiente' : 'Cancelado'}
-                          </span>
-                        </div>
+                      <div key={purchase.id} className="list-card">
                         <div className="flex items-center justify-between">
+                          <p className="font-bold text-slate-800 text-sm flex-1 min-w-0 truncate pr-2">{purchase.raffle.title}</p>
+                          {getStatusBadge(purchase.status)}
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
                           <div>
-                            <p className="text-sm text-slate-600">
-                              Boletos: {purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ')}
+                            <p className="text-slate-500">
+                              {purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ')}
                             </p>
-                            <p className="text-xs text-slate-400">
-                              {new Date(purchase.createdAt).toLocaleDateString('es-MX')}
-                            </p>
+                            <p className="text-slate-400">{new Date(purchase.createdAt).toLocaleDateString('es-MX')}</p>
                           </div>
-                          <p className="font-bold text-slate-800">${purchase.totalAmount.toLocaleString()}</p>
+                          <p className="font-black text-slate-800">${purchase.totalAmount.toLocaleString()}</p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-slate-400 text-center py-4">No hay compras registradas</p>
+                    <div className="admin-card p-6 text-center">
+                      <p className="text-slate-400 text-sm">Sin compras registradas</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -180,8 +217,3 @@ const Users = () => {
 };
 
 export default Users;
-
-
-
-
-

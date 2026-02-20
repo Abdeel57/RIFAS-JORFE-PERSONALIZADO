@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react';
 import { adminService } from '../services/admin.service';
-import {
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+import { useAuth } from '../hooks/useAuth';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
-const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['#4F46E5', '#8B5CF6', '#10B981', '#F59E0B'];
 
 const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { admin } = useAuth();
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,166 +28,191 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <p className="text-sm text-slate-400 font-medium">Cargando dashboard...</p>
       </div>
     );
   }
 
   if (!stats) {
-    return <div>Error al cargar datos</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-2">
+        <p className="text-slate-500 font-medium">No se pudieron cargar los datos</p>
+      </div>
+    );
   }
 
   const purchaseStatusData = [
-    { name: 'Pagadas', value: stats.paidPurchases },
-    { name: 'Pendientes', value: stats.pendingPurchases },
+    { name: 'Pagadas', value: stats.paidPurchases || 0 },
+    { name: 'Pendientes', value: stats.pendingPurchases || 0 },
   ];
 
   const ticketStatusData = [
-    { name: 'Vendidos', value: stats.soldTickets },
-    { name: 'Disponibles', value: stats.availableTickets },
+    { name: 'Vendidos', value: stats.soldTickets || 0 },
+    { name: 'Disponibles', value: stats.availableTickets || 0 },
   ];
 
+  const statCards = [
+    {
+      label: 'Rifas Activas',
+      value: stats.activeRaffles,
+      sub: `de ${stats.totalRaffles} totales`,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-50',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Boletos Vendidos',
+      value: stats.soldTickets,
+      sub: `de ${stats.totalTickets} totales`,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 9a3 3 0 010-6h20a3 3 0 010 6H2zM2 15a3 3 0 000 6h20a3 3 0 000-6H2z" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Compras Pendientes',
+      value: stats.pendingPurchases,
+      sub: `de ${stats.totalPurchases} totales`,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Ingresos Totales',
+      value: `$${(stats.totalRevenue || 0).toLocaleString()}`,
+      sub: `${stats.paidPurchases} compras pagadas`,
+      color: 'text-violet-600',
+      bg: 'bg-violet-50',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+        </svg>
+      ),
+    },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    if (status === 'paid') return <span className="badge-green">Pagado</span>;
+    if (status === 'pending') return <span className="badge-amber">Pendiente</span>;
+    return <span className="badge-red">Cancelado</span>;
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-black text-slate-800 tracking-tighter">Dashboard</h2>
-        <p className="text-slate-400 mt-1">Resumen general del sistema</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2">Rifas Activas</p>
-          <p className="text-3xl font-black text-blue-600">{stats.activeRaffles}</p>
-          <p className="text-xs text-slate-400 mt-1">de {stats.totalRaffles} totales</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2">Boletos Vendidos</p>
-          <p className="text-3xl font-black text-green-600">{stats.soldTickets}</p>
-          <p className="text-xs text-slate-400 mt-1">de {stats.totalTickets} totales</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2">Compras Pendientes</p>
-          <p className="text-3xl font-black text-amber-600">{stats.pendingPurchases}</p>
-          <p className="text-xs text-slate-400 mt-1">de {stats.totalPurchases} totales</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2">Ingresos Totales</p>
-          <p className="text-3xl font-black text-slate-800">${stats.totalRevenue.toLocaleString()}</p>
-          <p className="text-xs text-slate-400 mt-1">{stats.paidPurchases} compras pagadas</p>
+    <div className="space-y-5">
+      {/* Welcome Card */}
+      <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200 relative overflow-hidden">
+        <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/10 rounded-full" />
+        <div className="absolute -right-2 bottom-0 w-16 h-16 bg-white/10 rounded-full" />
+        <div className="relative">
+          <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Bienvenido</p>
+          <h2 className="text-xl font-black">
+            {admin?.name || 'Administrador'} 👋
+          </h2>
+          <p className="text-indigo-200 text-xs mt-1">Panel de control · Rifas NAO</p>
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-black text-slate-800 mb-4">Estado de Compras</h3>
-          <ResponsiveContainer width="100%" height={300}>
+      {/* Stats Grid — "chocolate bar" 2×2 layout */}
+      <div className="grid grid-cols-2 gap-3">
+        {statCards.map((card, i) => (
+          <div key={i} className="stat-card">
+            <div className={`w-9 h-9 ${card.bg} ${card.color} rounded-xl flex items-center justify-center`}>
+              {card.icon}
+            </div>
+            <p className={`text-2xl font-black ${card.color} leading-none mt-1`}>{card.value}</p>
+            <p className="text-[11px] font-semibold text-slate-500 leading-tight">{card.label}</p>
+            <p className="text-[10px] text-slate-400">{card.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="admin-card p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Compras</p>
+          <ResponsiveContainer width="100%" height={120}>
             <PieChart>
-              <Pie
-                data={purchaseStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
+              <Pie data={purchaseStatusData} cx="50%" cy="50%" outerRadius={45} dataKey="value" labelLine={false}>
                 {purchaseStatusData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={COLORS[index]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(v, n) => [v, n]} />
             </PieChart>
           </ResponsiveContainer>
+          <div className="flex flex-col gap-1 mt-1">
+            {purchaseStatusData.map((item, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i] }} />
+                <p className="text-[10px] text-slate-500 truncate">{item.name}: <b className="text-slate-700">{item.value}</b></p>
+              </div>
+            ))}
+          </div>
         </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-black text-slate-800 mb-4">Estado de Boletos</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="admin-card p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Boletos</p>
+          <ResponsiveContainer width="100%" height={120}>
             <PieChart>
-              <Pie
-                data={ticketStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
+              <Pie data={ticketStatusData} cx="50%" cy="50%" outerRadius={45} dataKey="value" labelLine={false}>
                 {ticketStatusData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={COLORS[index + 2]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(v, n) => [v, n]} />
             </PieChart>
           </ResponsiveContainer>
+          <div className="flex flex-col gap-1 mt-1">
+            {ticketStatusData.map((item, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i + 2] }} />
+                <p className="text-[10px] text-slate-500 truncate">{item.name}: <b className="text-slate-700">{item.value}</b></p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Recent Purchases */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
-        <div className="p-6 border-b border-slate-100">
-          <h3 className="text-lg font-black text-slate-800">Compras Recientes</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Usuario</th>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Rifa</th>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Boletos</th>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Fecha</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {recentPurchases.map((purchase) => (
-                <tr key={purchase.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-bold text-slate-800">{purchase.user.name}</p>
-                      <p className="text-xs text-slate-400">{purchase.user.phone}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-800">{purchase.raffle.title}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-slate-600">{purchase.tickets.length} boletos</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-800">${purchase.totalAmount.toLocaleString()}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
-                        purchase.status === 'paid'
-                          ? 'bg-green-100 text-green-600'
-                          : purchase.status === 'pending'
-                          ? 'bg-amber-100 text-amber-600'
-                          : 'bg-red-100 text-red-600'
-                      }`}
-                    >
-                      {purchase.status === 'paid' ? 'Pagado' : purchase.status === 'pending' ? 'Pendiente' : 'Cancelado'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs text-slate-400">
-                      {new Date(purchase.createdAt).toLocaleDateString('es-MX')}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div>
+        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3">Compras Recientes</h3>
+        <div className="space-y-3">
+          {recentPurchases.length === 0 ? (
+            <div className="admin-card p-8 text-center">
+              <p className="text-slate-400 text-sm">No hay compras recientes</p>
+            </div>
+          ) : (
+            recentPurchases.map((purchase) => (
+              <div key={purchase.id} className="list-card">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 text-sm truncate">{purchase.user.name}</p>
+                    <p className="text-xs text-slate-400">{purchase.user.phone}</p>
+                  </div>
+                  {getStatusBadge(purchase.status)}
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                  <div>
+                    <p className="text-xs text-slate-500 truncate max-w-[150px]">{purchase.raffle.title}</p>
+                    <p className="text-[10px] text-slate-400">{purchase.tickets.length} boletos · {new Date(purchase.createdAt).toLocaleDateString('es-MX')}</p>
+                  </div>
+                  <p className="font-black text-sm text-slate-800">${purchase.totalAmount.toLocaleString()}</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -199,5 +220,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-

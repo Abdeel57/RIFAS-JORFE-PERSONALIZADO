@@ -1,6 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
 
+  body {
+    background-color: #F0F4FF;
+  }
+}
+
+@layer components {
+  /* Cards */
+  .admin-card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm;
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-1;
+  }
+
+  /* List item cards (replaces table rows) */
+  .list-card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-2;
+  }
+
+  /* Form inputs */
+  .admin-input {
+    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800
+    focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
+    text-sm font-medium placeholder:text-slate-400 transition-all;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold
+    rounded-xl px-5 py-3 transition-all shadow-md shadow-indigo-200 text-sm;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold
+    rounded-xl px-5 py-3 transition-all text-sm;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply bg-transparent border border-slate-200 hover:bg-slate-50 active:scale-95
+    text-slate-600 font-bold rounded-xl px-4 py-2 transition-all text-sm;
+  }
+
+  /* Status badges */
+  .badge {
+    @apply px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-50 text-emerald-600 border border-emerald-200;
+  }
+
+  .badge-amber {
+    @apply badge bg-amber-50 text-amber-600 border border-amber-200;
+  }
+
+  .badge-red {
+    @apply badge bg-red-50 text-red-500 border border-red-200;
+  }
+
+  .badge-slate {
+    @apply badge bg-slate-100 text-slate-500 border border-slate-200;
+  }
+
+  /* Section header */
+  .section-title {
+    @apply text-2xl font-black text-slate-800 tracking-tight;
+  }
+
+  .section-sub {
+    @apply text-sm text-slate-400 font-medium mt-0.5;
+  }
+
+  /* Bottom tab bar link */
+  .tab-item {
+    @apply flex flex-col items-center gap-1 flex-1 py-2 transition-all;
+  }
+
+  .tab-item.active {
+    @apply text-indigo-600;
+  }
+
+  .tab-item:not(.active) {
+    @apply text-slate-400 hover:text-slate-600;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Glass morphism */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.85);
+  }
+}
