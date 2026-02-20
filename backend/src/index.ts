@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import env from './config/env';
 import { errorHandler } from './utils/errors';
 
 console.log('🔍 Iniciando servidor Express...');
@@ -239,12 +240,7 @@ app.get(['/admin', '/admin/*'], (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-const PORT = parseInt(process.env.PORT || '3001');
-const HOST = process.env.HOST || '0.0.0.0';
-
-console.log(`🚀 Iniciando servidor en http://${HOST}:${PORT}...`);
-
+// Manejo de procesos
 process.on('SIGTERM', () => {
   console.error('🛑 [PROCESS] Recibido SIGTERM, el contenedor será detenido');
 });
@@ -261,38 +257,29 @@ process.on('unhandledRejection', (reason) => {
   console.error('💥 [PROCESS] unhandledRejection:', reason);
 });
 
-process.on('beforeExit', (code) => {
-  console.error('🛑 [PROCESS] beforeExit', { code });
-});
-
-process.on('exit', (code) => {
-  console.error('🛑 [PROCESS] exit', { code });
-});
-
 // Iniciar servidor
-// Railway inyecta la variable PORT automáticamente
-const serverPort = process.env.PORT || env.PORT || 8080;
+// Railway inyecta la variable PORT automáticamente. Priorizamos process.env.PORT.
+const finalPort = process.env.PORT || env.PORT || 8080;
 
-app.listen(Number(serverPort), '0.0.0.0', () => {
+const server = app.listen(Number(finalPort), '0.0.0.0', () => {
   console.log(`\n🚀 SERVIDOR INICIADO`);
-  console.log(`📡 Puerto: ${serverPort}`);
+  console.log(`📡 Puerto: ${finalPort}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔍 Health check: http://0.0.0.0:${serverPort}/health`);
-  console.log(`👨‍💼 Admin panel: http://0.0.0.0:${serverPort}/admin\n`);
+  console.log(`🔍 Health check: /health`);
+  console.log(`👨‍💼 Admin panel: /admin\n`);
 
   if (process.env.RAILWAY_STATIC_URL) {
-    console.log(`🌐 URL Pública detectada: https://${process.env.RAILWAY_STATIC_URL}`);
+    console.log(`🌐 URL Pública: https://${process.env.RAILWAY_STATIC_URL}`);
   }
 
-  console.log(`📋 Rutas registradas:`);
+  console.log(`📋 Rutas Principales:`);
   console.log(`   - GET /`);
   console.log(`   - GET /health`);
-  console.log(`   - GET /test-logging`);
   console.log(`   - GET /api/*`);
-  console.log(`   - GET /admin/*`);
+  console.log(`   - ALL /admin/*`);
 });
 
-server.on('error', (error) => {
+server.on('error', (error: any) => {
   console.error('💥 [SERVER] error', error);
 });
 
