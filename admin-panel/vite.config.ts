@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/admin/',
   build: {
-    outDir: 'dist',
+    outDir: '../backend/dist/admin',
     emptyOutDir: true,
     assetsDir: 'assets',
     rollupOptions: {
