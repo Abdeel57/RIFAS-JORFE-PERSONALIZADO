@@ -2,12 +2,22 @@ import express from 'express';
 import path from 'path';
 
 const app = express();
+// Railway suele asignar un puerto dinámico. Si no lo hay, usamos 8080.
 const PORT = process.env.PORT || 8080;
+
+console.log('--- DIAGNOSTIC START ---');
+console.log('Env variables found:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
+console.log('Target PORT:', PORT);
 
 // 1. Health check inmediato - sin middleware
 app.get('/health', (req, res) => {
-    console.log('💚 [DIAGNOSTIC] Health check hit');
-    res.status(200).send('OK');
+    console.log(`💚 [HEALTH] Hit from ${req.ip} at ${new Date().toISOString()}`);
+    res.status(200).json({
+        status: 'ok',
+        alive: true,
+        port_used: PORT,
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.get('/diag', (req, res) => {

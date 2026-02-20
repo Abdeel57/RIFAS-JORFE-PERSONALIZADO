@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.git
+backend/node_modules
+backend/dist
+admin-panel/node_modules
+admin-panel/dist
