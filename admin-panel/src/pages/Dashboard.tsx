@@ -1,220 +1,431 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { adminService } from '../services/admin.service';
-import { useAuth } from '../hooks/useAuth';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
-const COLORS = ['#4F46E5', '#8B5CF6', '#10B981', '#F59E0B'];
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const Dashboard = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { admin } = useAuth();
+const fmt = (n: number) => n.toString().padStart(3, '0');
+const fmtTime = (d: string) => {
+  const dt = new Date(d);
+  const now = new Date();
+  const diffMs = now.getTime() - dt.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Ahora mismo';
+  if (diffMin < 60) return `Hace ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `Hace ${diffH}h`;
+  return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+};
+
+const phoneToWA = (phone: string) => phone.replace(/\D/g, '');
+
+// ─── Order Card ───────────────────────────────────────────────────────────────
+
+const OrderCard = ({
+  purchase,
+  onPay,
+  onRelease,
+  onEdit,
+  paying,
+}: {
+  purchase: any;
+  onPay: (id: string) => void;
+  onRelease: (id: string) => void;
+  onEdit: (p: any) => void;
+  paying: string | null;
+}) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const tickets: number[] = purchase.tickets?.map((t: any) => t.number) ?? [];
+  const visibleTickets = expanded ? tickets : tickets.slice(0, 5);
+  const hasMore = tickets.length > 5;
+  const isPaid = purchase.status === 'paid';
+  const isCancelled = purchase.status === 'cancelled';
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await adminService.getDashboardStats();
-        setStats(data.overview);
-        setRecentPurchases(data.recentPurchases || []);
-      } catch (error) {
-        console.error('Error loading dashboard:', error);
-      } finally {
-        setIsLoading(false);
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
       }
     };
-    loadData();
-  }, []);
+    if (menuOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-sm text-slate-400 font-medium">Cargando dashboard...</p>
+  const waMessage = encodeURIComponent(
+    `Hola ${purchase.user?.name ?? ''}, confirmamos que tu pago ha sido registrado. Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')} — Rifas NAO 🎟️`
+  );
+  const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
+
+  const trackMessage = encodeURIComponent(
+    `Hola ${purchase.user?.name ?? ''}, te informamos que tu pago está siendo verificado. En breve recibirás confirmación. Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')} — Rifas NAO 🎟️`
+  );
+  const trackLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${trackMessage}`;
+
+  return (
+    <div
+      className={`list-card relative transition-all duration-300 ${isPaid ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
+        }`}
+    >
+      {/* LEFT accent bar by status */}
+      <div
+        className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${isPaid ? 'bg-emerald-400' : isCancelled ? 'bg-slate-300' : 'bg-amber-400'
+          }`}
+      />
+
+      <div className="flex items-start gap-3 pl-3">
+        {/* Main info */}
+        <div className="flex-1 min-w-0">
+          {/* Row 1: name + time */}
+          <div className="flex items-center gap-2 justify-between">
+            <p className="font-black text-slate-800 text-sm truncate">{purchase.user?.name ?? '—'}</p>
+            <span className="text-[10px] text-slate-400 flex-shrink-0">{fmtTime(purchase.createdAt)}</span>
+          </div>
+
+          {/* Row 2: phone */}
+          <p className="text-[11px] text-slate-400">{purchase.user?.phone ?? ''}</p>
+
+          {/* Row 3: raffle */}
+          <p className="text-[11px] font-semibold text-indigo-600 truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
+
+          {/* Row 4: ticket chips */}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {visibleTickets.map((n: number) => (
+              <span
+                key={n}
+                className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-black text-slate-700"
+              >
+                #{fmt(n)}
+              </span>
+            ))}
+            {hasMore && !expanded && (
+              <button
+                onClick={() => setExpanded(true)}
+                className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-black text-indigo-500 hover:bg-indigo-100 transition-colors"
+              >
+                +{tickets.length - 5} más
+              </button>
+            )}
+            {expanded && hasMore && (
+              <button
+                onClick={() => setExpanded(false)}
+                className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-400 hover:bg-slate-100 transition-colors"
+              >
+                Ver menos
+              </button>
+            )}
+          </div>
+
+          {/* Row 5: total */}
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+            <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
+            {isPaid && <span className="badge-green">Pagado</span>}
+            {isCancelled && <span className="badge-red">Liberado</span>}
+          </div>
+        </div>
+
+        {/* Action buttons column */}
+        <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
+          {/* PAY button — primary, most important */}
+          {!isPaid && !isCancelled && (
+            <button
+              onClick={() => onPay(purchase.id)}
+              disabled={paying === purchase.id}
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60"
+            >
+              {paying === purchase.id ? (
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              Pago
+            </button>
+          )}
+
+          {/* RELEASE button */}
+          {!isPaid && !isCancelled && (
+            <button
+              onClick={() => onRelease(purchase.id)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-500 active:scale-95 text-slate-500 rounded-xl text-xs font-bold transition-all"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Liberar
+            </button>
+          )}
+
+          {/* OPTIONS button */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(v => !v)}
+              className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+              </svg>
+              Opciones
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
+                <button
+                  onClick={() => { onEdit(purchase); setMenuOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Editar
+                </button>
+                <div className="border-t border-slate-50" />
+                <a
+                  href={trackLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
+                  </svg>
+                  Enviar seguimiento
+                </a>
+                <div className="border-t border-slate-50" />
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 transition-colors"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
+                  </svg>
+                  Chat WhatsApp
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+};
 
-  if (!stats) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-2">
-        <p className="text-slate-500 font-medium">No se pudieron cargar los datos</p>
-      </div>
-    );
-  }
+// ─── Edit Modal (lightweight) ─────────────────────────────────────────────────
 
-  const purchaseStatusData = [
-    { name: 'Pagadas', value: stats.paidPurchases || 0 },
-    { name: 'Pendientes', value: stats.pendingPurchases || 0 },
-  ];
+const EditModal = ({
+  purchase,
+  onClose,
+  onSave,
+}: {
+  purchase: any;
+  onClose: () => void;
+  onSave: (id: string, status: 'pending' | 'paid' | 'cancelled') => void;
+}) => {
+  const [status, setStatus] = useState<'pending' | 'paid' | 'cancelled'>(purchase.status);
+  const [saving, setSaving] = useState(false);
 
-  const ticketStatusData = [
-    { name: 'Vendidos', value: stats.soldTickets || 0 },
-    { name: 'Disponibles', value: stats.availableTickets || 0 },
-  ];
-
-  const statCards = [
-    {
-      label: 'Rifas Activas',
-      value: stats.activeRaffles,
-      sub: `de ${stats.totalRaffles} totales`,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Boletos Vendidos',
-      value: stats.soldTickets,
-      sub: `de ${stats.totalTickets} totales`,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 9a3 3 0 010-6h20a3 3 0 010 6H2zM2 15a3 3 0 000 6h20a3 3 0 000-6H2z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Compras Pendientes',
-      value: stats.pendingPurchases,
-      sub: `de ${stats.totalPurchases} totales`,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Ingresos Totales',
-      value: `$${(stats.totalRevenue || 0).toLocaleString()}`,
-      sub: `${stats.paidPurchases} compras pagadas`,
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-        </svg>
-      ),
-    },
-  ];
-
-  const getStatusBadge = (status: string) => {
-    if (status === 'paid') return <span className="badge-green">Pagado</span>;
-    if (status === 'pending') return <span className="badge-amber">Pendiente</span>;
-    return <span className="badge-red">Cancelado</span>;
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(purchase.id, status);
+    setSaving(false);
   };
 
   return (
-    <div className="space-y-5">
-      {/* Welcome Card */}
-      <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200 relative overflow-hidden">
-        <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/10 rounded-full" />
-        <div className="absolute -right-2 bottom-0 w-16 h-16 bg-white/10 rounded-full" />
-        <div className="relative">
-          <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Bienvenido</p>
-          <h2 className="text-xl font-black">
-            {admin?.name || 'Administrador'} 👋
-          </h2>
-          <p className="text-indigo-200 text-xs mt-1">Panel de control · Rifas NAO</p>
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-base font-black text-slate-800">Editar Orden</h3>
+          <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-sm">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="admin-card p-4 space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cliente</p>
+            <p className="font-bold text-slate-800">{purchase.user?.name}</p>
+            <p className="text-sm text-slate-500">{purchase.user?.phone}</p>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Estado</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['pending', 'paid', 'cancelled'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={`py-3 rounded-xl text-xs font-black transition-all ${status === s
+                      ? s === 'paid' ? 'bg-emerald-500 text-white shadow-sm' : s === 'cancelled' ? 'bg-red-400 text-white shadow-sm' : 'bg-amber-400 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-500'
+                    }`}
+                >
+                  {s === 'paid' ? 'Pagado' : s === 'cancelled' ? 'Liberado' : 'Pendiente'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving || status === purchase.status}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm transition-colors"
+          >
+            {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Stats Grid — "chocolate bar" 2×2 layout */}
-      <div className="grid grid-cols-2 gap-3">
-        {statCards.map((card, i) => (
-          <div key={i} className="stat-card">
-            <div className={`w-9 h-9 ${card.bg} ${card.color} rounded-xl flex items-center justify-center`}>
-              {card.icon}
-            </div>
-            <p className={`text-2xl font-black ${card.color} leading-none mt-1`}>{card.value}</p>
-            <p className="text-[11px] font-semibold text-slate-500 leading-tight">{card.label}</p>
-            <p className="text-[10px] text-slate-400">{card.sub}</p>
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+const FILTERS = [
+  { key: 'pending', label: 'Pendientes', color: 'bg-amber-500' },
+  { key: 'all', label: 'Todas', color: 'bg-slate-400' },
+  { key: 'paid', label: 'Pagadas', color: 'bg-emerald-500' },
+] as const;
+
+const Dashboard = () => {
+  const [purchases, setPurchases] = useState<any[]>([]);
+  const [filter, setFilter] = useState<'pending' | 'all' | 'paid'>('pending');
+  const [isLoading, setIsLoading] = useState(true);
+  const [paying, setPaying] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<any>(null);
+
+  const load = async (f: typeof filter) => {
+    setIsLoading(true);
+    try {
+      const params = f === 'all' ? {} : { status: f };
+      const data = await adminService.getPurchases(params);
+      // sort: newest first
+      setPurchases((data ?? []).sort((a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { load(filter); }, [filter]);
+
+  const handlePay = async (id: string) => {
+    setPaying(id);
+    try {
+      await adminService.updatePurchaseStatus(id, 'paid');
+      // optimistic update
+      setPurchases(prev =>
+        prev.map(p => p.id === id ? { ...p, status: 'paid' } : p)
+      );
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error al actualizar el pago');
+    } finally {
+      setPaying(null);
+    }
+  };
+
+  const handleRelease = async (id: string) => {
+    if (!confirm('¿Liberar (cancelar) esta orden y devolver los boletos?')) return;
+    try {
+      await adminService.updatePurchaseStatus(id, 'cancelled');
+      setPurchases(prev =>
+        prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p)
+      );
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error al liberar la orden');
+    }
+  };
+
+  const handleEditSave = async (id: string, status: 'pending' | 'paid' | 'cancelled') => {
+    try {
+      await adminService.updatePurchaseStatus(id, status);
+      setPurchases(prev =>
+        prev.map(p => p.id === id ? { ...p, status } : p)
+      );
+      setEditTarget(null);
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error al actualizar');
+    }
+  };
+
+  const pendingCount = purchases.filter(p => p.status === 'pending').length;
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="section-title">Órdenes</h2>
+          <p className="section-sub">Marcá los pagos recibidos</p>
+        </div>
+        {pendingCount > 0 && filter === 'pending' && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+            <span className="text-xs font-black text-amber-600">{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}</span>
           </div>
+        )}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl">
+        {FILTERS.map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key as typeof filter)}
+            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${filter === f.key
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-400 hover:text-slate-600'
+              }`}
+          >
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="admin-card p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Compras</p>
-          <ResponsiveContainer width="100%" height={120}>
-            <PieChart>
-              <Pie data={purchaseStatusData} cx="50%" cy="50%" outerRadius={45} dataKey="value" labelLine={false}>
-                {purchaseStatusData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v, n) => [v, n]} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-col gap-1 mt-1">
-            {purchaseStatusData.map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i] }} />
-                <p className="text-[10px] text-slate-500 truncate">{item.name}: <b className="text-slate-700">{item.value}</b></p>
-              </div>
-            ))}
-          </div>
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center h-48 gap-3">
+          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-sm text-slate-400 font-medium">Cargando órdenes...</p>
         </div>
-        <div className="admin-card p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Boletos</p>
-          <ResponsiveContainer width="100%" height={120}>
-            <PieChart>
-              <Pie data={ticketStatusData} cx="50%" cy="50%" outerRadius={45} dataKey="value" labelLine={false}>
-                {ticketStatusData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index + 2]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v, n) => [v, n]} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-col gap-1 mt-1">
-            {ticketStatusData.map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i + 2] }} />
-                <p className="text-[10px] text-slate-500 truncate">{item.name}: <b className="text-slate-700">{item.value}</b></p>
-              </div>
-            ))}
+      ) : purchases.length === 0 ? (
+        <div className="admin-card p-12 flex flex-col items-center gap-3">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center">
+            <svg className="w-7 h-7 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </div>
+          <p className="text-slate-500 font-semibold text-sm">
+            {filter === 'pending' ? '¡Todo al día! Sin pendientes 🎉' : 'No hay órdenes aquí'}
+          </p>
         </div>
-      </div>
-
-      {/* Recent Purchases */}
-      <div>
-        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3">Compras Recientes</h3>
+      ) : (
         <div className="space-y-3">
-          {recentPurchases.length === 0 ? (
-            <div className="admin-card p-8 text-center">
-              <p className="text-slate-400 text-sm">No hay compras recientes</p>
-            </div>
-          ) : (
-            recentPurchases.map((purchase) => (
-              <div key={purchase.id} className="list-card">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 text-sm truncate">{purchase.user.name}</p>
-                    <p className="text-xs text-slate-400">{purchase.user.phone}</p>
-                  </div>
-                  {getStatusBadge(purchase.status)}
-                </div>
-                <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-                  <div>
-                    <p className="text-xs text-slate-500 truncate max-w-[150px]">{purchase.raffle.title}</p>
-                    <p className="text-[10px] text-slate-400">{purchase.tickets.length} boletos · {new Date(purchase.createdAt).toLocaleDateString('es-MX')}</p>
-                  </div>
-                  <p className="font-black text-sm text-slate-800">${purchase.totalAmount.toLocaleString()}</p>
-                </div>
-              </div>
-            ))
-          )}
+          {purchases.map(purchase => (
+            <OrderCard
+              key={purchase.id}
+              purchase={purchase}
+              onPay={handlePay}
+              onRelease={handleRelease}
+              onEdit={setEditTarget}
+              paying={paying}
+            />
+          ))}
         </div>
-      </div>
+      )}
+
+      {/* Edit Modal */}
+      {editTarget && (
+        <EditModal
+          purchase={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSave={handleEditSave}
+        />
+      )}
     </div>
   );
 };
