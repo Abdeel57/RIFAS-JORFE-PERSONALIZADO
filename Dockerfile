@@ -37,9 +37,6 @@ RUN npm run build
 # 4. Configuración Final
 WORKDIR /app/backend
 ENV NODE_ENV=production
-ENV PORT=8080
-
-EXPOSE 8080
 
 # Comando de inicio
 CMD ["sh", "startup.sh"]

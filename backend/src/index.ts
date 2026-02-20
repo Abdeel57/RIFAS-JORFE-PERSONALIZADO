@@ -10,28 +10,34 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 const app = express();
 
 // IMPORTANTE: Habilitar trust proxy para que Express confíe en el proxy de Railway
-// y maneje correctamente las redirecciones y protocolos (HTTP vs HTTPS)
 app.enable('trust proxy');
 
 // Middleware de logging para todas las peticiones - MOVIDO AL PRINCIPIO
 app.use((req, res, next) => {
-  console.log(`📥 [${req.method}] ${req.path}`, {
-    ip: req.ip,
-    forwarded: req.headers['x-forwarded-for'],
+  const start = Date.now();
+  console.log(`📥 [REQ] ${req.method} ${req.url}`, {
     host: req.headers.host,
-    origin: req.headers.origin,
-    ua: req.headers['user-agent']
+    ip: req.ip,
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
+  });
+
+  // Log on finish to see status code
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`📤 [RES] ${req.method} ${req.path} - Status: ${res.statusCode} (${duration}ms)`);
   });
   next();
 });
 
-// Ruta raíz para health checks de plataformas que prueban "/"
+// Ruta raíz para health checks y verificación simple
 app.get('/', (req, res) => {
-  console.log('🏠 [ROOT] Root check llamado');
+  console.log('🏠 [ROOT] Request reached root');
   res.status(200).json({
     status: 'ok',
-    message: 'Backend root is running',
+    message: 'Backend is running and reachable!',
     timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
   });
 });
 
@@ -263,13 +269,21 @@ process.on('exit', (code) => {
   console.error('🛑 [PROCESS] exit', { code });
 });
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+// Iniciar servidor
+// Railway inyecta la variable PORT automáticamente
+const serverPort = process.env.PORT || env.PORT || 8080;
+
+app.listen(Number(serverPort), '0.0.0.0', () => {
+  console.log(`\n🚀 SERVIDOR INICIADO`);
+  console.log(`📡 Puerto: ${serverPort}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔍 Health check: http://${HOST}:${PORT}/health`);
-  console.log(`🌐 API base: http://${HOST}:${PORT}/api`);
-  console.log(`👨‍💼 Admin panel: http://${HOST}:${PORT}/admin`);
-  console.log(`✅ Servidor iniciado correctamente`);
+  console.log(`🔍 Health check: http://0.0.0.0:${serverPort}/health`);
+  console.log(`👨‍💼 Admin panel: http://0.0.0.0:${serverPort}/admin\n`);
+
+  if (process.env.RAILWAY_STATIC_URL) {
+    console.log(`🌐 URL Pública detectada: https://${process.env.RAILWAY_STATIC_URL}`);
+  }
+
   console.log(`📋 Rutas registradas:`);
   console.log(`   - GET /`);
   console.log(`   - GET /health`);
