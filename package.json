@@ -7,6 +7,8 @@
   },
   "scripts": {
     "build": "cd backend && npm install && npx prisma generate && npm run build && cd ../admin-panel && npm install && npm run build",
-    "start": "cd backend && sh startup.sh"
+    "start": "cd backend && sh startup.sh",
+    "prisma:generate": "echo 'Generating prisma via subfolder...'",
+    "clean": "echo 'Cleaning via subfolder...'"
   }
 }
