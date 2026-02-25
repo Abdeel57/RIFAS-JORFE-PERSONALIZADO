@@ -137,3 +137,4 @@ Si necesitas ayuda adicional, comparte:
 3. **Resultado de `curl localhost:$PORT/health`** desde la terminal de Railway
 4. **Configuración de Healthcheck Path** en Railway Settings
 
+

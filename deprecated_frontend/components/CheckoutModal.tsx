@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
 
@@ -11,59 +11,76 @@ interface CheckoutModalProps {
   pricePerTicket: number;
 }
 
-type CheckoutStep = 1 | 2 | 3 | 4; 
+// Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
+type CheckoutStep = 1 | 2 | 3 | 4;
 
 const STORAGE_KEY_USER = 'nao_rifas_user_data';
 const STORAGE_KEY_PENDING = 'nao_pending_purchase';
 
-const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, selectedTickets, raffleId, pricePerTicket }) => {
+const MEXICAN_STATES = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
+  'CDMX', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango',
+  'Edo. Mex', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco',
+  'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca',
+  'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa',
+  'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz',
+  'Yucatán', 'Zacatecas', 'Otro'
+];
+
+const CheckoutModal: React.FC<CheckoutModalProps> = ({
+  isOpen,
+  onClose,
+  selectedTickets,
+  raffleId,
+  pricePerTicket,
+}) => {
   const [step, setStep] = useState<CheckoutStep>(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    state: ''
-  });
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', state: '' });
   const [isAutocompleted, setIsAutocompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
 
-  // Cargar datos guardados al abrir el modal para pre-rellenar
+  // Comprobante de pago
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Cargar datos guardados al abrir  
   useEffect(() => {
     if (isOpen) {
+      setStep(1);
+      setPurchaseId(null);
+      setProofFile(null);
+      setProofPreview(null);
       const savedData = localStorage.getItem(STORAGE_KEY_USER);
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
           setFormData(parsed);
           setIsAutocompleted(true);
-        } catch (e) {
-          console.error("Error cargando datos", e);
-        }
+        } catch (e) { }
       }
     }
   }, [isOpen]);
 
-  // Lógica de autocompletado inteligente bidireccional
   const handleInputChange = (field: string, value: string) => {
     const savedDataStr = localStorage.getItem(STORAGE_KEY_USER);
     const savedData = savedDataStr ? JSON.parse(savedDataStr) : null;
-
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
-      
       if (savedData) {
-        // Autocompletar desde NOMBRE (si coincide nombre guardado y el actual lleva > 4 letras)
-        if (field === 'name' && value.toLowerCase() === savedData.name.toLowerCase() && value.length >= 4) {
+        if (field === 'name' && value.toLowerCase() === savedData.name?.toLowerCase() && value.length >= 4) {
           setIsAutocompleted(true);
           return { ...savedData, name: value };
         }
-        // Autocompletar desde TELÉFONO (si coincide teléfono de 10 dígitos)
         if (field === 'phone' && value === savedData.phone && value.length === 10) {
           setIsAutocompleted(true);
           return { ...savedData, phone: value };
         }
       }
-      
       if (isAutocompleted) setIsAutocompleted(false);
       return newData;
     });
@@ -71,118 +88,182 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, selected
 
   const total = selectedTickets.length * pricePerTicket;
 
-  const uniqueBankData = useMemo(() => ({
+  const bankData = useMemo(() => ({
     bank: 'BBVA México',
-    clabe: '012 180 0152 4895 2410', // CLABE Fija para consistencia
-    beneficiary: 'RIFAS NAO MÉXICO S.A.'
-  }), []);
+    clabe: '012 180 0152 4895 2410',
+    beneficiary: 'RIFAS NAO MÉXICO S.A.',
+    concept: `Rifa NAO - ${selectedTickets.length} boleto(s)`,
+  }), [selectedTickets.length]);
 
-  useEffect(() => {
-    if (step === 3) {
-      soundService.playCoins();
-      localStorage.removeItem(STORAGE_KEY_PENDING);
-      const timer = setTimeout(() => {
-        setStep(4);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [step]);
-
-  if (!isOpen) return null;
-
-  const handleNext = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.name && formData.phone && formData.email && formData.state) {
-      // Persistir usuario en localStorage para autocompletado futuro
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(formData));
-      
-      soundService.playSelect();
-      setStep(2);
-    } else {
-      alert("Por favor completa todos los campos para continuar.");
-    }
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    soundService.playSelect();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleConfirmPurchase = async () => {
+  // ── Step 1: Envía datos → crea la compra en BD (estado pending) ──
+  const handleNext = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.phone || !formData.email || !formData.state) {
+      alert('Por favor completa todos los campos.');
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(formData));
+    soundService.playSelect();
+    setStep(2);
+  };
+
+  // ── Manejo de imagen de comprobante ──
+  const processFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Solo se aceptan imágenes (JPG, PNG, WEBP, etc.)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('La imagen no debe superar 10MB.');
+      return;
+    }
+    setProofFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProofPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  };
+
+  // ── Step 2: Confirmar compra y subir comprobante ──
+  const handleConfirmWithProof = async () => {
+    if (!proofPreview) {
+      alert('Por favor adjunta el comprobante de pago antes de confirmar.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await apiService.createPurchase({
+      // 1. Crear la compra en BD
+      const purchaseResult = await apiService.createPurchase({
         raffleId,
         ticketNumbers: selectedTickets,
         user: formData,
       });
-      
+      const newPurchaseId = purchaseResult.id;
+      setPurchaseId(newPurchaseId);
+
+      // 2. Subir el comprobante
+      setIsUploadingProof(true);
+      await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
+      setIsUploadingProof(false);
+
       // Guardar en localStorage para verificación
-      const pendingData = {
+      localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify({
         tickets: selectedTickets,
-        total: total,
+        total,
         user: formData,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify(pendingData));
-      
+        timestamp: Date.now(),
+        purchaseId: newPurchaseId,
+      }));
+
       soundService.playCoins();
       setStep(3);
+
+      // Auto-avanzar a step 4 después de 5s
+      setTimeout(() => setStep(4), 5000);
     } catch (error: any) {
-      console.error('Error creating purchase:', error);
+      console.error('Error:', error);
       alert(error.message || 'Error al procesar la compra. Por favor intenta de nuevo.');
     } finally {
       setIsSubmitting(false);
+      setIsUploadingProof(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 overflow-hidden">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={step < 3 ? onClose : undefined} />
-      
-      <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-        
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300"
+        onClick={step < 3 ? onClose : undefined}
+      />
+
+      <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[92vh]">
+
+        {/* ── Header ── */}
         {step <= 2 && (
-          <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black italic">N</div>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-black italic text-sm">N</div>
               <div>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">Registro de Compra</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Paso {step} de 2</p>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">
+                  {step === 1 ? 'Tus Datos' : 'Pago y Comprobante'}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {[1, 2].map(s => (
+                    <div
+                      key={s}
+                      className={`h-1 rounded-full transition-all duration-500 ${s === step ? 'w-6 bg-blue-600' : s < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-100'}`}
+                    />
+                  ))}
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">Paso {step} de 2</span>
+                </div>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         )}
 
-        <div className="p-8 overflow-y-auto custom-scrollbar-light">
+        <div className="overflow-y-auto custom-scrollbar-light flex-1">
+
+          {/* ════════════════════════════════════════
+              STEP 1 — DATOS DEL COMPRADOR
+          ════════════════════════════════════════ */}
           {step === 1 && (
-            <form onSubmit={handleNext} className="space-y-5">
-              <div className="text-center mb-6">
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-3 transition-colors duration-500 ${isAutocompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
-                  {isAutocompleted ? 'Datos Recuperados' : 'Dispositivo Recordado'}
-                </div>
-                <h4 className="text-2xl font-black text-slate-800 tracking-tight">Tus Datos</h4>
-                <p className="text-slate-500 text-sm mt-1">Escribe tu nombre o teléfono para autocompletar.</p>
+            <form onSubmit={handleNext} className="p-6 space-y-5">
+              <div className="text-center mb-4">
+                {isAutocompleted && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest mb-3">
+                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    Datos Recuperados
+                  </div>
+                )}
+                <p className="text-slate-500 text-sm">Escribe tu nombre o teléfono para autocompletar.</p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo</label>
-                  <input 
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo *</label>
+                  <input
                     required
-                    className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-base font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/30 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
-                    placeholder="Ej. Juan Pérez"
+                    className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
+                    placeholder="Ej. Juan Pérez García"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp</label>
-                    <input 
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp *</label>
+                    <input
                       required
                       type="tel"
-                      className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-base font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/30 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
+                      className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
                       placeholder="10 dígitos"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
@@ -190,29 +271,25 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, selected
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado</label>
-                    <select 
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado *</label>
+                    <select
                       required
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-base font-bold text-slate-700"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
                     >
-                      <option value="">Seleccionar...</option>
-                      <option value="CDMX">CDMX</option>
-                      <option value="Jalisco">Jalisco</option>
-                      <option value="Nuevo Leon">Nuevo León</option>
-                      <option value="Edo. Mex">Edo. Mex</option>
-                      <option value="Otro">Otro</option>
+                      <option value="">Estado...</option>
+                      {MEXICAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
-                  <input 
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email *</label>
+                  <input
                     required
                     type="email"
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-base font-bold text-slate-700"
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
                     placeholder="correo@ejemplo.com"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
@@ -220,85 +297,296 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, selected
                 </div>
               </div>
 
-              <button 
+              {/* Resumen rápido de boletos */}
+              <div className="bg-slate-50 rounded-2xl p-4 flex items-center justify-between border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resumen</p>
+                  <p className="text-sm font-black text-slate-800 mt-0.5">
+                    {selectedTickets.length} boleto{selectedTickets.length !== 1 ? 's' : ''}
+                    <span className="text-slate-400 font-medium ml-2 text-xs">
+                      #{selectedTickets.slice(0, 3).map(n => n.toString().padStart(3, '0')).join(' #')}
+                      {selectedTickets.length > 3 ? ` +${selectedTickets.length - 3} más` : ''}
+                    </span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
+                  <p className="text-xl font-black text-blue-600 tracking-tighter">${total.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-base uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-100 mt-6"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-100"
               >
-                Continuar al Pago
+                Continuar al Pago →
               </button>
             </form>
           )}
 
+          {/* ════════════════════════════════════════
+              STEP 2 — DATOS BANCARIOS + COMPROBANTE
+          ════════════════════════════════════════ */}
           {step === 2 && (
-            <div className="space-y-6 animate-in slide-in-from-right-10 duration-300">
-              <div className="text-center mb-6">
-                <h4 className="text-2xl font-black text-slate-800 tracking-tight">Resumen y Pago</h4>
-                <p className="text-slate-500 text-sm">Estás adquiriendo <span className="font-bold text-blue-600">{selectedTickets.length} boleto(s)</span></p>
-              </div>
+            <div className="p-6 space-y-5 animate-in slide-in-from-right-8 duration-300">
 
-              <div className="bg-blue-50/50 border border-blue-100 rounded-3xl p-6 space-y-4">
+              {/* Datos bancarios SPEI */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h5 className="font-black text-slate-800 uppercase text-xs tracking-widest">Transferencia SPEI</h5>
-                  <span className="text-blue-600 font-bold text-[9px] uppercase">Rápido</span>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-blue-50 space-y-3">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-bold">BANCO</span>
-                    <span className="text-slate-800 font-black">{uniqueBankData.bank}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-blue-600 rounded-xl flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+                    <h5 className="font-black text-slate-800 text-sm uppercase tracking-wider">Transferencia SPEI</h5>
                   </div>
-                  <div className="flex flex-col pt-2 border-t border-slate-50">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">CLABE</span>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-slate-800 font-black text-sm">{uniqueBankData.clabe}</span>
-                      <button className="p-2 text-blue-600" onClick={() => { navigator.clipboard.writeText(uniqueBankData.clabe); soundService.playSelect(); }}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                  <span className="text-[9px] font-black text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase">Rápido</span>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-blue-50 divide-y divide-slate-50">
+                  {/* Banco */}
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Banco</span>
+                    <span className="text-sm text-slate-800 font-black">{bankData.bank}</span>
+                  </div>
+                  {/* CLABE */}
+                  <div className="px-4 py-3">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">CLABE Interbancaria</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-800 font-black text-sm tracking-wider">{bankData.clabe}</span>
+                      <button
+                        onClick={() => handleCopy(bankData.clabe.replace(/\s/g, ''))}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${copied ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                      >
+                        {copied ? (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                            Copiado
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                            Copiar
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
+                  {/* Beneficiario */}
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Beneficiario</span>
+                    <span className="text-xs text-slate-700 font-bold truncate max-w-[60%] text-right">{bankData.beneficiary}</span>
+                  </div>
+                  {/* Concepto */}
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Concepto</span>
+                    <span className="text-xs text-slate-700 font-bold truncate max-w-[60%] text-right">{bankData.concept}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest text-center mb-4">Monto Exacto</p>
-                <p className="text-4xl font-black text-slate-800 text-center tracking-tighter">${total.toLocaleString()}</p>
+              {/* Total visible (compacto y claro) */}
+              <div className="flex items-center justify-between bg-slate-900 rounded-2xl px-5 py-4">
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Monto Exacto a Transferir</p>
+                  <p className="text-2xl font-black text-white tracking-tighter mt-0.5">${total.toLocaleString()} <span className="text-slate-500 text-sm font-medium">MXN</span></p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{selectedTickets.length} boleto{selectedTickets.length !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">${pricePerTicket.toLocaleString()} c/u</p>
+                </div>
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={() => setStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition-all">Atrás</button>
-                <button 
-                  onClick={handleConfirmPurchase}
-                  disabled={isSubmitting}
-                  className={`flex-[2] bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              {/* ── ZONA DE CARGA DEL COMPROBANTE ── */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Comprobante de Pago</p>
+                  <span className="text-[9px] bg-amber-100 text-amber-600 font-black px-2 py-0.5 rounded-full uppercase">Requerido</span>
+                </div>
+
+                {!proofPreview ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 group ${isDragOver
+                        ? 'border-blue-400 bg-blue-50 scale-[1.02]'
+                        : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50'
+                      }`}
+                  >
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isDragOver ? 'bg-blue-100' : 'bg-white border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50'}`}>
+                      <svg className={`w-6 h-6 transition-colors ${isDragOver ? 'text-blue-500' : 'text-slate-300 group-hover:text-blue-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-black text-slate-600 group-hover:text-blue-600 transition-colors">
+                        {isDragOver ? 'Suelta aquí' : 'Adjuntar comprobante'}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">Haz clic o arrastra tu imagen aquí</p>
+                      <p className="text-[10px] text-slate-300 mt-1 font-medium">JPG, PNG, WEBP · Máx. 10MB</p>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                ) : (
+                  /* Preview del comprobante cargado */
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
+                    <img
+                      src={proofPreview}
+                      alt="Comprobante de pago"
+                      className="w-full max-h-52 object-contain bg-slate-50 p-2"
+                    />
+                    <div className="p-3 bg-white border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-slate-600">Comprobante cargado</p>
+                          {proofFile && <p className="text-[9px] text-slate-400">{proofFile.name} · {(proofFile.size / 1024).toFixed(0)}KB</p>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setProofFile(null); setProofPreview(null); }}
+                        className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors px-2 py-1 hover:bg-red-50 rounded-lg"
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-2 pb-2">
+                <button
+                  onClick={() => { setProofFile(null); setProofPreview(null); setStep(1); }}
+                  className="flex-1 bg-slate-100 text-slate-500 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200"
                 >
-                  {isSubmitting ? 'Procesando...' : 'Confirmar Pago'}
+                  ← Atrás
+                </button>
+                <button
+                  onClick={handleConfirmWithProof}
+                  disabled={!proofPreview || isSubmitting}
+                  className={`flex-[2] font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all ${proofPreview && !isSubmitting
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg active:scale-95'
+                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                    }`}
+                >
+                  {isSubmitting
+                    ? isUploadingProof
+                      ? '📤 Subiendo...'
+                      : '⏳ Creando orden...'
+                    : proofPreview
+                      ? '✓ Confirmar y Enviar'
+                      : 'Adjunta el comprobante'
+                  }
                 </button>
               </div>
             </div>
           )}
 
+          {/* ════════════════════════════════════════
+              STEP 3 — CONFIRMACIÓN ANIMADA
+          ════════════════════════════════════════ */}
           {step === 3 && (
-            <div className="py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+            <div className="py-14 px-8 text-center space-y-5 animate-in zoom-in-95 duration-500">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-              <h4 className="text-3xl font-black text-slate-800 tracking-tight leading-none">¡Recibido!</h4>
-              <p className="text-slate-500 font-medium px-6">Validaremos tu pago y te enviaremos tus boletos digitales por WhatsApp a <span className="text-blue-600 font-bold">{formData.phone}</span>.</p>
+              <div>
+                <h4 className="text-3xl font-black text-slate-800 tracking-tight leading-none">¡Recibido!</h4>
+                <p className="text-slate-500 font-medium mt-3 leading-relaxed px-4">
+                  Tu comprobante fue enviado. El administrador validará tu pago y confirmará tus boletos por WhatsApp al número{' '}
+                  <span className="text-blue-600 font-bold">{formData.phone}</span>.
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-2xl p-4 text-left space-y-2">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tu orden</p>
+                <div className="flex flex-wrap gap-1">
+                  {selectedTickets.slice(0, 8).map(n => (
+                    <span key={n} className="px-2 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black">#{n.toString().padStart(3, '0')}</span>
+                  ))}
+                  {selectedTickets.length > 8 && (
+                    <span className="px-2 py-1 bg-slate-200 text-slate-500 rounded-lg text-[10px] font-black">+{selectedTickets.length - 8} más</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-1 justify-center">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="w-2 h-2 bg-blue-200 rounded-full animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
+                ))}
+              </div>
+              <p className="text-xs text-slate-400">Preparando resumen final...</p>
             </div>
           )}
 
+          {/* ════════════════════════════════════════
+              STEP 4 — FINAL
+          ════════════════════════════════════════ */}
           {step === 4 && (
-            <div className="py-6 text-center space-y-8 animate-in fade-in duration-700">
-              <h4 className="text-2xl font-black text-slate-800 tracking-tight px-4">¡Gracias por participar en Rifas Nao!</h4>
-              <div className="space-y-3 px-6">
-                <button onClick={() => window.open('https://facebook.com', '_blank')} className="w-full bg-[#1877F2] text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg">
-                   Sorteos en Facebook
+            <div className="py-10 px-6 text-center space-y-6 animate-in fade-in duration-700">
+              <div className="space-y-2">
+                <p className="text-4xl">🎟️</p>
+                <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
+                <p className="text-slate-500 text-sm leading-relaxed px-2">
+                  Revisa tu WhatsApp pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left space-y-2">
+                <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">¿Qué sigue?</p>
+                <div className="space-y-1.5">
+                  {[
+                    { icon: '🔍', text: 'El admin verifica tu comprobante' },
+                    { icon: '✅', text: 'Te confirmamos por WhatsApp' },
+                    { icon: '🎰', text: 'Participas en el sorteo' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                      <span>{item.icon}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2.5 px-2">
+                <button
+                  onClick={() => window.open(`https://wa.me/52${formData.phone.replace(/\D/g, '')}?text=${encodeURIComponent('Hola, acabo de realizar mi pago de Rifas NAO y subí mi comprobante. Por favor confirma mis boletos 🎟️')}`, '_blank')}
+                  className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] text-white py-3.5 px-6 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-105 transition-all shadow-lg shadow-green-100 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" /></svg>
+                  Enviar WhatsApp
                 </button>
-                <button onClick={onClose} className="w-full bg-slate-100 text-slate-600 font-black py-4 rounded-2xl text-xs uppercase tracking-widest">Cerrar</button>
+                <button
+                  onClick={onClose}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        .custom-scrollbar-light::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      `}</style>
     </div>
   );
 };

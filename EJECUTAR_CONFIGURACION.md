@@ -75,3 +75,4 @@ Si prefieres hacerlo manualmente, sigue `CONFIGURACION_MANUAL_COMPLETA.md`
 3. Verifica que tengas npm: `npm --version`
 4. Si hay errores, compártelos y te ayudo a solucionarlos
 
+

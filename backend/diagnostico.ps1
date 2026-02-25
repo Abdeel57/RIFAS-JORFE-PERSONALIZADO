@@ -100,3 +100,4 @@ Write-Host "   Si hay errores ❌, corrígelos primero" -ForegroundColor White
 Write-Host "   Luego ejecuta: npm run dev" -ForegroundColor White
 Write-Host ""
 
+

@@ -14,6 +14,10 @@ const createPurchaseSchema = z.object({
   }),
 });
 
+const uploadPaymentProofSchema = z.object({
+  paymentProofUrl: z.string().min(1, 'Se requiere el comprobante de pago'),
+});
+
 export const createPurchase = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = createPurchaseSchema.parse(req.body);
@@ -55,9 +59,26 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
     });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: userData,
+      // Verificar si el email ya está en uso por otro usuario
+      const existingEmailUser = await prisma.user.findUnique({
+        where: { email: userData.email },
       });
+
+      if (existingEmailUser) {
+        // Actualizar datos del usuario existente por email
+        user = await prisma.user.update({
+          where: { id: existingEmailUser.id },
+          data: {
+            name: userData.name,
+            phone: userData.phone,
+            state: userData.state,
+          },
+        });
+      } else {
+        user = await prisma.user.create({
+          data: userData,
+        });
+      }
     } else {
       // Actualizar datos del usuario si han cambiado
       user = await prisma.user.update({
@@ -126,7 +147,67 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+export const uploadPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const validated = uploadPaymentProofSchema.parse(req.body);
 
+    // Verificar que la compra existe y está pendiente
+    const purchase = await prisma.purchase.findUnique({
+      where: { id },
+    });
 
+    if (!purchase) {
+      throw new AppError(404, 'Purchase not found');
+    }
 
+    if (purchase.status === 'paid') {
+      throw new AppError(400, 'Purchase is already paid');
+    }
 
+    if (purchase.status === 'cancelled') {
+      throw new AppError(400, 'Purchase has been cancelled');
+    }
+
+    // Validar que el comprobante sea una imagen base64 o URL válida
+    const proofData = validated.paymentProofUrl;
+    const isBase64 = proofData.startsWith('data:image/');
+    const isUrl = proofData.startsWith('http://') || proofData.startsWith('https://');
+
+    if (!isBase64 && !isUrl) {
+      throw new AppError(400, 'Invalid payment proof format. Must be a base64 image or URL.');
+    }
+
+    // Guardar el comprobante
+    // Note: paymentProofUrl field is new - Prisma client will be regenerated on deploy
+    const updatedPurchase = await (prisma.purchase.update as any)({
+      where: { id },
+      data: {
+        paymentProofUrl: proofData,
+        paymentMethod: 'SPEI',
+      },
+      include: {
+        user: true,
+        raffle: true,
+        tickets: {
+          select: {
+            id: true,
+            number: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: updatedPurchase,
+      message: 'Comprobante de pago recibido. Tu orden será verificada pronto.',
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return next(error);
+    }
+    next(error);
+  }
+};

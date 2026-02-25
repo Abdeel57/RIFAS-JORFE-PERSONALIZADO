@@ -13,7 +13,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -92,6 +92,14 @@ class ApiService {
     return this.request<{ response: string }>('/support/chat', {
       method: 'POST',
       body: JSON.stringify({ message, raffleId }),
+    });
+  }
+
+  // Payment Proof
+  async uploadPaymentProof(purchaseId: string, paymentProofUrl: string) {
+    return this.request<any>(`/purchases/${purchaseId}/payment-proof`, {
+      method: 'POST',
+      body: JSON.stringify({ paymentProofUrl }),
     });
   }
 }

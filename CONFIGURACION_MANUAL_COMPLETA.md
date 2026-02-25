@@ -226,3 +226,4 @@ npm run prisma:generate
 
 Si todos los pasos están completos, tu backend debería funcionar tanto localmente como en Railway.
 
+

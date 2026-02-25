@@ -33,3 +33,4 @@ fi
 
 echo "=== STARTUP: launching node ==="
 exec node dist/index.js
+

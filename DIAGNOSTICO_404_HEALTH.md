@@ -192,3 +192,4 @@ Si necesitas ayuda, comparte:
 3. **Estado del servicio** (Online/Offline)
 4. **Variables de entorno** (sin mostrar valores sensibles)
 
+

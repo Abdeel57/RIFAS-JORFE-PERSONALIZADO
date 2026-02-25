@@ -18,6 +18,81 @@ const fmtTime = (d: string) => {
 
 const phoneToWA = (phone: string) => phone.replace(/\D/g, '');
 
+// ─── Proof Viewer Modal ───────────────────────────────────────────────────────
+
+const ProofViewerModal = ({
+  purchase,
+  onClose,
+  onPay,
+  onRelease,
+  paying,
+}: {
+  purchase: any;
+  onClose: () => void;
+  onPay: (id: string) => void;
+  onRelease: (id: string) => void;
+  paying: string | null;
+}) => {
+  const isPaid = purchase.status === 'paid';
+  const isCancelled = purchase.status === 'cancelled';
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-slate-800">Comprobante de Pago</h3>
+            <p className="text-xs text-slate-500">{purchase.user?.name}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition-colors text-sm font-bold">✕</button>
+        </div>
+
+        <div className="bg-slate-50">
+          {purchase.paymentProofUrl ? (
+            <img
+              src={purchase.paymentProofUrl}
+              alt="Comprobante de pago"
+              className="w-full max-h-96 object-contain"
+            />
+          ) : (
+            <div className="h-48 flex flex-col items-center justify-center gap-2 text-slate-400">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-sm font-medium">Sin comprobante adjunto</p>
+            </div>
+          )}
+        </div>
+
+        {!isPaid && !isCancelled && (
+          <div className="p-4 flex gap-2">
+            <button
+              onClick={() => { onRelease(purchase.id); onClose(); }}
+              className="flex-1 py-3 bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide"
+            >
+              Rechazar
+            </button>
+            <button
+              onClick={() => { onPay(purchase.id); onClose(); }}
+              disabled={paying === purchase.id}
+              className="flex-[2] py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all uppercase tracking-wide shadow-sm shadow-emerald-200 disabled:opacity-60"
+            >
+              {paying === purchase.id ? 'Procesando...' : '✓ Confirmar Pago'}
+            </button>
+          </div>
+        )}
+        {(isPaid || isCancelled) && (
+          <div className="p-4">
+            <div className={`text-center py-2 rounded-xl text-xs font-black uppercase tracking-wide ${isPaid ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+              {isPaid ? '✓ Pago Confirmado' : 'Orden Liberada'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
 const OrderCard = ({
@@ -35,12 +110,14 @@ const OrderCard = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showProof, setShowProof] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const tickets: number[] = purchase.tickets?.map((t: any) => t.number) ?? [];
   const visibleTickets = expanded ? tickets : tickets.slice(0, 5);
   const hasMore = tickets.length > 5;
   const isPaid = purchase.status === 'paid';
   const isCancelled = purchase.status === 'cancelled';
+  const hasProof = !!purchase.paymentProofUrl;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -63,157 +140,196 @@ const OrderCard = ({
   const trackLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${trackMessage}`;
 
   return (
-    <div
-      className={`list-card relative transition-all duration-300 ${isPaid ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
-        }`}
-    >
-      {/* LEFT accent bar by status */}
+    <>
       <div
-        className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${isPaid ? 'bg-emerald-400' : isCancelled ? 'bg-slate-300' : 'bg-amber-400'
+        className={`list-card relative transition-all duration-300 ${isPaid ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
           }`}
-      />
+      >
+        {/* LEFT accent bar by status */}
+        <div
+          className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${isPaid ? 'bg-emerald-400' : isCancelled ? 'bg-slate-300' : 'bg-amber-400'
+            }`}
+        />
 
-      <div className="flex items-start gap-3 pl-3">
-        {/* Main info */}
-        <div className="flex-1 min-w-0">
-          {/* Row 1: name + time */}
-          <div className="flex items-center gap-2 justify-between">
-            <p className="font-black text-slate-800 text-sm truncate">{purchase.user?.name ?? '—'}</p>
-            <span className="text-[10px] text-slate-400 flex-shrink-0">{fmtTime(purchase.createdAt)}</span>
-          </div>
+        <div className="flex items-start gap-3 pl-3">
+          {/* Main info */}
+          <div className="flex-1 min-w-0">
+            {/* Row 1: name + time */}
+            <div className="flex items-center gap-2 justify-between">
+              <p className="font-black text-slate-800 text-sm truncate">{purchase.user?.name ?? '—'}</p>
+              <span className="text-[10px] text-slate-400 flex-shrink-0">{fmtTime(purchase.createdAt)}</span>
+            </div>
 
-          {/* Row 2: phone */}
-          <p className="text-[11px] text-slate-400">{purchase.user?.phone ?? ''}</p>
+            {/* Row 2: phone */}
+            <p className="text-[11px] text-slate-400">{purchase.user?.phone ?? ''}</p>
 
-          {/* Row 3: raffle */}
-          <p className="text-[11px] font-semibold text-indigo-600 truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
+            {/* Row 3: raffle */}
+            <p className="text-[11px] font-semibold text-indigo-600 truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
 
-          {/* Row 4: ticket chips */}
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {visibleTickets.map((n: number) => (
-              <span
-                key={n}
-                className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-black text-slate-700"
-              >
-                #{fmt(n)}
-              </span>
-            ))}
-            {hasMore && !expanded && (
-              <button
-                onClick={() => setExpanded(true)}
-                className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-black text-indigo-500 hover:bg-indigo-100 transition-colors"
-              >
-                +{tickets.length - 5} más
-              </button>
-            )}
-            {expanded && hasMore && (
-              <button
-                onClick={() => setExpanded(false)}
-                className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-400 hover:bg-slate-100 transition-colors"
-              >
-                Ver menos
-              </button>
-            )}
-          </div>
-
-          {/* Row 5: total */}
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-            <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
-            {isPaid && <span className="badge-green">Pagado</span>}
-            {isCancelled && <span className="badge-red">Liberado</span>}
-          </div>
-        </div>
-
-        {/* Action buttons column */}
-        <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
-          {/* PAY button — primary, most important */}
-          {!isPaid && !isCancelled && (
-            <button
-              onClick={() => onPay(purchase.id)}
-              disabled={paying === purchase.id}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60"
-            >
-              {paying === purchase.id ? (
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-              Pago
-            </button>
-          )}
-
-          {/* RELEASE button */}
-          {!isPaid && !isCancelled && (
-            <button
-              onClick={() => onRelease(purchase.id)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-500 active:scale-95 text-slate-500 rounded-xl text-xs font-bold transition-all"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-              Liberar
-            </button>
-          )}
-
-          {/* OPTIONS button */}
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(v => !v)}
-              className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-              </svg>
-              Opciones
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
+            {/* Row 4: ticket chips */}
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {visibleTickets.map((n: number) => (
+                <span
+                  key={n}
+                  className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-black text-slate-700"
+                >
+                  #{fmt(n)}
+                </span>
+              ))}
+              {hasMore && !expanded && (
                 <button
-                  onClick={() => { onEdit(purchase); setMenuOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => setExpanded(true)}
+                  className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-black text-indigo-500 hover:bg-indigo-100 transition-colors"
                 >
-                  <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Editar
+                  +{tickets.length - 5} más
                 </button>
-                <div className="border-t border-slate-50" />
-                <a
-                  href={trackLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              )}
+              {expanded && hasMore && (
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-400 hover:bg-slate-100 transition-colors"
                 >
-                  <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
-                  </svg>
-                  Enviar seguimiento
-                </a>
-                <div className="border-t border-slate-50" />
-                <a
-                  href={waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 transition-colors"
+                  Ver menos
+                </button>
+              )}
+            </div>
+
+            {/* Row 5: total + proof badge */}
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+              <div className="flex items-center gap-2">
+                <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
+                {/* Comprobante badge */}
+                <button
+                  onClick={() => setShowProof(true)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${hasProof
+                      ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                    }`}
+                  title={hasProof ? 'Ver comprobante' : 'Sin comprobante'}
                 >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  Chat WhatsApp
-                </a>
+                  {hasProof ? 'Comprobante' : 'Sin foto'}
+                </button>
               </div>
+              {isPaid && <span className="badge-green">Pagado</span>}
+              {isCancelled && <span className="badge-red">Liberado</span>}
+            </div>
+          </div>
+
+          {/* Action buttons column */}
+          <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
+            {/* PAY button — primary, most important */}
+            {!isPaid && !isCancelled && (
+              <button
+                onClick={() => onPay(purchase.id)}
+                disabled={paying === purchase.id}
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60"
+              >
+                {paying === purchase.id ? (
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+                Pago
+              </button>
             )}
+
+            {/* RELEASE button */}
+            {!isPaid && !isCancelled && (
+              <button
+                onClick={() => onRelease(purchase.id)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-500 active:scale-95 text-slate-500 rounded-xl text-xs font-bold transition-all"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                Liberar
+              </button>
+            )}
+
+            {/* OPTIONS button */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(v => !v)}
+                className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+                </svg>
+                Opciones
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
+                  <button
+                    onClick={() => { onEdit(purchase); setMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Editar
+                  </button>
+                  <div className="border-t border-slate-50" />
+                  <button
+                    onClick={() => { setShowProof(true); setMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Ver comprobante
+                  </button>
+                  <div className="border-t border-slate-50" />
+                  <a
+                    href={trackLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
+                    </svg>
+                    Enviar seguimiento
+                  </a>
+                  <div className="border-t border-slate-50" />
+                  <a
+                    href={waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
+                    </svg>
+                    Chat WhatsApp
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Proof Viewer Modal */}
+      {showProof && (
+        <ProofViewerModal
+          purchase={purchase}
+          onClose={() => setShowProof(false)}
+          onPay={onPay}
+          onRelease={onRelease}
+          paying={paying}
+        />
+      )}
+    </>
   );
 };
 
@@ -258,8 +374,8 @@ const EditModal = ({
                   key={s}
                   onClick={() => setStatus(s)}
                   className={`py-3 rounded-xl text-xs font-black transition-all ${status === s
-                      ? s === 'paid' ? 'bg-emerald-500 text-white shadow-sm' : s === 'cancelled' ? 'bg-red-400 text-white shadow-sm' : 'bg-amber-400 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-500'
+                    ? s === 'paid' ? 'bg-emerald-500 text-white shadow-sm' : s === 'cancelled' ? 'bg-red-400 text-white shadow-sm' : 'bg-amber-400 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-500'
                     }`}
                 >
                   {s === 'paid' ? 'Pagado' : s === 'cancelled' ? 'Liberado' : 'Pendiente'}
@@ -377,8 +493,8 @@ const Dashboard = () => {
             key={f.key}
             onClick={() => setFilter(f.key as typeof filter)}
             className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${filter === f.key
-                ? 'bg-white text-slate-800 shadow-sm'
-                : 'text-slate-400 hover:text-slate-600'
+              ? 'bg-white text-slate-800 shadow-sm'
+              : 'text-slate-400 hover:text-slate-600'
               }`}
           >
             {f.label}

@@ -7,6 +7,7 @@ const updatePurchaseStatusSchema = z.object({
   status: z.enum(['pending', 'paid', 'cancelled']),
   paymentMethod: z.string().optional(),
   paymentReference: z.string().optional(),
+  paymentProofUrl: z.string().optional(),
 });
 
 export const getPurchases = async (req: Request, res: Response, next: NextFunction) => {
@@ -175,6 +176,7 @@ export const updatePurchaseStatus = async (req: Request, res: Response, next: Ne
     next(error);
   }
 };
+
 
 
 

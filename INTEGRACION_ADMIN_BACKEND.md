@@ -85,3 +85,4 @@ Esto es normal. El backend sirve `index.html` para todas las rutas `/admin/*` qu
 
 Si ves errores de CORS desde el admin panel, verifica que estés accediendo desde el mismo dominio. El admin panel no debería tener problemas de CORS ya que está en el mismo dominio que la API.
 
+

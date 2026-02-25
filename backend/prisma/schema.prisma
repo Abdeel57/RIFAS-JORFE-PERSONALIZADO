@@ -74,6 +74,7 @@ model Purchase {
   status           PurchaseStatus  @default(pending)
   paymentMethod    String?
   paymentReference String?
+  paymentProofUrl  String?         @db.Text
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -115,6 +116,7 @@ enum PurchaseStatus {
   paid
   cancelled
 }
+
 
 
 

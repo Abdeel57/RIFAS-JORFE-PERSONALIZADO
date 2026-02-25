@@ -176,3 +176,4 @@ Si necesitas ayuda, comparte:
 3. **Resultado de check-admin** (`npx tsx src/scripts/check-admin.ts`)
 4. **Error específico** que ves al intentar acceder
 
+

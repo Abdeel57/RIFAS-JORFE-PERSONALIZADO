@@ -130,3 +130,4 @@ Comparte:
 2. **El resultado del comando de verificación**
 3. **Cualquier error que veas al ejecutar `npm run dev`**
 
+
