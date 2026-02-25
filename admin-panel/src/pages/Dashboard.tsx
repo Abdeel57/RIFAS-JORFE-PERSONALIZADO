@@ -118,6 +118,7 @@ const OrderCard = ({
   const isPaid = purchase.status === 'paid';
   const isCancelled = purchase.status === 'cancelled';
   const hasProof = !!purchase.paymentProofUrl;
+  const verStatus = purchase.verificationStatus as string | undefined;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -202,8 +203,8 @@ const OrderCard = ({
                 <button
                   onClick={() => setShowProof(true)}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${hasProof
-                      ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
-                      : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                    ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
+                    : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
                     }`}
                   title={hasProof ? 'Ver comprobante' : 'Sin comprobante'}
                 >
@@ -213,6 +214,25 @@ const OrderCard = ({
                   {hasProof ? 'Comprobante' : 'Sin foto'}
                 </button>
               </div>
+              {/* Verification Status Badge */}
+              {verStatus === 'auto_verified' && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                  Banxico ✓
+                </span>
+              )}
+              {verStatus === 'pending_manual' && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-black">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  Revisar
+                </span>
+              )}
+              {verStatus === 'pending_verification' && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Verificando
+                </span>
+              )}
               {isPaid && <span className="badge-green">Pagado</span>}
               {isCancelled && <span className="badge-red">Liberado</span>}
             </div>

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { z } from 'zod';
+import { schedulePaymentVerification } from '../services/verificationQueue';
 
 const createPurchaseSchema = z.object({
   raffleId: z.string().min(1),
@@ -59,13 +60,11 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
     });
 
     if (!user) {
-      // Verificar si el email ya está en uso por otro usuario
       const existingEmailUser = await prisma.user.findUnique({
         where: { email: userData.email },
       });
 
       if (existingEmailUser) {
-        // Actualizar datos del usuario existente por email
         user = await prisma.user.update({
           where: { id: existingEmailUser.id },
           data: {
@@ -80,7 +79,6 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
         });
       }
     } else {
-      // Actualizar datos del usuario si han cambiado
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -119,18 +117,14 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
       return purchase;
     });
 
-    // Obtener la compra completa con relaciones
+    // Obtener la compra completa
     const purchaseWithDetails = await prisma.purchase.findUnique({
       where: { id: purchase.id },
       include: {
         user: true,
         raffle: true,
         tickets: {
-          select: {
-            id: true,
-            number: true,
-            status: true,
-          },
+          select: { id: true, number: true, status: true },
         },
       },
     });
@@ -152,24 +146,14 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     const { id } = req.params;
     const validated = uploadPaymentProofSchema.parse(req.body);
 
-    // Verificar que la compra existe y está pendiente
-    const purchase = await prisma.purchase.findUnique({
-      where: { id },
-    });
+    // Verificar que la compra existe
+    const purchase = await prisma.purchase.findUnique({ where: { id } });
 
-    if (!purchase) {
-      throw new AppError(404, 'Purchase not found');
-    }
+    if (!purchase) throw new AppError(404, 'Purchase not found');
+    if (purchase.status === 'paid') throw new AppError(400, 'Purchase is already paid');
+    if (purchase.status === 'cancelled') throw new AppError(400, 'Purchase has been cancelled');
 
-    if (purchase.status === 'paid') {
-      throw new AppError(400, 'Purchase is already paid');
-    }
-
-    if (purchase.status === 'cancelled') {
-      throw new AppError(400, 'Purchase has been cancelled');
-    }
-
-    // Validar que el comprobante sea una imagen base64 o URL válida
+    // Validar formato de imagen
     const proofData = validated.paymentProofUrl;
     const isBase64 = proofData.startsWith('data:image/');
     const isUrl = proofData.startsWith('http://') || proofData.startsWith('https://');
@@ -178,31 +162,45 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
       throw new AppError(400, 'Invalid payment proof format. Must be a base64 image or URL.');
     }
 
-    // Guardar el comprobante
-    // Note: paymentProofUrl field is new - Prisma client will be regenerated on deploy
+    // Guardar el comprobante y marcar como "en verificación"
     const updatedPurchase = await (prisma.purchase.update as any)({
       where: { id },
       data: {
         paymentProofUrl: proofData,
         paymentMethod: 'SPEI',
+        verificationStatus: 'pending_verification',
+        verificationNote: 'Comprobante recibido. Verificación automática programada en 5 minutos.',
       },
       include: {
         user: true,
         raffle: true,
         tickets: {
-          select: {
-            id: true,
-            number: true,
-            status: true,
-          },
+          select: { id: true, number: true, status: true },
         },
       },
     });
 
+    // Programar la verificación diferida (5 minutos)
+    // Solo si hay imagen base64 (los URLs no se pueden enviar a Gemini Vision directamente)
+    if (isBase64) {
+      schedulePaymentVerification(id, proofData);
+      console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática en 5 min.`);
+    } else {
+      // Si es URL (raro), marcar como pendiente manual
+      await (prisma.purchase.update as any)({
+        where: { id },
+        data: {
+          verificationStatus: 'pending_manual',
+          verificationNote: 'Comprobante como URL — requiere revisión manual del administrador.',
+        },
+      });
+    }
+
     res.json({
       success: true,
       data: updatedPurchase,
-      message: 'Comprobante de pago recibido. Tu orden será verificada pronto.',
+      message: 'Comprobante recibido. Tu pago será verificado automáticamente en unos minutos.',
+      verificationScheduled: isBase64,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

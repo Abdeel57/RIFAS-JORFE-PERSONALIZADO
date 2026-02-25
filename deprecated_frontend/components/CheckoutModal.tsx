@@ -400,9 +400,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               {/* ── ZONA DE CARGA DEL COMPROBANTE ── */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Comprobante de Pago</p>
-                  <span className="text-[9px] bg-amber-100 text-amber-600 font-black px-2 py-0.5 rounded-full uppercase">Requerido</span>
+                  <div className="flex items-center gap-1.5 bg-violet-50 border border-violet-100 rounded-full px-2.5 py-1">
+                    <svg className="w-3 h-3 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-[9px] font-black text-violet-600 uppercase tracking-widest">Verificación Banxico</span>
+                  </div>
                 </div>
 
                 {!proofPreview ? (
@@ -411,9 +416,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     onDrop={handleDrop}
                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                     onDragLeave={() => setIsDragOver(false)}
-                    className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 group ${isDragOver
-                        ? 'border-blue-400 bg-blue-50 scale-[1.02]'
-                        : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50'
+                    className={`border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 group ${isDragOver
+                      ? 'border-blue-400 bg-blue-50 scale-[1.02]'
+                      : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50'
                       }`}
                   >
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isDragOver ? 'bg-blue-100' : 'bg-white border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50'}`}>
@@ -423,10 +428,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-black text-slate-600 group-hover:text-blue-600 transition-colors">
-                        {isDragOver ? 'Suelta aquí' : 'Adjuntar comprobante'}
+                        {isDragOver ? 'Suelta aquí tu comprobante' : 'Adjuntar comprobante de pago'}
                       </p>
-                      <p className="text-xs text-slate-400 mt-1">Haz clic o arrastra tu imagen aquí</p>
-                      <p className="text-[10px] text-slate-300 mt-1 font-medium">JPG, PNG, WEBP · Máx. 10MB</p>
+                      <p className="text-xs text-slate-400 mt-1">Haz clic o arrastra la imagen aquí</p>
+                      <p className="text-[10px] text-slate-300 mt-0.5 font-medium">JPG, PNG, WEBP · Máx. 10MB</p>
                     </div>
                     <input
                       ref={fileInputRef}
@@ -465,6 +470,23 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Leyenda de verificación automática */}
+                <div className="bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 rounded-2xl px-4 py-3 flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-violet-100 rounded-xl flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-violet-700 leading-tight">
+                      Confirmación automática con Banxico
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                      Para agilizar tu confirmación, asegúrate de que la <span className="font-bold text-slate-700">Clave de Rastreo SPEI</span> sea claramente visible en la imagen. Si no aparece, un agente revisará tu pago en menos de 24 horas.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Botones */}
@@ -479,8 +501,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onClick={handleConfirmWithProof}
                   disabled={!proofPreview || isSubmitting}
                   className={`flex-[2] font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all ${proofPreview && !isSubmitting
-                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg active:scale-95'
-                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg active:scale-95'
+                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                     }`}
                 >
                   {isSubmitting

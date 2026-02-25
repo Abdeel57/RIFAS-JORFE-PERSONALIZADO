@@ -75,6 +75,8 @@ model Purchase {
   paymentMethod    String?
   paymentReference String?
   paymentProofUrl  String?         @db.Text
+  verificationStatus String?       // 'auto_verified' | 'pending_manual' | 'rejected'
+  verificationNote String?         @db.Text
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
