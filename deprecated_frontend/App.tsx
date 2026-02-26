@@ -26,9 +26,8 @@ const App: React.FC = () => {
       try {
         const raffles = await apiService.getRaffles('active');
         if (raffles && raffles.length > 0) {
-          // Usar la primera rifa activa o la rifa con id específico si existe
-          const raffle = raffles.find((r: any) => r.id === '1') || raffles[0];
-          setFeaturedRaffle(raffle as Raffle);
+          // Usar la primera rifa activa disponible
+          setFeaturedRaffle(raffles[0] as Raffle);
         } else {
           // Fallback a la constante si no hay rifas en la API
           setFeaturedRaffle(FEATURED_RAFFLE);
@@ -59,10 +58,10 @@ const App: React.FC = () => {
 
   const handleViewChange = (view: 'raffle' | 'verify' | 'terms') => {
     if (view === activeView) return;
-    
+
     setIsAppLoading(true);
-    window.scrollTo({ top: 0, behavior: 'instant' as any }); 
-    
+    window.scrollTo({ top: 0, behavior: 'instant' as any });
+
     setTimeout(() => {
       setActiveView(view);
       setIsAppLoading(false);
@@ -74,7 +73,7 @@ const App: React.FC = () => {
       {/* Header Estilo "Liquid Glass" */}
       <div className="fixed top-0 left-0 right-0 z-50 px-4 py-4 md:py-6 flex justify-center pointer-events-none">
         <nav className="pointer-events-auto relative overflow-hidden bg-white/50 backdrop-blur-[20px] border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] px-4 h-14 md:h-16 flex items-center justify-between gap-4 md:gap-8 max-w-7xl w-full transition-all duration-300">
-          
+
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
 
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
@@ -89,15 +88,15 @@ const App: React.FC = () => {
               <span className="text-[8px] font-bold text-blue-500 uppercase tracking-[0.2em] leading-none mt-1 hidden md:block">Sorteos Certificados</span>
             </div>
           </div>
-          
+
           <div className="relative flex bg-white/40 p-1 rounded-2xl border border-white/80 z-10 shadow-inner">
-            <button 
+            <button
               onClick={() => handleViewChange('raffle')}
               className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'raffle' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
             >
               Sorteo
             </button>
-            <button 
+            <button
               onClick={() => handleViewChange('verify')}
               className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'verify' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
             >
@@ -107,7 +106,7 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-2 md:gap-4 z-10">
             {/* Toggle de Sonido Arcade - Único elemento en la derecha para minimalismo */}
-            <button 
+            <button
               onClick={toggleMute}
               className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90
                 ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white text-blue-600 shadow-sm'}`}
@@ -150,8 +149,8 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="relative rounded-[3rem] overflow-hidden shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] bg-white border-[6px] border-white group will-change-transform">
-                      <img 
-                        src={featuredRaffle.prizeImage} 
+                      <img
+                        src={featuredRaffle.prizeImage}
                         alt={featuredRaffle.title}
                         className="w-full h-72 sm:h-96 md:h-[650px] object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
                         loading="eager"
@@ -159,17 +158,17 @@ const App: React.FC = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
                       <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
                         <div className="bg-white/95 backdrop-blur-md p-6 rounded-[2.5rem] shadow-2xl border border-white text-center min-w-[160px] animate-in slide-in-from-top-4 duration-500 delay-200">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-3">Costo Boleto</p>
-                            <p className="text-4xl font-black text-blue-600 tracking-tighter">${featuredRaffle.ticketPrice}</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-3">Costo Boleto</p>
+                          <p className="text-4xl font-black text-blue-600 tracking-tighter">${featuredRaffle.ticketPrice}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="relative pt-4">
-                      <TicketSelector 
+                      <TicketSelector
                         raffleId={featuredRaffle.id}
-                        totalTickets={featuredRaffle.totalTickets} 
-                        pricePerTicket={featuredRaffle.ticketPrice} 
+                        totalTickets={featuredRaffle.totalTickets}
+                        pricePerTicket={featuredRaffle.ticketPrice}
                         onCheckout={handleCheckout}
                       />
                     </div>
@@ -185,7 +184,7 @@ const App: React.FC = () => {
             )}
 
             <div className="flex flex-col items-center justify-center pt-8 pb-4 border-t border-slate-100">
-              <button 
+              <button
                 onClick={() => handleViewChange('terms')}
                 className="group flex items-center gap-3 text-slate-400 hover:text-blue-600 transition-all duration-300 py-2"
               >
@@ -208,8 +207,8 @@ const App: React.FC = () => {
       </main>
 
       {featuredRaffle && (
-        <CheckoutModal 
-          isOpen={isCheckoutOpen} 
+        <CheckoutModal
+          isOpen={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
           selectedTickets={selectedTicketsToBuy}
           raffleId={featuredRaffle.id}
@@ -234,11 +233,11 @@ const App: React.FC = () => {
           </div>
 
           <div className="w-full space-y-3">
-            <button 
+            <button
               onClick={() => setIsSupportChatOpen(true)}
               className="w-full flex items-center justify-center gap-3 bg-[#25D366] text-white py-3.5 px-6 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:brightness-105 transition-all shadow-lg active:scale-95"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z"/></svg>
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" /></svg>
               Chat de Soporte
             </button>
             <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{CONTACT_INFO.email}</p>
