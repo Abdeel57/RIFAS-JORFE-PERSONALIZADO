@@ -35,8 +35,7 @@ async function main() {
         subtitle: '¡El smartphone más potente de Apple!',
         description: 'iPhone 16 Pro Max en color Titanio Natural, 256GB de almacenamiento. Incluye cargador, cable USB-C, AirPods y garantía Apple de 1 año. Solo 999 boletos disponibles — ¡tus probabilidades son increíbles!',
         prizeImage: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-9inch-deserttitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1726771009201',
-        // videoUrl: configura desde el admin panel — pega la URL de embed de YouTube
-        // Ejemplo: https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1
+        videoUrl: 'https://www.youtube.com/embed/FdGMTjbdEXg',
         galleryImages: [
           'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-9inch-deserttitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1726771009201',
           'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-model-unselect-gallery-1-202409?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1726771018484',
@@ -74,7 +73,7 @@ async function main() {
         totalTickets: 999,
         status: 'active',
         drawDate,
-        // videoUrl: configura desde el admin panel
+        videoUrl: 'https://www.youtube.com/embed/FdGMTjbdEXg',
       },
     });
     // Verificar que tenga los 999 boletos
