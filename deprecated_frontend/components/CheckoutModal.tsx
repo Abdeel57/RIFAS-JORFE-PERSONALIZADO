@@ -183,16 +183,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     setIsSubmitting(true);
     try {
-      // 1. Crear la compra en BD
+      // 1. Crear la compra en BD (no depende de verificación automática)
       const purchaseResult = await apiService.createPurchase({
         raffleId,
         ticketNumbers: selectedTickets,
         user: formData,
       });
-      const newPurchaseId = purchaseResult.id;
+      const newPurchaseId = purchaseResult?.id;
+      if (!newPurchaseId) {
+        setErrorMessage('El servidor no devolvió el número de orden. Intenta de nuevo o contacta soporte.');
+        return;
+      }
       setPurchaseId(newPurchaseId);
 
-      // 2. Subir el comprobante
+      // 2. Subir el comprobante (la orden ya existe; la verificación automática es opcional)
       setIsUploadingProof(true);
       await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
       setIsUploadingProof(false);
@@ -212,7 +216,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Auto-avanzar a step 4 después de 5s
       setTimeout(() => setStep(4), 5000);
     } catch (error: any) {
-      setErrorMessage(error.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.');
+      const msg = error?.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.';
+      if (msg.includes('fetch') || msg.includes('red') || msg.includes('Failed') || msg.includes('404')) {
+        setErrorMessage(`${msg} Si el error continúa, comprueba que la página tenga conexión con el servidor (config.json o URL del API).`);
+      } else {
+        setErrorMessage(msg);
+      }
     } finally {
       setIsSubmitting(false);
       setIsUploadingProof(false);

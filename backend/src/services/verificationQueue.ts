@@ -46,7 +46,7 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             return;
         }
 
-        // 2. Gemini Vision: extraer datos del comprobante
+        // 2. Gemini Vision: extraer datos del comprobante (opcional; si no hay API key → pendiente manual)
         console.log(`🤖 Analizando imagen con Gemini Vision...`);
         const paymentData = await extractPaymentData(imageBase64);
         console.log(`📊 Datos extraídos:`, {
@@ -57,11 +57,11 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             confidence: paymentData.confidence,
         });
 
-        // 3. ¿Tiene clave de rastreo visible?
+        // 3. ¿Tiene clave de rastreo visible? (si no hay Gemini configurado, paymentData viene con nulls)
         if (!paymentData.claveRastreo) {
             console.log(`⚠️  No se detectó clave de rastreo → pendiente manual`);
             await markPendingManual(purchaseId, 'no_tracking_key',
-                'La clave de rastreo no es visible en el comprobante adjunto.');
+                'La clave de rastreo no es visible en el comprobante o la verificación automática no está configurada. Un administrador revisará tu pago.');
             return;
         }
 

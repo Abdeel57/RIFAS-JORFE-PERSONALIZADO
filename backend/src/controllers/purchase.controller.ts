@@ -27,6 +27,7 @@ function normalizePhone(phone: string): string {
 }
 
 export const createPurchase = async (req: Request, res: Response, next: NextFunction) => {
+  console.log('📦 [CREATE_PURCHASE] Request received', { bodyKeys: req.body ? Object.keys(req.body) : [] });
   try {
     const body = req.body || {};
     if (body.user && typeof body.user.phone === 'string') {
@@ -191,13 +192,15 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
       },
     });
 
-    // Programar la verificación diferida (5 minutos)
-    // Solo si hay imagen base64 (los URLs no se pueden enviar a Gemini Vision directamente)
+    // Verificación automática (opcional): no bloquea ni falla la creación de la orden
     if (isBase64) {
-      schedulePaymentVerification(id, proofData);
-      console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática en 5 min.`);
+      try {
+        schedulePaymentVerification(id, proofData);
+        console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática programada.`);
+      } catch (err: any) {
+        console.warn('⚠️ No se pudo programar verificación automática (la orden se guardó correctamente):', err?.message);
+      }
     } else {
-      // Si es URL (raro), marcar como pendiente manual
       await (prisma.purchase.update as any)({
         where: { id },
         data: {
@@ -210,8 +213,7 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     res.json({
       success: true,
       data: updatedPurchase,
-      message: 'Comprobante recibido. Tu pago será verificado automáticamente en unos minutos.',
-      verificationScheduled: isBase64,
+      message: 'Comprobante recibido. Un administrador revisará tu pago y te confirmará por WhatsApp.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
