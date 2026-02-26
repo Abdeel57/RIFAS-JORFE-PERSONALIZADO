@@ -102,6 +102,17 @@ model Admin {
   @@index([email])
 }
 
+model SystemSettings {
+  id               String   @id @default("default")
+  bankName         String   @default("BBVA México")
+  clabe            String   @default("012 180 0152 4895 2410")
+  beneficiary      String   @default("RIFAS NAO MÉXICO S.A.")
+  whatsapp         String   @default("+521234567890")
+  contactEmail     String   @default("contacto@rifasnao.com")
+  instagram        String   @default("@rifasnao_oficial")
+  updatedAt        DateTime @updatedAt
+}
+
 enum RaffleStatus {
   active
   completed

@@ -6,6 +6,7 @@ import Raffles from './pages/Raffles';
 import Tickets from './pages/Tickets';
 import Purchases from './pages/Purchases';
 import Users from './pages/Users';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -40,6 +41,7 @@ function App() {
           <Route path="tickets" element={<Tickets />} />
           <Route path="purchases" element={<Purchases />} />
           <Route path="users" element={<Users />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

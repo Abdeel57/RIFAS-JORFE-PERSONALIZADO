@@ -89,10 +89,27 @@ async function main() {
     }));
 
     await prisma.ticket.createMany({ data: tickets });
-    console.log(`ℹ️  Rifa existente actualizada: 999 boletos @ $1 (ID: ${raffle.id})`);
+    console.log(`✅ Todos los boletos marcados como disponibles`);
   }
 
-  console.log('\n✅ Seeding completado');
+  // --- Inicializar Configuración del Sistema ---
+  console.log('⚙️ Verificando configuración del sistema...');
+  await prisma.systemSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      bankName: 'BBVA México',
+      clabe: '012 180 0152 4895 2410',
+      beneficiary: 'RIFAS NAO MÉXICO S.A.',
+      whatsapp: '+521234567890',
+      contactEmail: 'contacto@rifasnao.com',
+      instagram: '@rifasnao_oficial',
+    },
+  });
+  console.log('✅ Configuración del sistema inicializada');
+
+  console.log('\n✨ Seed completado con éxito');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`Admin: ${adminEmail} / ${adminPassword}`);
   console.log('Rifa: iPhone 16 Pro Max — 999 boletos @ $1 MXN');

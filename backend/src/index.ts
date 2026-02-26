@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import env from './config/env';
-import { errorHandler } from './utils/errors';
+import { errorHandler, AppError } from './utils/errors';
+import settingsRoutes from './routes/settings.routes';
+import supportRoutes from './routes/support.routes';
 
 console.log('🔍 Iniciando servidor Express...');
 console.log('PORT:', process.env.PORT);
@@ -165,6 +167,7 @@ try {
     if (process.env.GEMINI_API_KEY) {
       const supportRoutes = require('./routes/support.routes').default;
       app.use('/api/support', supportRoutes);
+      app.use('/api/settings', settingsRoutes);
       console.log('✅ Ruta de soporte (chatbot) cargada');
     } else {
       console.log('⚠️  Ruta de soporte omitida (GEMINI_API_KEY no configurada)');

@@ -39,6 +39,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isAutocompleted, setIsAutocompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [dynamicSettings, setDynamicSettings] = useState<any>(null);
 
   // Comprobante de pago
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -48,21 +49,37 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // Cargar datos guardados al abrir  
+  // Cargar datos guardados y configuraciones al abrir  
   useEffect(() => {
     if (isOpen) {
       setStep(1);
       setPurchaseId(null);
       setProofFile(null);
       setProofPreview(null);
-      const savedData = localStorage.getItem(STORAGE_KEY_USER);
-      if (savedData) {
+
+      const loadData = async () => {
+        // Cargar usuario del localStorage
+        const savedData = localStorage.getItem(STORAGE_KEY_USER);
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            setFormData(parsed);
+            setIsAutocompleted(true);
+          } catch (e) { }
+        }
+
+        // Cargar configuraciones del sistema (bancos, etc)
         try {
-          const parsed = JSON.parse(savedData);
-          setFormData(parsed);
-          setIsAutocompleted(true);
-        } catch (e) { }
-      }
+          const settings = await apiService.getSettings();
+          if (settings) {
+            setDynamicSettings(settings);
+          }
+        } catch (error) {
+          console.error('Error loading settings:', error);
+        }
+      };
+
+      loadData();
     }
   }, [isOpen]);
 
@@ -89,11 +106,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const total = selectedTickets.length * pricePerTicket;
 
   const bankData = useMemo(() => ({
-    bank: 'BBVA México',
-    clabe: '012 180 0152 4895 2410',
-    beneficiary: 'RIFAS NAO MÉXICO S.A.',
+    bank: dynamicSettings?.bankName || 'BBVA México',
+    clabe: dynamicSettings?.clabe || '012 180 0152 4895 2410',
+    beneficiary: dynamicSettings?.beneficiary || 'RIFAS NAO MÉXICO S.A.',
     concept: `Rifa NAO - ${selectedTickets.length} boleto(s)`,
-  }), [selectedTickets.length]);
+  }), [selectedTickets.length, dynamicSettings]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -586,7 +603,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               <div className="space-y-2.5 px-2">
                 <button
-                  onClick={() => window.open(`https://wa.me/52${formData.phone.replace(/\D/g, '')}?text=${encodeURIComponent('Hola, acabo de realizar mi pago de Rifas NAO y subí mi comprobante. Por favor confirma mis boletos 🎟️')}`, '_blank')}
+                  onClick={() => window.open(`https://wa.me/${(dynamicSettings?.whatsapp || '+521234567890').replace(/\D/g, '')}?text=${encodeURIComponent('Hola, acabo de realizar mi pago de Rifas NAO y subí mi comprobante. Por favor confirma mis boletos 🎟️')}`, '_blank')}
                   className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] text-white py-3.5 px-6 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-105 transition-all shadow-lg shadow-green-100 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" /></svg>
