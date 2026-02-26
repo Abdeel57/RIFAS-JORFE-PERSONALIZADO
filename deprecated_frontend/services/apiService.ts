@@ -102,6 +102,11 @@ class ApiService {
       body: JSON.stringify({ paymentProofUrl }),
     });
   }
+
+  // System Settings
+  async getSettings() {
+    return this.request<any>('/settings');
+  }
 }
 
 export const apiService = new ApiService();

@@ -80,6 +80,17 @@ export const adminService = {
     const response = await api.get(`/admin/users/${id}`);
     return response.data.data;
   },
+
+  // Settings
+  async getSettings() {
+    const response = await api.get('/settings');
+    return response.data.data;
+  },
+
+  async updateSettings(data: any) {
+    const response = await api.put('/settings', data);
+    return response.data.data;
+  },
 };
 
 
