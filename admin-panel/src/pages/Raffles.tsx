@@ -202,57 +202,78 @@ const Raffles = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Descripción *</label>
-                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required rows={3} className="admin-input resize-none" placeholder="Describe el premio..." />
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Descripción Detallada *</label>
+                <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required rows={5} className="admin-input resize-none" placeholder="Describe el premio con lujo de detalle..." />
               </div>
+
+              <div className="space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Diseño de Galería</h4>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 1 (Principal - Cabecera)</label>
+                  <input type="url" value={formData.prizeImage} onChange={(e) => setFormData({ ...formData, prizeImage: e.target.value })} required className="admin-input bg-white" placeholder="URL de la imagen principal" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 2 (Detalle Abajo)</label>
+                    <input type="url" value={formData.galleryImages.split('\n')[0] || ''} onChange={(e) => {
+                      const lines = formData.galleryImages.split('\n');
+                      lines[0] = e.target.value;
+                      setFormData({ ...formData, galleryImages: lines.join('\n') });
+                    }} className="admin-input bg-white" placeholder="Imagen abajo #1" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 3 (Detalle Abajo)</label>
+                    <input type="url" value={formData.galleryImages.split('\n')[1] || ''} onChange={(e) => {
+                      const lines = formData.galleryImages.split('\n');
+                      lines[1] = e.target.value;
+                      setFormData({ ...formData, galleryImages: lines.join('\n') });
+                    }} className="admin-input bg-white" placeholder="Imagen abajo #2" />
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-400 italic">
+                  Las imágenes 2 y 3 aparecerán en la parte inferior, debajo de la tiquetera y el video.
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Imagen principal *</label>
-                  <input type="url" value={formData.prizeImage} onChange={(e) => setFormData({ ...formData, prizeImage: e.target.value })} required className="admin-input" placeholder="https://..." />
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Video URL (YouTube Embed)</label>
+                  <input type="url" value={formData.videoUrl} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} className="admin-input" placeholder="https://www.youtube.com/embed/..." />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Video URL</label>
-                  <input type="url" value={formData.videoUrl} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} className="admin-input" placeholder="https://www.youtube.com/embed/VIDEO_ID" />
-                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                    En YouTube: comparte → insertar → copia la URL del src del iframe.<br />
-                    Ej: <span className="font-mono">https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1</span>
-                  </p>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Imágenes de galería (una por línea)</label>
-                <textarea value={formData.galleryImages} onChange={(e) => setFormData({ ...formData, galleryImages: e.target.value })} rows={3} className="admin-input resize-none" placeholder="https://imagen1.com&#10;https://imagen2.com" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Precio *</label>
                   <input type="number" step="0.01" value={formData.ticketPrice} onChange={(e) => setFormData({ ...formData, ticketPrice: e.target.value })} required className="admin-input" placeholder="50" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Total *</label>
-                  <input type="number" value={formData.totalTickets} onChange={(e) => setFormData({ ...formData, totalTickets: e.target.value })} required className="admin-input" placeholder="1000" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Estado</label>
-                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'completed' })} className="admin-input">
-                    <option value="active">Activa</option>
-                    <option value="completed">Completada</option>
-                  </select>
-                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Total *</label>
+                <input type="number" value={formData.totalTickets} onChange={(e) => setFormData({ ...formData, totalTickets: e.target.value })} required className="admin-input" placeholder="1000" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Estado</label>
+                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'completed' })} className="admin-input">
+                  <option value="active">Activa</option>
+                  <option value="completed">Completada</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Fecha de sorteo *</label>
                 <input type="datetime-local" value={formData.drawDate} onChange={(e) => setFormData({ ...formData, drawDate: e.target.value })} required className="admin-input" />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="btn-primary flex-1">Guardar</button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancelar</button>
-              </div>
-            </form>
           </div>
-        </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="submit" className="btn-primary flex-1">Guardar</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancelar</button>
+          </div>
+        </form>
+          </div>
+        </div >
       )}
-    </div>
+    </div >
   );
 };
 

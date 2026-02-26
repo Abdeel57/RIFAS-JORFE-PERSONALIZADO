@@ -138,7 +138,7 @@ const App: React.FC = () => {
                   <>
                     <div className="text-center max-w-4xl mx-auto space-y-3 mb-8">
                       <div className="inline-block px-4 py-1.5 bg-white shadow-sm border border-slate-100 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-                        Edición Especial Raptor 2024
+                        Edición Especial
                       </div>
                       <h1 className="text-4xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
                         {featuredRaffle.title}

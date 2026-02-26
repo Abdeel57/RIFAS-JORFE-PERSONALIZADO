@@ -25,15 +25,17 @@ async function main() {
 
   // ── 2. Rifa iPhone de prueba (999 boletos @ $1) ──────────────────────────
   const drawDate = new Date('2026-12-15T20:00:00.000Z'); // Sorteo: 15 dic 2026
+  const iphoneTitle = 'iPhone 16 Pro Max 256GB';
+  const iphoneDescription = '¡Participa y estrena el nuevo iPhone 16 Pro Max! Este increíble premio incluye el smartphone más potente de Apple en color Titanio Natural con 256GB de almacenamiento. Experimenta la velocidad del chip A18 Pro, la versatilidad de su sistema de cámaras pro y la belleza de su pantalla Super Retina XDR de 6.9 pulgadas. El paquete incluye caja original, cable de carga USB-C, AirPods Pro de regalo y garantía oficial de Apple por 1 año. Solo 999 boletos disponibles, ¡tus oportunidades de ganar son altísimas!';
 
-  let raffle = await prisma.raffle.findFirst({ where: { title: 'iPhone 16 Pro Max 256GB' } });
+  let raffle = await prisma.raffle.findFirst({ where: { title: iphoneTitle } });
 
   if (!raffle) {
     raffle = await prisma.raffle.create({
       data: {
-        title: 'iPhone 16 Pro Max 256GB',
+        title: iphoneTitle,
         subtitle: '¡El smartphone más potente de Apple!',
-        description: 'iPhone 16 Pro Max en color Titanio Natural, 256GB de almacenamiento. Incluye cargador, cable USB-C, AirPods y garantía Apple de 1 año. Solo 999 boletos disponibles — ¡tus probabilidades son increíbles!',
+        description: iphoneDescription,
         prizeImage: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-9inch-deserttitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1726771009201',
         videoUrl: 'https://www.youtube.com/embed/FdGMTjbdEXg',
         galleryImages: [
@@ -54,16 +56,7 @@ async function main() {
       },
     });
 
-    // Crear los 999 boletos
-    const tickets = Array.from({ length: 999 }, (_, i) => ({
-      raffleId: raffle!.id,
-      number: i + 1,
-      status: 'available' as const,
-    }));
-    await prisma.ticket.createMany({ data: tickets });
-
-    console.log('✅ Rifa creada: iPhone 16 Pro Max — 999 boletos @ $1');
-    console.log(`   ID: ${raffle.id}`);
+    console.log(`✅ Rifa creada: ${iphoneTitle}`);
   } else {
     // Si ya existe, actualizar precio y total si es necesario
     await prisma.raffle.update({
@@ -73,22 +66,29 @@ async function main() {
         totalTickets: 999,
         status: 'active',
         drawDate,
+        description: iphoneDescription,
         videoUrl: 'https://www.youtube.com/embed/FdGMTjbdEXg',
       },
     });
-    // Verificar que tenga los 999 boletos
-    const ticketCount = await prisma.ticket.count({ where: { raffleId: raffle.id } });
-    if (ticketCount < 999) {
-      const existing = await prisma.ticket.findMany({ where: { raffleId: raffle.id }, select: { number: true } });
-      const existingNumbers = new Set(existing.map((t) => t.number));
-      const missingTickets = Array.from({ length: 999 }, (_, i) => i + 1)
-        .filter((n) => !existingNumbers.has(n))
-        .map((n) => ({ raffleId: raffle!.id, number: n, status: 'available' as const }));
-      if (missingTickets.length > 0) {
-        await prisma.ticket.createMany({ data: missingTickets });
-      }
-      console.log(`✅ Boletos completados: ${ticketCount} → 999`);
-    }
+    console.log(`ℹ️ Rifa "${iphoneTitle}" actualizada`);
+  }
+
+  // Verificar boletos (Asegurar que existan pero NO estén vendidos)
+  const ticketCount = await prisma.ticket.count({ where: { raffleId: raffle.id } });
+
+  if (ticketCount !== 999) {
+    console.log(`⏳ Generando 999 boletos para ${iphoneTitle}...`);
+    // Borrar boletos previos si hay discrepancia (para resetear a 0% sold)
+    await prisma.ticket.deleteMany({ where: { raffleId: raffle.id } });
+
+    // Crear boletos disponibles
+    const tickets = Array.from({ length: 999 }, (_, i) => ({
+      number: i + 1,
+      status: 'available' as any,
+      raffleId: raffle.id,
+    }));
+
+    await prisma.ticket.createMany({ data: tickets });
     console.log(`ℹ️  Rifa existente actualizada: 999 boletos @ $1 (ID: ${raffle.id})`);
   }
 
