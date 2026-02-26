@@ -85,43 +85,48 @@ if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
-// Agregar orígenes adicionales comunes
+// Orígenes del frontend público (Netlify) — imprescindible para naorifas.netlify.app
 allowedOrigins.push('https://naorifas.netlify.app');
+allowedOrigins.push('http://naorifas.netlify.app');
+// Local y desarrollo
 allowedOrigins.push('http://localhost:3000');
 allowedOrigins.push('http://localhost:5173');
+allowedOrigins.push('http://127.0.0.1:3000');
+allowedOrigins.push('http://127.0.0.1:5173');
 
 // Agregar dinámicamente el host actual (Railway)
 if (process.env.RAILWAY_PUBLIC_DOMAIN) {
   allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
 }
-// También permitir cualquier subdominio de railway.app en producción como fallback
-if (process.env.NODE_ENV === 'production') {
-  allowedOrigins.push(/\.railway\.app$/ as any);
+// Regex: permitir cualquier subdominio de netlify.app y railway.app
+const allowedOriginPatterns: RegExp[] = [/\.netlify\.app$/i, /\.railway\.app$/i];
+
+function isOriginAllowed(origin: string): boolean {
+  if (allowedOrigins.includes(origin)) return true;
+  return allowedOriginPatterns.some((re) => re.test(origin));
 }
 
 console.log('🌐 Orígenes permitidos:', allowedOrigins);
+console.log('🌐 Patrones (netlify.app, railway.app): activos');
 
-// Configuración simplificada de CORS (solo para frontend externo)
+// Configuración de CORS para frontend en Netlify y otros orígenes permitidos
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Permitir requests sin origen (como Postman, curl, etc.)
+    // Permitir requests sin origen (Postman, curl, same-origin, etc.)
     if (!origin) {
       return callback(null, true);
     }
 
-    // Si el origen está en la lista permitida, permitirlo
-    if (allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       console.log(`✅ CORS: Origen permitido: ${origin}`);
       return callback(null, true);
     }
 
-    // En desarrollo, permitir todos los orígenes
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
 
-    // En producción, solo permitir orígenes específicos
-    console.log(`⚠️  CORS: Origen no permitido: ${origin}`);
+    console.log(`⚠️  CORS: Origen rechazado: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -162,12 +167,13 @@ try {
   app.use('/api/verify', verifyRoutes);
   app.use('/api/admin', adminRoutes);
 
+  app.use('/api/settings', settingsRoutes);
+
   // Cargar rutas de soporte solo si Gemini está configurado
   try {
     if (process.env.GEMINI_API_KEY) {
       const supportRoutes = require('./routes/support.routes').default;
       app.use('/api/support', supportRoutes);
-      app.use('/api/settings', settingsRoutes);
       console.log('✅ Ruta de soporte (chatbot) cargada');
     } else {
       console.log('⚠️  Ruta de soporte omitida (GEMINI_API_KEY no configurada)');

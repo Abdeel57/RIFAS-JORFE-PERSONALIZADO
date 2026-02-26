@@ -1,4 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://paginas-production.up.railway.app/api';
+// Siempre usar URL absoluta: si en Netlify ponen solo "paginas-production.up.railway.app/api"
+// sin "https://", el navegador lo interpreta como ruta relativa y da 404.
+const rawBase = import.meta.env.VITE_API_URL || 'https://paginas-production.up.railway.app/api';
+const API_BASE_URL =
+  rawBase.startsWith('http://') || rawBase.startsWith('https://')
+    ? rawBase.replace(/\/$/, '')
+    : `https://${rawBase.replace(/^\//, '')}`;
 
 interface ApiResponse<T> {
   success: boolean;
