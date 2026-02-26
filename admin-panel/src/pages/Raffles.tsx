@@ -212,7 +212,11 @@ const Raffles = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Video URL</label>
-                  <input type="url" value={formData.videoUrl} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} className="admin-input" placeholder="https://youtube.com/..." />
+                  <input type="url" value={formData.videoUrl} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} className="admin-input" placeholder="https://www.youtube.com/embed/VIDEO_ID" />
+                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                    En YouTube: comparte → insertar → copia la URL del src del iframe.<br />
+                    Ej: <span className="font-mono">https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1</span>
+                  </p>
                 </div>
               </div>
               <div>
