@@ -22,10 +22,20 @@ class ApiService {
       },
     });
 
-    const data: ApiResponse<T> = await response.json();
+    let data: ApiResponse<T>;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(
+        response.ok
+          ? 'Error al leer la respuesta del servidor.'
+          : `Error del servidor (${response.status}). Intenta de nuevo en un momento.`
+      );
+    }
 
     if (!response.ok || !data.success) {
-      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      const message = data.error || `Error ${response.status}. Intenta de nuevo.`;
+      throw new Error(message);
     }
 
     return data.data as T;

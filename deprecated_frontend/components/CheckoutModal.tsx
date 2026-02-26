@@ -40,6 +40,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [dynamicSettings, setDynamicSettings] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Comprobante de pago
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -56,6 +57,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setPurchaseId(null);
       setProofFile(null);
       setProofPreview(null);
+      setErrorMessage(null);
 
       const loadData = async () => {
         // Cargar usuario del localStorage
@@ -84,6 +86,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   }, [isOpen]);
 
   const handleInputChange = (field: string, value: string) => {
+    setErrorMessage(null);
     const savedDataStr = localStorage.getItem(STORAGE_KEY_USER);
     const savedData = savedDataStr ? JSON.parse(savedDataStr) : null;
     setFormData(prev => {
@@ -122,8 +125,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // ── Step 1: Envía datos → crea la compra en BD (estado pending) ──
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!formData.name || !formData.phone || !formData.email || !formData.state) {
-      alert('Por favor completa todos los campos.');
+      setErrorMessage('Por favor completa todos los campos: nombre, WhatsApp, estado y correo.');
+      return;
+    }
+    if (formData.phone.replace(/\D/g, '').length !== 10) {
+      setErrorMessage('El WhatsApp debe tener exactamente 10 dígitos.');
       return;
     }
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(formData));
@@ -133,12 +141,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   // ── Manejo de imagen de comprobante ──
   const processFile = (file: File) => {
+    setErrorMessage(null);
     if (!file.type.startsWith('image/')) {
-      alert('Solo se aceptan imágenes (JPG, PNG, WEBP, etc.)');
+      setErrorMessage('Solo se aceptan imágenes (JPG, PNG, WEBP, etc.).');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('La imagen no debe superar 10MB.');
+      setErrorMessage('La imagen no debe superar 10 MB.');
       return;
     }
     setProofFile(file);
@@ -163,8 +172,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   // ── Step 2: Confirmar compra y subir comprobante ──
   const handleConfirmWithProof = async () => {
+    setErrorMessage(null);
     if (!proofPreview) {
-      alert('Por favor adjunta el comprobante de pago antes de confirmar.');
+      setErrorMessage('Por favor adjunta el comprobante de pago antes de confirmar.');
       return;
     }
     setIsSubmitting(true);
@@ -198,8 +208,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Auto-avanzar a step 4 después de 5s
       setTimeout(() => setStep(4), 5000);
     } catch (error: any) {
-      console.error('Error:', error);
-      alert(error.message || 'Error al procesar la compra. Por favor intenta de nuevo.');
+      setErrorMessage(error.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.');
     } finally {
       setIsSubmitting(false);
       setIsUploadingProof(false);
@@ -246,6 +255,39 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         )}
 
         <div className="overflow-y-auto custom-scrollbar-light flex-1">
+
+          {/* ── Cuadro de error integrado (step 1 y 2) ── */}
+          {errorMessage && (step === 1 || step === 2) && (
+            <div className="mx-4 mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-amber-800 leading-snug">{errorMessage}</p>
+                  <button
+                    type="button"
+                    onClick={() => setErrorMessage(null)}
+                    className="mt-2 text-xs font-black text-amber-700 hover:text-amber-900 uppercase tracking-wider transition-colors"
+                  >
+                    Entendido
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setErrorMessage(null)}
+                  className="flex-shrink-0 p-1 rounded-lg text-amber-500 hover:bg-amber-100 transition-colors"
+                  aria-label="Cerrar"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ════════════════════════════════════════
               STEP 1 — DATOS DEL COMPRADOR
@@ -509,7 +551,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Botones */}
               <div className="flex gap-2 pb-2">
                 <button
-                  onClick={() => { setProofFile(null); setProofPreview(null); setStep(1); }}
+                  onClick={() => { setProofFile(null); setProofPreview(null); setErrorMessage(null); setStep(1); }}
                   className="flex-1 bg-slate-100 text-slate-500 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200"
                 >
                   ← Atrás

@@ -19,9 +19,20 @@ const uploadPaymentProofSchema = z.object({
   paymentProofUrl: z.string().min(1, 'Se requiere el comprobante de pago'),
 });
 
+// Normalizar teléfono a 10 dígitos (México: quitar espacios, código país, etc.)
+function normalizePhone(phone: string): string {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (digits.length >= 10) return digits.slice(-10);
+  return digits;
+}
+
 export const createPurchase = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const validated = createPurchaseSchema.parse(req.body);
+    const body = req.body || {};
+    if (body.user && typeof body.user.phone === 'string') {
+      body.user = { ...body.user, phone: normalizePhone(body.user.phone) };
+    }
+    const validated = createPurchaseSchema.parse(body);
     const { raffleId, ticketNumbers, user: userData } = validated;
 
     // Verificar que la rifa existe y está activa

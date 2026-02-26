@@ -30,9 +30,21 @@ export const errorHandler = (
 
   if (err instanceof ZodError) {
     console.error('📋 [VALIDATION ERROR]', err.errors);
+    const first = err.errors[0];
+    const path = first?.path?.join('.') || '';
+    const msg = first?.message || 'Datos inválidos';
+    const messages: Record<string, string> = {
+      'user.phone': 'El teléfono debe tener exactamente 10 dígitos (solo números).',
+      'user.email': 'El correo electrónico no es válido.',
+      'user.name': 'El nombre es obligatorio.',
+      'user.state': 'Selecciona un estado.',
+      'raffleId': 'Rifa no válida.',
+      'ticketNumbers': 'Selecciona al menos un boleto.',
+    };
+    const userMessage = messages[path] || msg;
     return res.status(400).json({
       success: false,
-      error: 'Validation Error',
+      error: userMessage,
       details: err.errors,
     });
   }
