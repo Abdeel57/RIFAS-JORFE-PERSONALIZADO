@@ -1,4 +1,4 @@
-dirasos Después del Deploy Exitoso
+Pasos Después del Deploy Exitoso
 
 ## ✅ Deploy Completado
 
@@ -98,6 +98,56 @@ Prueba algunos endpoints:
    https://tu-backend.up.railway.app/api/raffles
    ```
    Debería responder con un array (puede estar vacío si no hay rifas)
+
+### Paso 7: Página pública (Netlify) y compra de boletos
+
+Para que **https://naorifas.netlify.app** pueda crear órdenes y comprar boletos:
+
+1. **URL del backend:** La app carga la URL del API desde el archivo **`config.json`** en la raíz del sitio (ya incluido en el repo). Ese archivo debe tener:
+   ```json
+   { "apiUrl": "https://paginas-production.up.railway.app/api" }
+   ```
+   Sustituye por la URL real de tu backend en Railway (con `/api` al final).
+
+2. **Opcional en Netlify:** En Site settings → Environment variables puedes definir:
+   - `VITE_API_URL` = `https://tu-backend.up.railway.app/api`  
+   (solo si quieres fijar la URL en el build; si usas `config.json`, no es obligatorio).
+
+3. **Conexión real:** Si la API no responde (CORS, 404, red), la página muestra una **vista de demostración** y un aviso: "Sin conexión con el servidor". En ese modo **no se pueden crear órdenes**. Recargar la página cuando el backend esté bien configurado y accesible.
+
+4. **Backend:** En Railway, en Variables del backend, ten **`FRONTEND_URL`** = `https://naorifas.netlify.app` para que CORS permita peticiones desde Netlify.
+
+### Paso 8: Migraciones y dependencias (Railway sin consola)
+
+**Railway no tiene consola en la web**, pero no necesitas usarla para esto:
+
+1. **Dependencias (`npm install`)**  
+   En cada deploy, Railway ejecuta el build de tu proyecto y hace **`npm install`** automáticamente. Si en el repo tienes `multer`, `sharp`, etc. en `package.json`, se instalan en ese paso.  
+   → Solo tienes que **hacer push** del código (con el `package.json` y, si existe, `package-lock.json` actualizados).
+
+2. **Migraciones (`prisma migrate deploy`)**  
+   El script de arranque del backend ya incluye las migraciones:
+   ```text
+   "start": "npx prisma migrate deploy && node dist/index.js"
+   ```
+   Cada vez que Railway inicia el servicio, ejecuta **`npx prisma migrate deploy`** y luego arranca la app. Las migraciones pendientes (por ejemplo la tabla `StoredImage`) se aplican solas en la base de datos de Railway.  
+   → Solo tienes que **hacer push** de la carpeta `backend/prisma/migrations` y desplegar; no hace falta abrir ninguna consola en Railway.
+
+3. **Opcional: aplicar la migración desde tu PC**  
+   Si quieres aplicar la migración tú mismo contra la base de datos de Railway:
+   - En Railway → tu proyecto → **Variables** del servicio backend (o de la base de datos).
+   - Copia **`DATABASE_URL`** (la URL de PostgreSQL).
+   - En tu PC, en la carpeta `backend`, crea o edita el archivo **`.env`** y pega:
+     ```env
+     DATABASE_URL="postgresql://usuario:contraseña@host:puerto/nombre?sslmode=..."
+     ```
+   - En la terminal, desde la raíz del repo:
+     ```bash
+     cd backend
+     npm install
+     npx prisma migrate deploy
+     ```
+   Después de eso, la migración ya estará aplicada en la BD de Railway y en el próximo deploy el `prisma migrate deploy` que corre al iniciar no hará cambios nuevos.
 
 ## 🎯 Resultado Final Esperado
 

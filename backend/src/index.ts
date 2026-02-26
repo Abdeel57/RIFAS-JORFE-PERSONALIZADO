@@ -161,10 +161,12 @@ try {
   const purchaseRoutes = require('./routes/purchases.routes').default;
   const verifyRoutes = require('./routes/verify.routes').default;
   const adminRoutes = require('./routes/admin.routes').default;
+  const imagesRoutes = require('./routes/images.routes').default;
 
   app.use('/api/raffles', raffleRoutes);
   app.use('/api/purchases', purchaseRoutes);
   app.use('/api/verify', verifyRoutes);
+  app.use('/api/images', imagesRoutes);
   app.use('/api/admin', adminRoutes);
 
   app.use('/api/settings', settingsRoutes);

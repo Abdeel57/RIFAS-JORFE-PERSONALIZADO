@@ -18,6 +18,7 @@ const Raffles = () => {
     drawDate: '',
     status: 'active' as 'active' | 'completed',
   });
+  const [uploadingImage, setUploadingImage] = useState<'prize' | 'gallery0' | 'gallery1' | null>(null);
 
   useEffect(() => {
     loadRaffles();
@@ -85,6 +86,28 @@ const Raffles = () => {
       loadRaffles();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al eliminar la rifa');
+    }
+  };
+
+  const handleImageUpload = async (field: 'prize' | 'gallery0' | 'gallery1', file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Solo se permiten imágenes (JPG, PNG, WebP).');
+      return;
+    }
+    setUploadingImage(field);
+    try {
+      const { url } = await adminService.uploadImage(file);
+      if (field === 'prize') {
+        setFormData((prev) => ({ ...prev, prizeImage: url }));
+      } else {
+        const lines = formData.galleryImages.split('\n');
+        lines[field === 'gallery0' ? 0 : 1] = url;
+        setFormData((prev) => ({ ...prev, galleryImages: lines.join('\n') }));
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al subir la imagen');
+    } finally {
+      setUploadingImage(null);
     }
   };
 
@@ -210,31 +233,54 @@ const Raffles = () => {
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Diseño de Galería</h4>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 1 (Principal - Cabecera)</label>
-                  <input type="url" value={formData.prizeImage} onChange={(e) => setFormData({ ...formData, prizeImage: e.target.value })} required className="admin-input bg-white" placeholder="URL de la imagen principal" />
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 1 (Principal - Cabecera) *</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input type="url" value={formData.prizeImage} onChange={(e) => setFormData({ ...formData, prizeImage: e.target.value })} required className="admin-input bg-white flex-1" placeholder="URL o sube desde dispositivo" />
+                    <label className="btn-secondary cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0">
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('prize', f); e.target.value = ''; }} disabled={!!uploadingImage} />
+                      {uploadingImage === 'prize' ? 'Subiendo…' : '📷 Subir imagen'}
+                    </label>
+                  </div>
+                  {formData.prizeImage && (
+                    <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white max-w-[200px]">
+                      <img src={formData.prizeImage} alt="Vista previa" className="w-full h-auto object-contain max-h-32" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 2 (Detalle Abajo)</label>
-                    <input type="url" value={formData.galleryImages.split('\n')[0] || ''} onChange={(e) => {
-                      const lines = formData.galleryImages.split('\n');
-                      lines[0] = e.target.value;
-                      setFormData({ ...formData, galleryImages: lines.join('\n') });
-                    }} className="admin-input bg-white" placeholder="Imagen abajo #1" />
+                    <div className="flex gap-2">
+                      <input type="url" value={formData.galleryImages.split('\n')[0] || ''} onChange={(e) => {
+                        const lines = formData.galleryImages.split('\n');
+                        lines[0] = e.target.value;
+                        setFormData({ ...formData, galleryImages: lines.join('\n') });
+                      }} className="admin-input bg-white flex-1" placeholder="URL o subir" />
+                      <label className="btn-secondary cursor-pointer shrink-0 px-2 flex items-center">
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('gallery0', f); e.target.value = ''; }} disabled={!!uploadingImage} />
+                        {uploadingImage === 'gallery0' ? '…' : '📷'}
+                      </label>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Imagen 3 (Detalle Abajo)</label>
-                    <input type="url" value={formData.galleryImages.split('\n')[1] || ''} onChange={(e) => {
-                      const lines = formData.galleryImages.split('\n');
-                      lines[1] = e.target.value;
-                      setFormData({ ...formData, galleryImages: lines.join('\n') });
-                    }} className="admin-input bg-white" placeholder="Imagen abajo #2" />
+                    <div className="flex gap-2">
+                      <input type="url" value={formData.galleryImages.split('\n')[1] || ''} onChange={(e) => {
+                        const lines = formData.galleryImages.split('\n');
+                        lines[1] = e.target.value;
+                        setFormData({ ...formData, galleryImages: lines.join('\n') });
+                      }} className="admin-input bg-white flex-1" placeholder="URL o subir" />
+                      <label className="btn-secondary cursor-pointer shrink-0 px-2 flex items-center">
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('gallery1', f); e.target.value = ''; }} disabled={!!uploadingImage} />
+                        {uploadingImage === 'gallery1' ? '…' : '📷'}
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 <p className="text-[10px] text-slate-400 italic">
-                  Las imágenes 2 y 3 aparecerán en la parte inferior, debajo de la tiquetera y el video.
+                  Puedes pegar una URL o subir desde tu dispositivo (JPG, PNG, WebP). Se guardan en la base de datos con alta calidad.
                 </p>
               </div>
 

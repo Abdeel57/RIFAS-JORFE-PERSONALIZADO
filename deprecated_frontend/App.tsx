@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FEATURED_RAFFLE, CONTACT_INFO } from './constants.ts';
+import { FEATURED_RAFFLE, CONTACT_INFO, FALLBACK_RAFFLE_ID } from './constants.ts';
 import TicketSelector from './components/TicketSelector.tsx';
 import RaffleDetails from './components/RaffleDetails.tsx';
 import CheckoutModal from './components/CheckoutModal.tsx';
@@ -134,6 +134,15 @@ const App: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {featuredRaffle?.id === FALLBACK_RAFFLE_ID && (
+                  <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+                    <span className="text-2xl">⚠️</span>
+                    <div>
+                      <p className="font-bold text-amber-800 text-sm">Sin conexión con el servidor</p>
+                      <p className="text-amber-700 text-xs mt-0.5">Estás viendo una vista de demostración. Recarga la página para cargar rifas reales y poder comprar boletos.</p>
+                    </div>
+                  </div>
+                )}
                 {featuredRaffle ? (
                   <>
                     <div className="text-center max-w-4xl mx-auto space-y-3 mb-8">

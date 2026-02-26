@@ -7,8 +7,8 @@ const createRaffleSchema = z.object({
   title: z.string().min(1),
   subtitle: z.string().optional(),
   description: z.string().min(1),
-  prizeImage: z.string().url(),
-  galleryImages: z.array(z.string().url()).default([]),
+  prizeImage: z.string().min(1),
+  galleryImages: z.array(z.string().min(1)).default([]),
   videoUrl: z.string().url().optional().or(z.literal('')),
   features: z.array(z.object({
     title: z.string(),

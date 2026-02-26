@@ -1,8 +1,11 @@
 
 import { Raffle } from './types';
 
+/** ID de la rifa de demostración cuando la API no responde. No existe en el backend; no se puede comprar. */
+export const FALLBACK_RAFFLE_ID = 'iphone-16-pro-max-fallback';
+
 export const FEATURED_RAFFLE: Raffle = {
-  id: 'iphone-16-pro-max-fallback',
+  id: FALLBACK_RAFFLE_ID,
   title: 'iPhone 16 Pro Max 256GB',
   subtitle: '¡El smartphone más potente de Apple!',
   description: 'iPhone 16 Pro Max en color Titanio Natural, 256GB de almacenamiento. Incluye cargador, cable USB-C, AirPods y garantía Apple de 1 año. Solo 999 boletos disponibles — ¡tus probabilidades son increíbles!',

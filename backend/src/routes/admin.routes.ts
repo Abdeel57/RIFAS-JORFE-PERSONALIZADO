@@ -21,6 +21,8 @@ import {
   getUsers,
   getUserById,
 } from '../controllers/admin/user.controller';
+import { uploadImage } from '../controllers/image.controller';
+import { uploadImageMiddleware } from '../middleware/upload.middleware';
 
 const router = Router();
 
@@ -32,6 +34,9 @@ router.use(authenticateAdmin);
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+// Upload de imagen (desde dispositivo → BD, alta calidad)
+router.post('/upload-image', uploadImageMiddleware, uploadImage);
 
 // Raffles
 router.get('/raffles', getAllRaffles);

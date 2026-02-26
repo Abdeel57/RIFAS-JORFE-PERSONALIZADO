@@ -56,6 +56,14 @@ export const errorHandler = (
     });
   }
 
+  const multerErr = err as Error & { code?: string };
+  if (multerErr.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ success: false, error: 'La imagen supera el tamaño máximo permitido (12 MB).' });
+  }
+  if (multerErr.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ success: false, error: 'Envía la imagen en el campo "file".' });
+  }
+
   console.error('💥 [UNEXPECTED ERROR]', err);
   return res.status(500).json({
     success: false,

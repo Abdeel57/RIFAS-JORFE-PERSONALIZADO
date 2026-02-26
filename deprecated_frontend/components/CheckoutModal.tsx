@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
+import { FALLBACK_RAFFLE_ID } from '../constants.ts';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -173,6 +173,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // ── Step 2: Confirmar compra y subir comprobante ──
   const handleConfirmWithProof = async () => {
     setErrorMessage(null);
+    if (raffleId === FALLBACK_RAFFLE_ID) {
+      setErrorMessage('Esta rifa es solo de demostración (no hay conexión con el servidor). Recarga la página e intenta de nuevo para comprar boletos reales.');
+      return;
+    }
     if (!proofPreview) {
       setErrorMessage('Por favor adjunta el comprobante de pago antes de confirmar.');
       return;
@@ -255,6 +259,24 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         )}
 
         <div className="overflow-y-auto custom-scrollbar-light flex-1">
+
+          {/* ── Aviso modo demostración (rifa fallback = sin API) ── */}
+          {raffleId === FALLBACK_RAFFLE_ID && (step === 1 || step === 2) && (
+            <div className="mx-4 mt-4 p-4 rounded-2xl bg-blue-50 border border-blue-200 shadow-sm">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-blue-800 leading-snug">
+                    Vista de demostración. No hay conexión con el servidor. Recarga la página para ver rifas reales y poder comprar boletos.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Cuadro de error integrado (step 1 y 2) ── */}
           {errorMessage && (step === 1 || step === 2) && (

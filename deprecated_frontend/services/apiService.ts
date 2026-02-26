@@ -1,10 +1,41 @@
-// Siempre usar URL absoluta: si en Netlify ponen solo "paginas-production.up.railway.app/api"
-// sin "https://", el navegador lo interpreta como ruta relativa y da 404.
-const rawBase = import.meta.env.VITE_API_URL || 'https://paginas-production.up.railway.app/api';
-const API_BASE_URL =
-  rawBase.startsWith('http://') || rawBase.startsWith('https://')
-    ? rawBase.replace(/\/$/, '')
-    : `https://${rawBase.replace(/^\//, '')}`;
+/**
+ * Base URL del API:
+ * 1. Se intenta cargar desde /config.json (mismo origen) para no depender del build.
+ * 2. Si falla, se usa VITE_API_URL del build (Netlify) o este fallback absoluto.
+ */
+const BUILD_TIME_BASE =
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+    ? import.meta.env.VITE_API_URL
+    : 'https://paginas-production.up.railway.app/api';
+
+function normalizeBaseUrl(raw: string): string {
+  const s = (raw || '').trim();
+  if (s.startsWith('http://') || s.startsWith('https://')) return s.replace(/\/$/, '');
+  return `https://${s.replace(/^\//, '')}`;
+}
+
+const defaultBaseUrl = normalizeBaseUrl(BUILD_TIME_BASE);
+
+let configPromise: Promise<string> | null = null;
+
+function getBaseUrl(): Promise<string> {
+  if (configPromise) return configPromise;
+  configPromise = (async () => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await fetch(`${origin}/config.json`, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        const url = json?.apiUrl;
+        if (url && typeof url === 'string') return normalizeBaseUrl(url);
+      }
+    } catch {
+      // ignore
+    }
+    return defaultBaseUrl;
+  })();
+  return configPromise;
+}
 
 interface ApiResponse<T> {
   success: boolean;
@@ -14,11 +45,9 @@ interface ApiResponse<T> {
 }
 
 class ApiService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const base = await getBaseUrl();
+    const url = `${base}${endpoint}`;
 
     const response = await fetch(url, {
       ...options,
@@ -47,7 +76,6 @@ class ApiService {
     return data.data as T;
   }
 
-  // Raffles
   async getRaffles(status?: 'active' | 'completed') {
     const query = status ? `?status=${status}` : '';
     return this.request<any[]>(`/raffles${query}`);
@@ -62,16 +90,10 @@ class ApiService {
     return this.request<any[]>(`/raffles/${raffleId}/tickets${query}`);
   }
 
-  // Purchases
   async createPurchase(purchaseData: {
     raffleId: string;
     ticketNumbers: number[];
-    user: {
-      name: string;
-      phone: string;
-      email: string;
-      state: string;
-    };
+    user: { name: string; phone: string; email: string; state: string };
   }) {
     return this.request<any>('/purchases', {
       method: 'POST',
@@ -79,31 +101,13 @@ class ApiService {
     });
   }
 
-  // Verify
   async verifyTickets(phone: string) {
-    return this.request<{
-      user: {
-        name: string;
-        phone: string;
-        email: string;
-      } | null;
-      tickets: Array<{
-        number: number;
-        status: string;
-        purchaseId: string;
-        raffle: {
-          id: string;
-          title: string;
-          drawDate: string;
-        };
-      }>;
-    }>('/verify', {
+    return this.request<any>('/verify', {
       method: 'POST',
       body: JSON.stringify({ phone }),
     });
   }
 
-  // Support Chat
   async sendChatMessage(message: string, raffleId?: string) {
     return this.request<{ response: string }>('/support/chat', {
       method: 'POST',
@@ -111,7 +115,6 @@ class ApiService {
     });
   }
 
-  // Payment Proof
   async uploadPaymentProof(purchaseId: string, paymentProofUrl: string) {
     return this.request<any>(`/purchases/${purchaseId}/payment-proof`, {
       method: 'POST',
@@ -119,15 +122,9 @@ class ApiService {
     });
   }
 
-  // System Settings
   async getSettings() {
     return this.request<any>('/settings');
   }
 }
 
 export const apiService = new ApiService();
-
-
-
-
-

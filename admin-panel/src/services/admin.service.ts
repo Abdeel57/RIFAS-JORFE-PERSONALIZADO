@@ -34,6 +34,16 @@ export const adminService = {
     return response.data;
   },
 
+  /** Sube una imagen desde el dispositivo; devuelve { id, url } para usar en prizeImage o galleryImages. */
+  async uploadImage(file: File): Promise<{ id: string; url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await api.post('/admin/upload-image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data;
+  },
+
   // Tickets
   async getTickets(filters?: { raffleId?: string; status?: string; purchaseId?: string }) {
     const response = await api.get('/admin/tickets', { params: filters });
