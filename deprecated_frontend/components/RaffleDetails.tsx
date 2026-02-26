@@ -197,140 +197,144 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full animate-pulse"></span>
             Video Oficial
           </div>
+        </div>
+      </div>
 
-          {/* Sección de Descripción Detallada e Imágenes de Galería */}
-          <div className="max-w-5xl mx-auto px-4 space-y-12 md:space-y-20">
-            <div className="space-y-6 md:space-y-10 text-center md:text-left">
-              <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-                Descripción del Premio
+      {/* Sección de Descripción Detallada e Imágenes de Galería */}
+      <div className="max-w-5xl mx-auto px-4 space-y-12 md:space-y-20">
+        <div className="space-y-6 md:space-y-10 text-center md:text-left">
+          <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+            Descripción del Premio
+          </div>
+          <h3 className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
+            Conoce cada <span className="text-blue-600 italic">Detalle</span>
+          </h3>
+          <p className="text-slate-500 text-sm md:text-xl leading-relaxed max-w-4xl font-medium">
+            {raffle.description}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+          <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
+            <SafeImage
+              src={raffle.galleryImages[1]}
+              alt="Detalle 1"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
+              <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Vista Detallada</span>
+            </div>
+          </div>
+          <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
+            <SafeImage
+              src={raffle.galleryImages[2]}
+              alt="Detalle 2"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
+              <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Acabados Premium</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative group max-w-5xl mx-auto px-1 md:px-4 pt-4 md:pt-6">
+        <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-400/5 blur-[80px] rounded-full pointer-events-none"></div>
+
+        <div className="relative overflow-hidden bg-white/60 backdrop-blur-[20px] border border-white/70 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.03)] p-6 md:p-12 transition-all duration-500 hover:shadow-[0_25px_50px_rgba(0,0,0,0.05)]">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
+              <div className="relative">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-blue-600 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-blue-100 transform hover:rotate-6 transition-transform">
+                  <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 border-2 md:border-4 border-white rounded-full"></div>
               </div>
-              <h3 className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
-                Conoce cada <span className="text-blue-600 italic">Detalle</span>
-              </h3>
-              <p className="text-slate-500 text-sm md:text-xl leading-relaxed max-w-4xl font-medium">
-                {raffle.description}
+              <div className="space-y-0.5 md:space-y-1">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <h4 className="text-lg md:text-2xl font-black text-slate-800 tracking-tighter">Rifas Nao Oficial</h4>
+                  <div className="w-4 h-4 md:w-5 md:h-5 bg-[#1877F2] rounded-full flex items-center justify-center">
+                    <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white fill-current" viewBox="0 0 20 20"><path d="M19.43 3.42l-2.85-2.85c-.78-.78-2.05-.78-2.83 0l-10.4 10.4-3.13-3.13c-.78-.78-2.05-.78-2.83 0-.78.78-.78 2.05 0 2.83l4.54 4.54c.39.39.9.59 1.41.59s1.02-.2 1.41-.59l11.82-11.82c.78-.78.78-2.05 0-2.83z" /></svg>
+                  </div>
+                </div>
+                <p className="text-slate-500 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em]">Comunidad Verificada</p>
+              </div>
+            </div>
+
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
+            >
+              Seguir en Facebook
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
+            <div className="bg-white/70 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/90 shadow-sm space-y-4 md:space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-100 rounded-full border border-slate-200"></div>
+                <div className="flex-1">
+                  <div className="h-2 w-24 md:w-28 bg-slate-100 rounded mb-1"></div>
+                  <div className="h-1.5 w-16 md:w-20 bg-slate-50 rounded"></div>
+                </div>
+              </div>
+              <p className="text-[11px] md:text-base text-slate-600 font-medium leading-relaxed italic">
+                "¡Increíble ambiente en la entrega de ayer! Gracias por la confianza."
               </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-              <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
-                <SafeImage
-                  src={raffle.galleryImages[1]}
-                  alt="Detalle 1"
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                  <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Vista Detallada</span>
+              <div className="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-36">
+                <div className="bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden border border-white">
+                  <SafeImage src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=300" alt="Entrega" className="w-full h-full object-cover" />
+                </div>
+                <div className="bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-[9px] md:text-[10px] font-black uppercase tracking-tighter border border-white">
+                  En Vivo
                 </div>
               </div>
-              <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
-                <SafeImage
-                  src={raffle.galleryImages[2]}
-                  alt="Detalle 2"
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                  <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Acabados Premium</span>
-                </div>
+            </div>
+
+            <div className="space-y-4 md:space-y-8 text-center md:text-left">
+              <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
+                Transparencia <span className="text-blue-600 italic">Total</span>
+              </h5>
+              <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
+                Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
+                <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
+                <span className="bg-blue-50 text-blue-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-blue-100 uppercase tracking-widest">#EnVivo</span>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="relative group max-w-5xl mx-auto px-1 md:px-4 pt-4 md:pt-6">
-            <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-400/5 blur-[80px] rounded-full pointer-events-none"></div>
+      <div className="max-w-4xl mx-auto px-1 md:px-4 py-6 md:py-20">
+        <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
+          <div className="text-3xl md:text-4xl">🤔</div>
+          <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>
+          <p className="text-slate-500 text-sm md:text-lg font-medium">Resolvemos todas tus dudas con transparencia.</p>
+        </div>
 
-            <div className="relative overflow-hidden bg-white/60 backdrop-blur-[20px] border border-white/70 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.03)] p-6 md:p-12 transition-all duration-500 hover:shadow-[0_25px_50px_rgba(0,0,0,0.05)]">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
-                  <div className="relative">
-                    <div className="w-14 h-14 md:w-20 md:h-20 bg-blue-600 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-blue-100 transform hover:rotate-6 transition-transform">
-                      <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 border-2 md:border-4 border-white rounded-full"></div>
-                  </div>
-                  <div className="space-y-0.5 md:space-y-1">
-                    <div className="flex items-center justify-center md:justify-start gap-2">
-                      <h4 className="text-lg md:text-2xl font-black text-slate-800 tracking-tighter">Rifas Nao Oficial</h4>
-                      <div className="w-4 h-4 md:w-5 md:h-5 bg-[#1877F2] rounded-full flex items-center justify-center">
-                        <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white fill-current" viewBox="0 0 20 20"><path d="M19.43 3.42l-2.85-2.85c-.78-.78-2.05-.78-2.83 0l-10.4 10.4-3.13-3.13c-.78-.78-2.05-.78-2.83 0-.78.78-.78 2.05 0 2.83l4.54 4.54c.39.39.9.59 1.41.59s1.02-.2 1.41-.59l11.82-11.82c.78-.78.78-2.05 0-2.83z" /></svg>
-                      </div>
-                    </div>
-                    <p className="text-slate-500 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em]">Comunidad Verificada</p>
-                  </div>
-                </div>
-
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
-                >
-                  Seguir en Facebook
-                </a>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
-                <div className="bg-white/70 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/90 shadow-sm space-y-4 md:space-y-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-100 rounded-full border border-slate-200"></div>
-                    <div className="flex-1">
-                      <div className="h-2 w-24 md:w-28 bg-slate-100 rounded mb-1"></div>
-                      <div className="h-1.5 w-16 md:w-20 bg-slate-50 rounded"></div>
-                    </div>
-                  </div>
-                  <p className="text-[11px] md:text-base text-slate-600 font-medium leading-relaxed italic">
-                    "¡Increíble ambiente en la entrega de ayer! Gracias por la confianza."
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-36">
-                    <div className="bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden border border-white">
-                      <SafeImage src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=300" alt="Entrega" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-[9px] md:text-[10px] font-black uppercase tracking-tighter border border-white">
-                      En Vivo
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 md:space-y-8 text-center md:text-left">
-                  <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
-                    Transparencia <span className="text-blue-600 italic">Total</span>
-                  </h5>
-                  <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
-                    Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
-                  </p>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-                    <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
-                    <span className="bg-blue-50 text-blue-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-blue-100 uppercase tracking-widest">#EnVivo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] shadow-xl md:shadow-2xl border border-slate-50 p-6 md:p-14">
+          <div className="divide-y divide-slate-100">
+            {faqs.map((faq, index) => (
+              <FAQItem key={index} question={faq.question} answer={faq.answer} />
+            ))}
           </div>
 
-          <div className="max-w-4xl mx-auto px-1 md:px-4 py-6 md:py-20">
-            <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
-              <div className="text-3xl md:text-4xl">🤔</div>
-              <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>
-              <p className="text-slate-500 text-sm md:text-lg font-medium">Resolvemos todas tus dudas con transparencia.</p>
-            </div>
-
-            <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] shadow-xl md:shadow-2xl border border-slate-50 p-6 md:p-14">
-              <div className="divide-y divide-slate-100">
-                {faqs.map((faq, index) => (
-                  <FAQItem key={index} question={faq.question} answer={faq.answer} />
-                ))}
-              </div>
-
-              <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
-                <button
-                  onClick={onOpenSupport}
-                  className="group flex items-center gap-3 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] hover:text-blue-700 transition-all py-3 px-6 rounded-2xl active:bg-blue-50"
-                >
-                  Hablar con Nao Assist
-                  <span className="transform group-hover:translate-x-2 transition-transform">→</span>
-                </button>
-              </div>
-            </div>
-            );
+          <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
+            <button
+              onClick={onOpenSupport}
+              className="group flex items-center gap-3 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] hover:text-blue-700 transition-all py-3 px-6 rounded-2xl active:bg-blue-50"
+            >
+              Hablar con Nao Assist
+              <span className="transform group-hover:translate-x-2 transition-transform">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-            export default RaffleDetails;
+export default RaffleDetails;

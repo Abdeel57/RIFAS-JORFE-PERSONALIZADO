@@ -252,28 +252,29 @@ const Raffles = () => {
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Total *</label>
                 <input type="number" value={formData.totalTickets} onChange={(e) => setFormData({ ...formData, totalTickets: e.target.value })} required className="admin-input" placeholder="1000" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Estado</label>
-                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'completed' })} className="admin-input">
-                  <option value="active">Activa</option>
-                  <option value="completed">Completada</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Estado</label>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'completed' })} className="admin-input">
+                    <option value="active">Activa</option>
+                    <option value="completed">Completada</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Fecha de sorteo *</label>
+                  <input type="datetime-local" value={formData.drawDate} onChange={(e) => setFormData({ ...formData, drawDate: e.target.value })} required className="admin-input" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Fecha de sorteo *</label>
-                <input type="datetime-local" value={formData.drawDate} onChange={(e) => setFormData({ ...formData, drawDate: e.target.value })} required className="admin-input" />
-              </div>
-          </div>
 
-          <div className="flex gap-3 pt-2">
-            <button type="submit" className="btn-primary flex-1">Guardar</button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancelar</button>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="btn-primary flex-1">Guardar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancelar</button>
+              </div>
+            </form>
           </div>
-        </form>
-          </div>
-        </div >
+        </div>
       )}
-    </div >
+    </div>
   );
 };
 
