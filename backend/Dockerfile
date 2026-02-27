@@ -2,6 +2,10 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Evitar que puppeteer descargue Chrome en el build (no hay Chromium en esta imagen)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 # Instalar OpenSSL para Prisma
 RUN apk add --no-cache openssl openssl-dev
 
@@ -9,7 +13,7 @@ RUN apk add --no-cache openssl openssl-dev
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar dependencias
+# Instalar dependencias (puppeteer no descargará Chrome gracias a PUPPETEER_SKIP_CHROMIUM_DOWNLOAD)
 RUN npm install
 
 # Generar Prisma Client
