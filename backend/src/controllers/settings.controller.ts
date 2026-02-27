@@ -7,9 +7,12 @@ const updateSettingsSchema = z.object({
     bankName: z.string().min(1).optional(),
     clabe: z.string().min(1).optional(),
     beneficiary: z.string().min(1).optional(),
+    accountNumber: z.string().optional().nullable(),
+    paymentInstructions: z.string().optional().nullable(),
     whatsapp: z.string().min(1).optional(),
     contactEmail: z.string().email().optional(),
     instagram: z.string().optional(),
+    autoVerificationEnabled: z.boolean().optional(),
 });
 
 export const getSettings = async (req: Request, res: Response, next: NextFunction) => {
@@ -37,11 +40,15 @@ export const getSettings = async (req: Request, res: Response, next: NextFunctio
 export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = updateSettingsSchema.parse(req.body);
+        // Convertir strings vacíos a null para campos opcionales
+        const data: Record<string, any> = { ...validated };
+        if (data.accountNumber === '') data.accountNumber = null;
+        if (data.paymentInstructions === '') data.paymentInstructions = null;
 
         const settings = await prisma.systemSettings.upsert({
             where: { id: 'default' },
-            update: validated,
-            create: { id: 'default', ...validated },
+            update: data,
+            create: { id: 'default', ...data },
         });
 
         res.json({

@@ -9,9 +9,12 @@ const Settings: React.FC = () => {
         bankName: '',
         clabe: '',
         beneficiary: '',
+        accountNumber: '',
+        paymentInstructions: '',
         whatsapp: '',
         contactEmail: '',
         instagram: '',
+        autoVerificationEnabled: true,
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -21,7 +24,18 @@ const Settings: React.FC = () => {
             try {
                 const response = await api.get('/settings');
                 if (response.data?.success) {
-                    setSettings(response.data.data);
+                    const data = response.data.data || {};
+                    setSettings({
+                        bankName: data.bankName || '',
+                        clabe: data.clabe || '',
+                        beneficiary: data.beneficiary || '',
+                        accountNumber: data.accountNumber || '',
+                        paymentInstructions: data.paymentInstructions || '',
+                        whatsapp: data.whatsapp || '',
+                        contactEmail: data.contactEmail || '',
+                        instagram: data.instagram || '',
+                        autoVerificationEnabled: data.autoVerificationEnabled !== false,
+                    });
                 }
             } catch (error) {
                 toast.error('Error al cargar la configuración');
@@ -111,6 +125,41 @@ const Settings: React.FC = () => {
                                 onChange={(e) => setSettings({ ...settings, beneficiary: e.target.value })}
                                 placeholder="Ej. Juan Pérez García"
                                 required
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Número de Cuenta (opcional)</label>
+                            <input
+                                type="text"
+                                className="admin-input"
+                                value={settings.accountNumber || ''}
+                                onChange={(e) => setSettings({ ...settings, accountNumber: e.target.value })}
+                                placeholder="Ej. 0123456789"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Verificación automática de pagos</label>
+                            <div className="flex items-center gap-3 h-12">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.autoVerificationEnabled}
+                                        onChange={(e) => setSettings({ ...settings, autoVerificationEnabled: e.target.checked })}
+                                        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <span className="text-sm font-bold text-slate-700">Habilitada (Banxico CEP + IA)</span>
+                                </label>
+                            </div>
+                            <p className="text-[10px] text-slate-500 ml-1">Verifica comprobantes SPEI automáticamente usando IA y Banxico. Desactiva para revisión 100% manual.</p>
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrucciones extra de pago (opcional)</label>
+                            <textarea
+                                className="admin-input resize-none min-h-[80px]"
+                                value={settings.paymentInstructions || ''}
+                                onChange={(e) => setSettings({ ...settings, paymentInstructions: e.target.value })}
+                                placeholder="Ej. Incluir número de orden en el concepto. Tiempo de acreditación: 24 hrs."
+                                rows={3}
                             />
                         </div>
                     </div>

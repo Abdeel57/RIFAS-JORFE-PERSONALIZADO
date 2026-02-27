@@ -146,7 +146,7 @@ const OrderCard = ({
     <>
       <div
         className={`list-card relative transition-all duration-300 ${isPaid ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
-          }`}
+          } ${menuOpen ? 'z-50 overflow-visible' : ''}`}
       >
         {/* LEFT accent bar by status */}
         <div
@@ -275,7 +275,7 @@ const OrderCard = ({
               </button>
             )}
 
-            {/* OPTIONS button */}
+            {/* OPTIONS button - menú abre hacia arriba para no taparse con la orden de abajo */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(v => !v)}
@@ -288,7 +288,7 @@ const OrderCard = ({
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-52 min-w-[200px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
+                <div className="absolute right-0 bottom-full mb-1 w-52 min-w-[200px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-[100]">
                   <button
                     onClick={() => { onEdit(purchase); setMenuOpen(false); }}
                     className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"

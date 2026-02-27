@@ -112,14 +112,17 @@ model StoredImage {
 }
 
 model SystemSettings {
-  id               String   @id @default("default")
-  bankName         String   @default("BBVA México")
-  clabe            String   @default("012 180 0152 4895 2410")
-  beneficiary      String   @default("RIFAS NAO MÉXICO S.A.")
-  whatsapp         String   @default("+521234567890")
-  contactEmail     String   @default("contacto@rifasnao.com")
-  instagram        String   @default("@rifasnao_oficial")
-  updatedAt        DateTime @updatedAt
+  id                       String   @id @default("default")
+  bankName                 String   @default("BBVA México")
+  clabe                   String   @default("012 180 0152 4895 2410")
+  beneficiary              String   @default("RIFAS NAO MÉXICO S.A.")
+  accountNumber            String?
+  paymentInstructions      String?  @db.Text
+  whatsapp                 String   @default("+521234567890")
+  contactEmail             String   @default("contacto@rifasnao.com")
+  instagram                String   @default("@rifasnao_oficial")
+  autoVerificationEnabled  Boolean  @default(true)
+  updatedAt                DateTime @updatedAt
 }
 
 enum RaffleStatus {

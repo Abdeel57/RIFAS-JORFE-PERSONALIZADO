@@ -192,11 +192,22 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
       },
     });
 
-    // Verificación automática (opcional): no bloquea ni falla la creación de la orden
+    // Verificación automática (solo si está habilitada en configuración): no bloquea la orden
     if (isBase64) {
       try {
-        schedulePaymentVerification(id, proofData);
-        console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática programada.`);
+        const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        if (settings?.autoVerificationEnabled !== false) {
+          schedulePaymentVerification(id, proofData);
+          console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática programada.`);
+        } else {
+          await (prisma.purchase.update as any)({
+            where: { id },
+            data: {
+              verificationStatus: 'pending_manual',
+              verificationNote: 'Verificación automática deshabilitada. Revisar manualmente.',
+            },
+          });
+        }
       } catch (err: any) {
         console.warn('⚠️ No se pudo programar verificación automática (la orden se guardó correctamente):', err?.message);
       }
