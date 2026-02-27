@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import env from '../config/env';
 
 export interface ExtractedPaymentData {
@@ -41,8 +42,8 @@ export async function extractPaymentData(imageBase64: string): Promise<Extracted
     }
 
     try {
-        const { GoogleGenAI } = await import('@google/genai');
-        const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+        const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         // Limpiar el prefijo data:image/...;base64, si existe
         const base64Data = imageBase64.includes(',')
@@ -55,22 +56,12 @@ export async function extractPaymentData(imageBase64: string): Promise<Extracted
                 : imageBase64.startsWith('data:image/webp') ? 'image/webp'
                     : 'image/jpeg';
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    {
-                        inlineData: {
-                            data: base64Data,
-                            mimeType,
-                        },
-                    },
-                    { text: EXTRACTION_PROMPT },
-                ],
-            },
-        });
+        const result = await model.generateContent([
+            EXTRACTION_PROMPT,
+            { inlineData: { data: base64Data, mimeType } },
+        ]);
 
-        const rawText = response.text?.trim() || '';
+        const rawText = result.response.text().trim();
         console.log('🤖 Gemini Vision respuesta raw:', rawText.slice(0, 300));
 
         // Extraer JSON del texto (puede venir con o sin ```json```)

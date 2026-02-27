@@ -38,13 +38,13 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
       }
     }
 
-    const chat = await startSupportChat(raffleInfo);
-    const response = await chat.sendMessage({ message });
+    const chat = startSupportChat(raffleInfo);
+    const result = await chat.sendMessage(message);
 
     res.json({
       success: true,
       data: {
-        response: response.text || 'No se pudo generar una respuesta.',
+        response: result.response.text() || 'No se pudo generar una respuesta.',
       },
     });
   } catch (error) {
