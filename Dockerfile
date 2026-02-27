@@ -4,7 +4,6 @@ FROM node:18-bookworm-slim
 # DEBE declararse antes de cualquier RUN npm install
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV NODE_ENV=production
 
 # Chromium (Puppeteer) + OpenSSL (Prisma) + fuentes mínimas
 RUN apt-get update && apt-get install -y --no-install-recommends \
