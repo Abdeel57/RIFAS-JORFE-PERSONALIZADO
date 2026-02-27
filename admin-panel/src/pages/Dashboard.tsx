@@ -156,22 +156,25 @@ const OrderCard = ({
             }`}
         />
 
-        <div className="flex items-start gap-3 pl-3">
-          {/* Main info */}
-          <div className="flex-1 min-w-0">
-            {/* Row 1: name + time */}
-            <div className="flex items-center gap-2 justify-between">
+        {/* Contenido en columna en móvil: info arriba, botones abajo sin solaparse */}
+        <div className="flex flex-col gap-3 pl-3">
+          {/* Bloque de información */}
+          <div className="min-w-0">
+            {/* Fila: nombre + hora + estado */}
+            <div className="flex items-center gap-2 justify-between flex-wrap">
               <p className="font-black text-slate-800 text-sm truncate">{purchase.user?.name ?? '—'}</p>
-              <span className="text-[10px] text-slate-400 flex-shrink-0">{fmtTime(purchase.createdAt)}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-[10px] text-slate-400">{fmtTime(purchase.createdAt)}</span>
+                {!isPaid && !isCancelled && <span className="badge-amber">Pendiente</span>}
+                {isPaid && <span className="badge-green">Pagado</span>}
+                {isCancelled && <span className="badge-red">Liberado</span>}
+              </div>
             </div>
 
-            {/* Row 2: phone */}
-            <p className="text-[11px] text-slate-400">{purchase.user?.phone ?? ''}</p>
-
-            {/* Row 3: raffle */}
+            <p className="text-[11px] text-slate-400 mt-0.5">{purchase.user?.phone ?? ''}</p>
             <p className="text-[11px] font-semibold text-indigo-600 truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
 
-            {/* Row 4: ticket chips */}
+            {/* Chips de boletos */}
             <div className="flex flex-wrap gap-1 mt-1.5">
               {visibleTickets.map((n: number) => (
                 <span
@@ -184,6 +187,7 @@ const OrderCard = ({
               {hasMore && !expanded && (
                 <button
                   onClick={() => setExpanded(true)}
+                  type="button"
                   className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-black text-indigo-500 hover:bg-indigo-100 transition-colors"
                 >
                   +{tickets.length - 5} más
@@ -192,6 +196,7 @@ const OrderCard = ({
               {expanded && hasMore && (
                 <button
                   onClick={() => setExpanded(false)}
+                  type="button"
                   className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-400 hover:bg-slate-100 transition-colors"
                 >
                   Ver menos
@@ -199,57 +204,52 @@ const OrderCard = ({
               )}
             </div>
 
-            {/* Row 5: total + proof badge */}
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-              <div className="flex items-center gap-2">
-                <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
-                {/* Comprobante badge */}
-                <button
-                  onClick={() => setShowProof(true)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${hasProof
-                    ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
-                    : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
-                    }`}
-                  title={hasProof ? 'Ver comprobante' : 'Sin comprobante'}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {hasProof ? 'Comprobante' : 'Sin foto'}
-                </button>
-              </div>
-              {/* Verification Status Badge */}
+            {/* Total + Comprobante + estado verificación */}
+            <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+              <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
+              <button
+                onClick={() => setShowProof(true)}
+                type="button"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black transition-all touch-manipulation min-h-[36px] ${hasProof
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'
+                  : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}
+                title={hasProof ? 'Ver comprobante' : 'Sin comprobante'}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {hasProof ? 'Comprobante' : 'Sin foto'}
+              </button>
               {verStatus === 'auto_verified' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black">
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-black">
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                   Banxico ✓
                 </span>
               )}
               {verStatus === 'pending_manual' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-black">
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg text-[10px] font-black">
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                   Revisar
                 </span>
               )}
               {verStatus === 'pending_verification' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black">
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-[10px] font-black">
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Verificando
                 </span>
               )}
-              {isPaid && <span className="badge-green">Pagado</span>}
-              {isCancelled && <span className="badge-red">Liberado</span>}
             </div>
           </div>
 
-          {/* Action buttons column */}
-          <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
-            {/* PAY button — primary, most important */}
+          {/* Fila de botones de acción: siempre debajo, sin solaparse */}
+          <div className="flex flex-wrap gap-2 items-stretch">
+            {/* Pago — principal */}
             {!isPaid && !isCancelled && (
               <button
                 onClick={() => onPay(purchase.id)}
                 disabled={paying === purchase.id}
-                className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
+                className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
               >
                 {paying === purchase.id ? (
                   <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -264,11 +264,10 @@ const OrderCard = ({
               </button>
             )}
 
-            {/* RELEASE button - touch target 44px */}
             {!isPaid && !isCancelled && (
               <button
                 onClick={() => onRelease(purchase.id)}
-                className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-500 rounded-xl text-xs font-bold transition-all touch-manipulation"
+                className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -277,20 +276,19 @@ const OrderCard = ({
               </button>
             )}
 
-            {/* Para órdenes PAGADAS: opción de marcar pendiente o liberar */}
             {isPaid && (
               <>
                 <button
                   onClick={() => onSetPending(purchase.id)}
-                  className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-700 rounded-xl text-xs font-bold transition-all touch-manipulation border border-amber-200"
+                  className="flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-700 rounded-xl text-xs font-bold transition-all touch-manipulation border border-amber-200"
                   title="Marcar como pendiente"
                 >
                   Pendiente
                 </button>
                 <button
                   onClick={() => onRelease(purchase.id)}
-                  className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-500 rounded-xl text-xs font-bold transition-all touch-manipulation"
-                  title="Liberar orden y devolver boletos"
+                  className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
+                  title="Liberar orden"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -300,7 +298,6 @@ const OrderCard = ({
               </>
             )}
 
-            {/* OPTIONS button - menú abre hacia arriba para no taparse con la orden de abajo */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(v => !v)}
