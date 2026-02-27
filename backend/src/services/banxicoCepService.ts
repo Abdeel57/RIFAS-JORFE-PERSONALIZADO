@@ -127,7 +127,7 @@ export async function verifyWithBanxico(
             const dateValue = toDateInputValue(paymentData.fecha);
             const fechaInput = await page.$('input[name="fecha"], input[id="fecha"], input[type="date"]');
             if (fechaInput && dateValue) {
-                await fechaInput.evaluate((el: HTMLInputElement, v: string) => { el.value = v; }, dateValue);
+                await fechaInput.evaluate((el: any, v: string) => { el.value = v; }, dateValue);
             } else if (fechaInput) {
                 await fechaInput.click({ clickCount: 3 });
                 await fechaInput.type(paymentData.fecha, { delay: 30 });
