@@ -1,42 +1,36 @@
-# Dockerfile definitivo para Monorepo Rifas Nao
-# Este archivo reemplaza a Nixpacks para dar control total sobre el build
+FROM node:18-alpine
 
-FROM node:20-slim
-
-# Instalar dependencias del sistema necesarias para Prisma
-RUN apt-get update -y && apt-get install -y openssl ca-certificates
-
-WORKDIR /app
-
-# 1. Preparar Backend
-COPY backend/package*.json ./backend/
-WORKDIR /app/backend
-RUN npm install
-
-# 2. Preparar Admin Panel
-WORKDIR /app
-COPY admin-panel/package*.json ./admin-panel/
-WORKDIR /app/admin-panel
-RUN npm install
-
-# 3. Copiar código y compilar todo
-WORKDIR /app
-COPY backend ./backend/
-COPY admin-panel ./admin-panel/
-
-# Compilar Backend (Prisma + TS)
-WORKDIR /app/backend
-RUN npx prisma generate
-RUN npm run build
-
-# Compilar Admin Panel (Vite)
-# Esto genera los archivos en backend/dist/admin/
-WORKDIR /app/admin-panel
-RUN npm run build
-
-# 4. Configuración Final
-WORKDIR /app/backend
+# Evitar descarga de Chrome durante npm install (puppeteer)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV=production
 
-# Comando de inicio
-CMD ["sh", "startup.sh"]
+# OpenSSL requerido por Prisma
+RUN apk add --no-cache openssl openssl-dev
+
+# ── Build Admin Panel ──────────────────────────────────────────────────────────
+WORKDIR /app/admin-panel
+
+COPY admin-panel/package*.json ./
+RUN npm install
+
+COPY admin-panel/ ./
+# vite.config.ts tiene outDir: '../backend/dist/admin'
+# → salida en /app/backend/dist/admin/
+RUN npm run build
+
+# ── Build Backend ──────────────────────────────────────────────────────────────
+WORKDIR /app/backend
+
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
+
+RUN npm install
+RUN npx prisma generate
+
+COPY backend/ ./
+RUN npm run build
+
+RUN chmod +x startup.sh
+
+CMD ["sh", "./startup.sh"]

@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import env from '../config/env';
 
 export interface ExtractedPaymentData {
@@ -42,6 +41,7 @@ export async function extractPaymentData(imageBase64: string): Promise<Extracted
     }
 
     try {
+        const { GoogleGenAI } = await import('@google/genai');
         const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
         // Limpiar el prefijo data:image/...;base64, si existe

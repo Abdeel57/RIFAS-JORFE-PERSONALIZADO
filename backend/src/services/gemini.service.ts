@@ -1,15 +1,16 @@
-import { GoogleGenAI, Chat } from "@google/genai";
+import type { Chat } from "@google/genai";
 import env from '../config/env';
 
-const getAiClient = () => {
+const getAiClient = async () => {
   if (!env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY not configured. Chatbot feature is disabled.");
   }
+  const { GoogleGenAI } = await import('@google/genai');
   return new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 };
 
-export const startSupportChat = (raffleInfo?: { title: string; ticketPrice: number; whatsapp: string }) => {
-  const ai = getAiClient();
+export const startSupportChat = async (raffleInfo?: { title: string; ticketPrice: number; whatsapp: string }): Promise<Chat> => {
+  const ai = await getAiClient();
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
@@ -26,7 +27,7 @@ export const startSupportChat = (raffleInfo?: { title: string; ticketPrice: numb
 };
 
 export const editImage = async (imageBuffer: string, prompt: string): Promise<string | null> => {
-  const ai = getAiClient();
+  const ai = await getAiClient();
   const base64Data = imageBuffer.split(',')[1];
   
   const response = await ai.models.generateContent({
@@ -55,7 +56,7 @@ export const editImage = async (imageBuffer: string, prompt: string): Promise<st
 };
 
 export const analyzeImage = async (imageBuffer: string): Promise<string> => {
-  const ai = getAiClient();
+  const ai = await getAiClient();
   const base64Data = imageBuffer.split(',')[1];
 
   const response = await ai.models.generateContent({
