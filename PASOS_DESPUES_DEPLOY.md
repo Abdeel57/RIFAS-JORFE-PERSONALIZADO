@@ -199,6 +199,22 @@ Después de completar todos los pasos:
 2. Verifica que el seed se ejecutó correctamente
 3. Verifica que las migraciones se ejecutaron: `npx tsx src/scripts/check-admin.ts`
 
+## 🔍 Verificación automática de comprobantes (Gemini + Banxico)
+
+La verificación automática **solo se dispara cuando el cliente sube el comprobante desde la web pública** (naorifas.netlify.app): crear orden → adjuntar imagen → confirmar. No se ejecuta cuando el admin marca la orden como pagada manualmente.
+
+**En los logs de Railway deberías ver (en ese orden):**
+1. `📷 [COMPROBANTE] POST payment-proof recibido para orden xxxxxxxx`
+2. `📷 [COMPROBANTE] Formato: base64 (verificación automática)`
+3. `✅ [COMPROBANTE] Orden xxxxxxxx: verificación automática programada en 2 min.`
+4. **2 minutos después:** `⏰ [VERIFICACIÓN] Ejecutando job ahora para orden xxxxxxxx`
+5. Luego los logs de Gemini Vision y Banxico.
+
+**Si no ves el punto 1:** la petición desde la web pública no está llegando al backend (revisa que en Netlify/config la URL del API sea tu backend en Railway; revisa CORS).
+**Si el backend se reinicia** (redeploy, sleep) **antes de que pasen los 2 minutos**, el job se pierde (está en memoria) y la orden queda en "Verificando" hasta que el admin la revise manualmente.
+
+**Variables necesarias para verificación automática:** `GEMINI_API_KEY` (y opcionalmente Banxico/Puppeteer en el servidor).
+
 ## ✅ Checklist Final
 
 - [ ] Admin panel accesible en `/admin`

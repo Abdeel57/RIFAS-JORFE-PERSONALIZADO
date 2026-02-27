@@ -156,6 +156,7 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
 export const uploadPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    console.log(`📷 [COMPROBANTE] POST payment-proof recibido para orden ${id.slice(-8)}`);
     const validated = uploadPaymentProofSchema.parse(req.body);
 
     // Verificar que la compra existe
@@ -169,6 +170,7 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     const proofData = validated.paymentProofUrl;
     const isBase64 = proofData.startsWith('data:image/');
     const isUrl = proofData.startsWith('http://') || proofData.startsWith('https://');
+    console.log(`📷 [COMPROBANTE] Formato: ${isBase64 ? 'base64 (verificación automática)' : isUrl ? 'URL (revisión manual)' : 'inválido'}`);
 
     if (!isBase64 && !isUrl) {
       throw new AppError(400, 'Invalid payment proof format. Must be a base64 image or URL.');
@@ -198,7 +200,7 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
         const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
         if (settings?.autoVerificationEnabled !== false) {
           schedulePaymentVerification(id, proofData);
-          console.log(`📤 Comprobante recibido para orden ${id.slice(-8)}. Verificación automática programada.`);
+          console.log(`✅ [COMPROBANTE] Orden ${id.slice(-8)}: verificación automática programada en 2 min.`);
         } else {
           await (prisma.purchase.update as any)({
             where: { id },

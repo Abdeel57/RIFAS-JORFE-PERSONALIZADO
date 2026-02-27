@@ -21,6 +21,7 @@ export function schedulePaymentVerification(purchaseId: string, imageBase64: str
 
     const timeoutId = setTimeout(async () => {
         pendingJobs.delete(purchaseId);
+        console.log(`⏰ [VERIFICACIÓN] Ejecutando job ahora para orden ${purchaseId.slice(-8)} (2 min tras comprobante).`);
         await runVerification(purchaseId, imageBase64);
     }, VERIFICATION_DELAY_MS);
 
