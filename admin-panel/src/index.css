@@ -122,6 +122,21 @@
     padding-top: env(safe-area-inset-top);
   }
 
+  .confirm-toast {
+    animation: confirmSlideUp 0.2s ease-out;
+  }
+
+  @keyframes confirmSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;

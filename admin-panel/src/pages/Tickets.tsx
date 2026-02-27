@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
 
 const Tickets = () => {
+  const { showConfirm } = useConfirm();
   const [tickets, setTickets] = useState<any[]>([]);
   const [raffles, setRaffles] = useState<any[]>([]);
   const [filters, setFilters] = useState({ raffleId: '', status: '' });
@@ -34,13 +37,20 @@ const Tickets = () => {
     }
   };
 
-  const handleUpdateStatus = async (ticketId: string, newStatus: 'available' | 'reserved' | 'sold') => {
-    try {
-      await adminService.updateTicket(ticketId, newStatus);
-      loadTickets();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al actualizar el boleto');
-    }
+  const handleUpdateStatus = (ticketId: string, newStatus: 'available' | 'reserved' | 'sold') => {
+    showConfirm({
+      message: '¿Guardar cambios?',
+      onConfirm: async () => {
+        try {
+          await adminService.updateTicket(ticketId, newStatus);
+          loadTickets();
+          toast.success('Boleto actualizado');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Error al actualizar el boleto');
+          throw error;
+        }
+      },
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -125,7 +135,12 @@ const Tickets = () => {
                   <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block mb-1">Cambiar estado</label>
                   <select
                     value={ticket.status}
-                    onChange={(e) => handleUpdateStatus(ticket.id, e.target.value as 'available' | 'reserved' | 'sold')}
+                    onChange={(e) => {
+                      const newStatus = e.target.value as 'available' | 'reserved' | 'sold';
+                      if (newStatus !== ticket.status) {
+                        handleUpdateStatus(ticket.id, newStatus);
+                      }
+                    }}
                     className="admin-input py-2 text-xs"
                   >
                     <option value="available">Disponible</option>

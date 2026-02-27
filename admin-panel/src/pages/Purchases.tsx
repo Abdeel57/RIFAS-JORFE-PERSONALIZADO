@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
 
 const Purchases = () => {
+  const { showConfirm } = useConfirm();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [raffles, setRaffles] = useState<any[]>([]);
   const [filters, setFilters] = useState({ status: '', raffleId: '' });
@@ -35,14 +38,22 @@ const Purchases = () => {
     }
   };
 
-  const handleUpdateStatus = async (purchaseId: string, status: 'pending' | 'paid' | 'cancelled', paymentMethod?: string, paymentReference?: string) => {
-    try {
-      await adminService.updatePurchaseStatus(purchaseId, status, paymentMethod, paymentReference);
-      loadPurchases();
-      setSelectedPurchase(null);
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al actualizar la compra');
-    }
+  const handleUpdateStatus = (purchaseId: string, status: 'pending' | 'paid' | 'cancelled', paymentMethod?: string, paymentReference?: string) => {
+    const msg = status === 'paid' ? '¿Confirmar pago?' : status === 'cancelled' ? '¿Cancelar esta compra?' : '¿Guardar cambios?';
+    showConfirm({
+      message: msg,
+      onConfirm: async () => {
+        try {
+          await adminService.updatePurchaseStatus(purchaseId, status, paymentMethod, paymentReference);
+          loadPurchases();
+          setSelectedPurchase(null);
+          toast.success(status === 'paid' ? 'Pago confirmado' : status === 'cancelled' ? 'Compra cancelada' : 'Cambios guardados');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Error al actualizar la compra');
+          throw error;
+        }
+      },
+    });
   };
 
   const handleViewDetails = async (id: string) => {
@@ -145,9 +156,9 @@ const Purchases = () => {
       {selectedPurchase && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[85dvh] overflow-y-auto overflow-x-hidden overscroll-contain">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
-              <h3 className="text-lg font-black text-slate-800">Detalle de Compra</h3>
-              <button onClick={() => setSelectedPurchase(null)} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500">✕</button>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 bg-white rounded-t-3xl sm:rounded-t-2xl shrink-0">
+              <h3 className="text-lg font-black text-slate-800 truncate min-w-0">Detalle de Compra</h3>
+              <button onClick={() => setSelectedPurchase(null)} className="w-10 h-10 min-w-[44px] min-h-[44px] shrink-0 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 touch-manipulation">✕</button>
             </div>
             <div className="p-5 pb-safe space-y-4">
               {/* User */}

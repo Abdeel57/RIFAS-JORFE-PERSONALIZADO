@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
 
 const Raffles = () => {
+  const { showConfirm } = useConfirm();
   const [raffles, setRaffles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,41 +60,54 @@ const Raffles = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const submitData = {
-        ...formData,
-        ticketPrice: parseFloat(formData.ticketPrice),
-        totalTickets: parseInt(formData.totalTickets),
-        galleryImages: formData.galleryImages.split('\n').filter((url) => url.trim()),
-        drawDate: new Date(formData.drawDate).toISOString(),
-      };
-      if (editingRaffle) {
-        await adminService.updateRaffle(editingRaffle.id, submitData);
-      } else {
-        await adminService.createRaffle(submitData);
-      }
-      setIsModalOpen(false);
-      loadRaffles();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al guardar la rifa');
-    }
+    showConfirm({
+      message: '¿Guardar cambios?',
+      onConfirm: async () => {
+        try {
+          const submitData = {
+            ...formData,
+            ticketPrice: parseFloat(formData.ticketPrice),
+            totalTickets: parseInt(formData.totalTickets),
+            galleryImages: formData.galleryImages.split('\n').filter((url) => url.trim()),
+            drawDate: new Date(formData.drawDate).toISOString(),
+          };
+          if (editingRaffle) {
+            await adminService.updateRaffle(editingRaffle.id, submitData);
+          } else {
+            await adminService.createRaffle(submitData);
+          }
+          setIsModalOpen(false);
+          loadRaffles();
+          toast.success('Rifa guardada');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Error al guardar la rifa');
+          throw error;
+        }
+      },
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta rifa?')) return;
-    try {
-      await adminService.deleteRaffle(id);
-      loadRaffles();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al eliminar la rifa');
-    }
+  const handleDelete = (id: string) => {
+    showConfirm({
+      message: '¿Eliminar esta rifa?',
+      onConfirm: async () => {
+        try {
+          await adminService.deleteRaffle(id);
+          loadRaffles();
+          toast.success('Rifa eliminada');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Error al eliminar la rifa');
+          throw error;
+        }
+      },
+    });
   };
 
   const handleImageUpload = async (field: 'prize' | 'gallery0' | 'gallery1', file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Solo se permiten imágenes (JPG, PNG, WebP).');
+      toast.error('Solo se permiten imágenes (JPG, PNG, WebP).');
       return;
     }
     setUploadingImage(field);
@@ -105,7 +121,7 @@ const Raffles = () => {
         setFormData((prev) => ({ ...prev, galleryImages: lines.join('\n') }));
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al subir la imagen');
+      toast.error(error.response?.data?.error || 'Error al subir la imagen');
     } finally {
       setUploadingImage(null);
     }

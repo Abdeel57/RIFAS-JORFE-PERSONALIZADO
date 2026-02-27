@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -25,7 +27,15 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <BrowserRouter basename="/admin">
+    <ConfirmProvider>
+      <BrowserRouter basename="/admin">
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 4000,
+            style: { maxWidth: '90vw', borderRadius: '1rem' },
+          }}
+        />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -45,6 +55,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ConfirmProvider>
   );
 }
 

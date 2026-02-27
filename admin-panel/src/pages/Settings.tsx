@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 
 const Settings: React.FC = () => {
+    const { showConfirm } = useConfirm();
     const [settings, setSettings] = useState({
         bankName: '',
         clabe: '',
@@ -30,19 +32,25 @@ const Settings: React.FC = () => {
         fetchSettings();
     }, []);
 
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSaving(true);
-        try {
-            const response = await api.put('/settings', settings);
-            if (response.data?.success) {
-                toast.success('Configuración guardada correctamente');
-            }
-        } catch (error) {
-            toast.error('Error al guardar la configuración');
-        } finally {
-            setIsSaving(false);
-        }
+        showConfirm({
+            message: '¿Guardar cambios?',
+            onConfirm: async () => {
+                setIsSaving(true);
+                try {
+                    const response = await api.put('/settings', settings);
+                    if (response.data?.success) {
+                        toast.success('Configuración guardada correctamente');
+                    }
+                } catch (error) {
+                    toast.error('Error al guardar la configuración');
+                    throw error;
+                } finally {
+                    setIsSaving(false);
+                }
+            },
+        });
     };
 
     if (isLoading) {

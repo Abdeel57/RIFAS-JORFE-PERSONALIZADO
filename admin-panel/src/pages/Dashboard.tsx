@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -67,13 +69,13 @@ const ProofViewerModal = ({
         {!isPaid && !isCancelled && (
           <div className="p-4 pb-safe flex gap-2">
             <button
-              onClick={() => { onRelease(purchase.id); onClose(); }}
+              onClick={() => onRelease(purchase.id)}
               className="flex-1 min-h-[44px] py-3 bg-slate-100 hover:bg-red-50 active:bg-red-100 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide touch-manipulation"
             >
               Rechazar
             </button>
             <button
-              onClick={() => { onPay(purchase.id); onClose(); }}
+              onClick={() => onPay(purchase.id)}
               disabled={paying === purchase.id}
               className="flex-[2] min-h-[44px] py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all uppercase tracking-wide shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
             >
@@ -364,21 +366,31 @@ const EditModal = ({
   onClose: () => void;
   onSave: (id: string, status: 'pending' | 'paid' | 'cancelled') => void;
 }) => {
+  const { showConfirm } = useConfirm();
   const [status, setStatus] = useState<'pending' | 'paid' | 'cancelled'>(purchase.status);
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
-    setSaving(true);
-    await onSave(purchase.id, status);
-    setSaving(false);
+  const handleSave = () => {
+    showConfirm({
+      message: '¿Guardar cambios?',
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          await onSave(purchase.id, status);
+          onClose();
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[85dvh] overflow-y-auto overflow-x-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-base font-black text-slate-800">Editar Orden</h3>
-          <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-sm">✕</button>
+          <button onClick={onClose} className="w-10 h-10 min-w-[44px] min-h-[44px] shrink-0 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 text-sm touch-manipulation">✕</button>
         </div>
         <div className="p-5 space-y-4">
           <div className="admin-card p-4 space-y-1">
@@ -425,6 +437,7 @@ const FILTERS = [
 ] as const;
 
 const Dashboard = () => {
+  const { showConfirm } = useConfirm();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [filter, setFilter] = useState<'pending' | 'all' | 'paid'>('pending');
   const [isLoading, setIsLoading] = useState(true);
@@ -449,31 +462,43 @@ const Dashboard = () => {
 
   useEffect(() => { load(filter); }, [filter]);
 
-  const handlePay = async (id: string) => {
-    setPaying(id);
-    try {
-      await adminService.updatePurchaseStatus(id, 'paid');
-      // optimistic update
-      setPurchases(prev =>
-        prev.map(p => p.id === id ? { ...p, status: 'paid' } : p)
-      );
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al actualizar el pago');
-    } finally {
-      setPaying(null);
-    }
+  const handlePay = (id: string) => {
+    showConfirm({
+      message: '¿Confirmar pago?',
+      onConfirm: async () => {
+        setPaying(id);
+        try {
+          await adminService.updatePurchaseStatus(id, 'paid');
+          setPurchases(prev =>
+            prev.map(p => p.id === id ? { ...p, status: 'paid' } : p)
+          );
+          toast.success('Pago confirmado');
+        } catch (e: any) {
+          toast.error(e.response?.data?.error || 'Error al actualizar el pago');
+          throw e;
+        } finally {
+          setPaying(null);
+        }
+      },
+    });
   };
 
-  const handleRelease = async (id: string) => {
-    if (!confirm('¿Liberar (cancelar) esta orden y devolver los boletos?')) return;
-    try {
-      await adminService.updatePurchaseStatus(id, 'cancelled');
-      setPurchases(prev =>
-        prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p)
-      );
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al liberar la orden');
-    }
+  const handleRelease = (id: string) => {
+    showConfirm({
+      message: '¿Liberar (cancelar) esta orden y devolver los boletos?',
+      onConfirm: async () => {
+        try {
+          await adminService.updatePurchaseStatus(id, 'cancelled');
+          setPurchases(prev =>
+            prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p)
+          );
+          toast.success('Orden liberada');
+        } catch (e: any) {
+          toast.error(e.response?.data?.error || 'Error al liberar la orden');
+          throw e;
+        }
+      },
+    });
   };
 
   const handleEditSave = async (id: string, status: 'pending' | 'paid' | 'cancelled') => {
@@ -483,8 +508,10 @@ const Dashboard = () => {
         prev.map(p => p.id === id ? { ...p, status } : p)
       );
       setEditTarget(null);
+      toast.success('Cambios guardados');
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al actualizar');
+      toast.error(e.response?.data?.error || 'Error al actualizar');
+      throw e;
     }
   };
 
