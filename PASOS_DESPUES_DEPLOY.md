@@ -215,7 +215,7 @@ La verificación automática **solo se dispara cuando el cliente sube el comprob
 
 **Variables necesarias para verificación automática:** `GEMINI_API_KEY` (y opcionalmente Banxico/Puppeteer en el servidor).
 
-**Para que Banxico CEP funcione en el servidor:** el Dockerfile usa **Debian** (node:18-bookworm-slim) e instala Chromium con `apt`. Es **necesario** que en Railway el servicio Backend tenga **Root Directory** = `backend` (ver `backend/RAILWAY_BACKEND.md`). Si el build falla, revisa ese archivo y que Builder sea Dockerfile.
+**Para que Banxico CEP funcione en el servidor:** el backend se construye con **Nixpacks** (no Dockerfile); `backend/nixpacks.toml` incluye Chromium. En Railway el servicio Backend debe tener **Root Directory** = `backend` (ver `backend/RAILWAY_BACKEND.md`). Si el build fallaba sin logs, era por el Dockerfile; ahora se usa Nixpacks y los logs del build deberían verse.
 
 ## ✅ Checklist Final
 

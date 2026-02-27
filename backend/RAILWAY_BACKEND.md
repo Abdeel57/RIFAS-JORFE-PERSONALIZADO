@@ -1,15 +1,14 @@
 # Configuración del servicio Backend en Railway
 
-Para que el **build con Dockerfile** funcione (y con él la verificación automática con Banxico), el servicio **BACKEND** debe usar la carpeta `backend` como raíz.
+El backend se construye con **Nixpacks** (no con Dockerfile) para que Chromium y la verificación Banxico funcionen y los logs del build se vean bien.
 
 ## Pasos en Railway (solo una vez)
 
 1. Entra a tu proyecto en **Railway**.
-2. Haz clic en el servicio **BACKEND** (no en Database).
-3. Ve a la pestaña **Settings**.
-4. En **Build**, busca **Root Directory** (o "Source" / "Monorepo").
-5. Pon exactamente: **`backend`** (sin barra al final).
-6. Guarda si hace falta. En **Builder** deja **Dockerfile** (o "Dockerfile" si está la opción).
-7. Dispara un nuevo deploy (Deployments → "Deploy" o push a GitHub).
+2. Haz clic en el servicio **BACKEND**.
+3. Ve a **Settings**.
+4. En **Build** / **Source**, pon **Root Directory** = **`backend`** (sin barra final).
+5. Si en **Builder** estaba "Dockerfile", cámbialo a **Nixpacks** o **Auto** (ya no hay Dockerfile en backend; se usa `nixpacks.toml`).
+6. Guarda y lanza un nuevo deploy (o haz push a GitHub).
 
-Con eso, el contexto del build es la carpeta `backend`, el Dockerfile encuentra `package.json`, `prisma/` y `startup.sh`, y Chromium se instala correctamente para Banxico CEP.
+Con **Root Directory** = `backend`, el build se hace desde la carpeta `backend`, Nixpacks instala Chromium y dependencias, y el servicio arranca con `npm start`. Si el build fallaba antes sin logs, suele ser por usar Dockerfile con contexto incorrecto; sin Dockerfile, Nixpacks suele mostrar los pasos del build con normalidad.
