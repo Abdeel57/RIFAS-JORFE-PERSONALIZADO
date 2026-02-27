@@ -217,6 +217,8 @@ La verificación automática **solo se dispara cuando el cliente sube el comprob
 
 **Solo si tras el deploy sigue fallando Banxico** (en logs: "Failed to launch the browser process" o "libglib"): en Railway → servicio **Backend** → **Settings** → **Builder**, asegúrate de que el build use el **Dockerfile** (no Nixpacks). El Dockerfile del backend instala Chromium para que Puppeteer pueda abrir la página de Banxico CEP.
 
+**Si el build del Dockerfile falla en Railway** ("Failed to build an image"): abre el deploy fallido y revisa los **logs completos** (clic en el paso "Build image"). Si ves "chromium: no such package" o "unable to select packages", el repo community ya está habilitado en el Dockerfile; si el error es otro (ej. "COPY failed", "prisma not found"), en **Settings** del servicio Backend pon **Root Directory** = `backend` para que el contexto del build sea la carpeta backend.
+
 ## ✅ Checklist Final
 
 - [ ] Admin panel accesible en `/admin`

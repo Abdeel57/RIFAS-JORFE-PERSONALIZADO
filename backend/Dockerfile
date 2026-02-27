@@ -2,6 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Asegurar repo community (chromium) según versión de Alpine del base image
+RUN V=$(grep VERSION_ID /etc/os-release | cut -d= -f2 | tr -d '"' | cut -d. -f1,2) && \
+    grep -q "community" /etc/apk/repositories || echo "http://dl-cdn.alpinelinux.org/alpine/v${V}/community" >> /etc/apk/repositories && \
+    apk update
+
 # Instalar OpenSSL para Prisma + Chromium y dependencias para Puppeteer (Banxico CEP)
 RUN apk add --no-cache \
     openssl openssl-dev \
