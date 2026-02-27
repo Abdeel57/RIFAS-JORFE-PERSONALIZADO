@@ -147,8 +147,8 @@ const OrderCard = ({
   return (
     <>
       <div
-        className={`list-card relative transition-all duration-300 ${isPaid ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
-          } ${menuOpen ? 'z-50 overflow-visible' : ''}`}
+        className={`list-card relative transition-all duration-300 ${isPaid && !menuOpen ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
+          } ${menuOpen ? 'z-50 overflow-visible opacity-100' : ''}`}
       >
         {/* LEFT accent bar by status */}
         <div
@@ -313,8 +313,15 @@ const OrderCard = ({
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 bottom-full mb-1 w-52 min-w-[200px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-[100]">
-                  <button
+                <>
+                  {/* Fondo para cerrar al tocar fuera y que el menú destaque */}
+                  <div
+                    className="fixed inset-0 z-[95] bg-slate-900/40"
+                    onClick={() => setMenuOpen(false)}
+                    aria-hidden
+                  />
+                  <div className="absolute right-0 bottom-full mb-1 w-52 min-w-[200px] z-[100] rounded-2xl overflow-hidden bg-white border-2 border-slate-200 shadow-2xl">
+                    <button
                     onClick={() => { onEdit(purchase); setMenuOpen(false); }}
                     className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
                   >
@@ -359,7 +366,8 @@ const OrderCard = ({
                     </svg>
                     Chat WhatsApp
                   </a>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
