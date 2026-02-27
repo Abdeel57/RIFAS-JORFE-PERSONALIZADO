@@ -38,7 +38,7 @@ export const handleChat = async (req: Request, res: Response, next: NextFunction
       }
     }
 
-    const chat = startSupportChat(raffleInfo);
+    const chat = await startSupportChat(raffleInfo);
     const response = await chat.sendMessage({ message });
 
     res.json({
