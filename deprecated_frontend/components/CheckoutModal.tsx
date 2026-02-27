@@ -9,6 +9,8 @@ interface CheckoutModalProps {
   selectedTickets: number[];
   raffleId: string;
   pricePerTicket: number;
+  /** Se llama cuando la orden se creó y se subió el comprobante correctamente (para refrescar boletos). */
+  onPurchaseSuccess?: () => void;
 }
 
 // Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
@@ -33,6 +35,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   selectedTickets,
   raffleId,
   pricePerTicket,
+  onPurchaseSuccess,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', state: '' });
@@ -212,6 +215,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       soundService.playCoins();
       setStep(3);
+      onPurchaseSuccess?.();
 
       // Auto-avanzar a step 4 después de 5s
       setTimeout(() => setStep(4), 5000);

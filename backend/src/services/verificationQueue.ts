@@ -2,13 +2,13 @@ import prisma from '../config/database';
 import { extractPaymentData } from './geminiVisionPaymentService';
 import { verifyWithBanxico } from './banxicoCepService';
 
-const VERIFICATION_DELAY_MS = 5 * 60 * 1000; // 5 minutos
+const VERIFICATION_DELAY_MS = 2 * 60 * 1000; // 2 minutos
 
 // Mapa en memoria de jobs pendientes (suficiente para el volumen actual)
 const pendingJobs = new Map<string, NodeJS.Timeout>();
 
 /**
- * Programa la verificación automática de un pago 5 minutos después de recibir el comprobante.
+ * Programa la verificación automática de un pago 2 minutos después de recibir el comprobante.
  * Si el servidor reinicia, los jobs se pierden pero el admin puede confirmar manualmente.
  */
 export function schedulePaymentVerification(purchaseId: string, imageBase64: string): void {
@@ -17,7 +17,7 @@ export function schedulePaymentVerification(purchaseId: string, imageBase64: str
         clearTimeout(pendingJobs.get(purchaseId)!);
     }
 
-    console.log(`⏳ Job de verificación programado para orden ${purchaseId.slice(-8)} en 5 minutos...`);
+    console.log(`⏳ Job de verificación programado para orden ${purchaseId.slice(-8)} en 2 minutos...`);
 
     const timeoutId = setTimeout(async () => {
         pendingJobs.delete(purchaseId);

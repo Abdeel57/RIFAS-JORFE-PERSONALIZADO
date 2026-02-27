@@ -15,6 +15,7 @@ import { Raffle } from './types.ts';
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms'>('raffle');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [refreshTicketsAt, setRefreshTicketsAt] = useState<number>(0);
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
   const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number[]>([]);
   const [isAppLoading, setIsAppLoading] = useState(true);
@@ -179,6 +180,7 @@ const App: React.FC = () => {
                         totalTickets={featuredRaffle.totalTickets}
                         pricePerTicket={featuredRaffle.ticketPrice}
                         onCheckout={handleCheckout}
+                        refreshTrigger={refreshTicketsAt}
                       />
                     </div>
 
@@ -222,6 +224,7 @@ const App: React.FC = () => {
           selectedTickets={selectedTicketsToBuy}
           raffleId={featuredRaffle.id}
           pricePerTicket={featuredRaffle.ticketPrice}
+          onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
         />
       )}
 

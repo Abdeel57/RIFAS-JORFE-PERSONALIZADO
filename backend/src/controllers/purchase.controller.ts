@@ -181,7 +181,7 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
         paymentProofUrl: proofData,
         paymentMethod: 'SPEI',
         verificationStatus: 'pending_verification',
-        verificationNote: 'Comprobante recibido. Verificación automática programada en 5 minutos.',
+        verificationNote: 'Comprobante recibido. Verificación automática programada en 2 minutos.',
       },
       include: {
         user: true,

@@ -20,16 +20,17 @@ const TicketItem = React.memo(({
   isLucky: boolean; 
   onClick: (num: number, status: string) => void;
 }) => {
-  const isSold = status === 'sold';
+  const isUnavailable = status === 'sold' || status === 'reserved';
   
   return (
     <button
       id={`ticket-${number}`}
       onClick={() => onClick(number, status)}
-      disabled={isSold}
+      disabled={isUnavailable}
       className={`
         aspect-square flex items-center justify-center text-[10px] font-black rounded-lg transition-all duration-200 relative will-change-transform
-        ${isSold ? 'bg-slate-50 text-slate-200 cursor-not-allowed' : 
+        ${status === 'sold' ? 'bg-slate-50 text-slate-200 cursor-not-allowed' : 
+          status === 'reserved' ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed' :
           isLucky ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce' :
           isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10' : 
           isHighlighted ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105' :
@@ -46,9 +47,11 @@ interface TicketSelectorProps {
   totalTickets: number;
   pricePerTicket: number;
   onCheckout: (tickets: number[]) => void;
+  /** Cuando cambia, se vuelven a cargar los boletos (ej. tras una compra exitosa). */
+  refreshTrigger?: number;
 }
 
-const TicketSelector: React.FC<TicketSelectorProps> = ({ raffleId, totalTickets, pricePerTicket, onCheckout }) => {
+const TicketSelector: React.FC<TicketSelectorProps> = ({ raffleId, totalTickets, pricePerTicket, onCheckout, refreshTrigger }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isMachineOpen, setIsMachineOpen] = useState(false);
@@ -86,7 +89,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({ raffleId, totalTickets,
     if (raffleId) {
       loadTickets();
     }
-  }, [raffleId, totalTickets]);
+  }, [raffleId, totalTickets, refreshTrigger]);
 
   const toggleTicket = useCallback((num: number, status: string) => {
     if (status !== 'available' || isAnimating) return;
@@ -237,9 +240,10 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({ raffleId, totalTickets,
         </div>
       )}
 
-      <div className="flex gap-4 px-1 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+      <div className="flex flex-wrap gap-4 px-1 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-100 rounded-full"></div><span>Libre</span></div>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-600 rounded-full"></div><span>Mío</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-100 rounded-full"></div><span>Apartado</span></div>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-50 rounded-full opacity-50"></div><span>Vendido</span></div>
       </div>
 
