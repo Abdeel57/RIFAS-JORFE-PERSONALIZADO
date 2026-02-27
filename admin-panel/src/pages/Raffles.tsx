@@ -187,10 +187,10 @@ const Raffles = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleOpenModal(raffle)} className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-colors">
+                    <button onClick={() => handleOpenModal(raffle)} className="min-h-[44px] px-3 py-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-xs font-bold transition-colors touch-manipulation">
                       Editar
                     </button>
-                    <button onClick={() => handleDelete(raffle.id)} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-xs font-bold transition-colors">
+                    <button onClick={() => handleDelete(raffle.id)} className="min-h-[44px] px-3 py-2 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl text-xs font-bold transition-colors touch-manipulation">
                       Eliminar
                     </button>
                   </div>
@@ -201,19 +201,19 @@ const Raffles = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal - móvil: bottom sheet; desktop: centrado */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 pb-0 sm:pb-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[85dvh] overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 bg-white rounded-t-3xl sm:rounded-t-2xl shrink-0">
               <h3 className="text-lg font-black text-slate-800">
                 {editingRaffle ? 'Editar Rifa' : 'Nueva Rifa'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition-colors">
+              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 min-w-[44px] min-h-[44px] shrink-0 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 transition-colors touch-manipulation">
                 ✕
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 pb-safe flex-1 min-h-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Título *</label>

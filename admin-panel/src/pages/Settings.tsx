@@ -54,7 +54,7 @@ const Settings: React.FC = () => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="max-w-4xl mx-auto w-full min-w-0 space-y-8 animate-in fade-in duration-500 overflow-x-hidden">
             <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight">Configuración del Sistema</h1>
                 <p className="text-slate-500 mt-1">Gestiona los datos bancarios y de contacto que ven tus clientes.</p>
@@ -76,7 +76,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Banco</label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.bankName}
                                 onChange={(e) => setSettings({ ...settings, bankName: e.target.value })}
                                 placeholder="Ej. BBVA México"
@@ -87,7 +87,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CLABE Interbancaria</label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.clabe}
                                 onChange={(e) => setSettings({ ...settings, clabe: e.target.value })}
                                 placeholder="18 dígitos"
@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Beneficiario</label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.beneficiary}
                                 onChange={(e) => setSettings({ ...settings, beneficiary: e.target.value })}
                                 placeholder="Ej. Juan Pérez García"
@@ -123,7 +123,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">WhatsApp de Soporte</label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.whatsapp}
                                 onChange={(e) => setSettings({ ...settings, whatsapp: e.target.value })}
                                 placeholder="Ej. +521234567890"
@@ -134,7 +134,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email de Contacto</label>
                             <input
                                 type="email"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.contactEmail}
                                 onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
                                 placeholder="Ej. contacto@rifasnao.com"
@@ -145,7 +145,7 @@ const Settings: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de Usuario Instagram</label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                                className="admin-input"
                                 value={settings.instagram}
                                 onChange={(e) => setSettings({ ...settings, instagram: e.target.value })}
                                 placeholder="Ej. @rifasnao_oficial"
@@ -159,7 +159,7 @@ const Settings: React.FC = () => {
                     <button
                         type="submit"
                         disabled={isSaving}
-                        className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                        className="px-10 py-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 touch-manipulation"
                     >
                         {isSaving ? (
                             <>

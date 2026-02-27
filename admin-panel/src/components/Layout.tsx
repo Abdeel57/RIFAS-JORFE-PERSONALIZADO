@@ -58,10 +58,10 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4FF]">
+    <div className="min-h-screen bg-[#F0F4FF] overflow-x-hidden">
       {/* Top Header */}
-      <header className="glass sticky top-0 z-40 border-b border-slate-200/60">
-        <div className="flex items-center justify-between h-14 px-4">
+      <header className="glass sticky top-0 z-40 border-b border-slate-200/60 pt-safe">
+        <div className="flex items-center justify-between h-14 min-h-[44px] px-4 gap-2">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200">
@@ -95,13 +95,13 @@ const Layout = () => {
       </header>
 
       {/* Page Content */}
-      <main className="px-4 py-4 pb-24 max-w-2xl mx-auto">
+      <main className="px-4 py-4 pb-24 max-w-2xl mx-auto w-full min-w-0 overflow-x-hidden">
         <Outlet />
       </main>
 
       {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/60 pb-safe">
-        <div className="flex items-center justify-around max-w-full overflow-x-auto scrollbar-none px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/60 pb-safe overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-around max-w-full px-2 min-w-0">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;

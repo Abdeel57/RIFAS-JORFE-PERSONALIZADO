@@ -120,15 +120,15 @@ const Purchases = () => {
                     <p className="text-[10px] text-slate-400">{new Date(purchase.createdAt).toLocaleDateString('es-MX')}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleViewDetails(purchase.id)} className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-colors">
+                    <button onClick={() => handleViewDetails(purchase.id)} className="min-h-[44px] px-3 py-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-xs font-bold transition-colors touch-manipulation">
                       Ver
                     </button>
                     {purchase.status === 'pending' && (
                       <>
-                        <button onClick={() => handleUpdateStatus(purchase.id, 'paid')} className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl text-xs font-bold transition-colors">
+                        <button onClick={() => handleUpdateStatus(purchase.id, 'paid')} className="min-h-[44px] px-3 py-2 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-600 rounded-xl text-xs font-bold transition-colors touch-manipulation">
                           ✓ Pagar
                         </button>
-                        <button onClick={() => handleUpdateStatus(purchase.id, 'cancelled')} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-xs font-bold transition-colors">
+                        <button onClick={() => handleUpdateStatus(purchase.id, 'cancelled')} className="min-h-[44px] px-3 py-2 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl text-xs font-bold transition-colors touch-manipulation">
                           ✕
                         </button>
                       </>
@@ -141,15 +141,15 @@ const Purchases = () => {
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* Details Modal - móvil: bottom sheet */}
       {selectedPurchase && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[85dvh] overflow-y-auto overflow-x-hidden overscroll-contain">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
               <h3 className="text-lg font-black text-slate-800">Detalle de Compra</h3>
               <button onClick={() => setSelectedPurchase(null)} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500">✕</button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-5 pb-safe space-y-4">
               {/* User */}
               <div className="admin-card p-4 space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cliente</p>
@@ -184,10 +184,10 @@ const Purchases = () => {
               {/* Actions */}
               {selectedPurchase.status === 'pending' && (
                 <div className="flex gap-3">
-                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'paid')} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm transition-colors">
+                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'paid')} className="flex-1 min-h-[44px] bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black py-3 rounded-xl text-sm transition-colors touch-manipulation">
                     ✓ Marcar como Pagado
                   </button>
-                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'cancelled')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-500 font-black py-3 rounded-xl text-sm transition-colors">
+                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'cancelled')} className="flex-1 min-h-[44px] bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 font-black py-3 rounded-xl text-sm transition-colors touch-manipulation">
                     Cancelar
                   </button>
                 </div>

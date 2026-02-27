@@ -37,22 +37,22 @@ const ProofViewerModal = ({
   const isCancelled = purchase.status === 'cancelled';
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-800">Comprobante de Pago</h3>
             <p className="text-xs text-slate-500">{purchase.user?.name}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition-colors text-sm font-bold">✕</button>
+          <button onClick={onClose} className="w-10 h-10 min-w-[44px] min-h-[44px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 transition-colors text-sm font-bold touch-manipulation">✕</button>
         </div>
 
-        <div className="bg-slate-50">
+        <div className="bg-slate-50 overflow-auto max-h-[50dvh]">
           {purchase.paymentProofUrl ? (
             <img
               src={purchase.paymentProofUrl}
               alt="Comprobante de pago"
-              className="w-full max-h-96 object-contain"
+              className="w-full h-auto object-contain"
             />
           ) : (
             <div className="h-48 flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -65,17 +65,17 @@ const ProofViewerModal = ({
         </div>
 
         {!isPaid && !isCancelled && (
-          <div className="p-4 flex gap-2">
+          <div className="p-4 pb-safe flex gap-2">
             <button
               onClick={() => { onRelease(purchase.id); onClose(); }}
-              className="flex-1 py-3 bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide"
+              className="flex-1 min-h-[44px] py-3 bg-slate-100 hover:bg-red-50 active:bg-red-100 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide touch-manipulation"
             >
               Rechazar
             </button>
             <button
               onClick={() => { onPay(purchase.id); onClose(); }}
               disabled={paying === purchase.id}
-              className="flex-[2] py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black transition-all uppercase tracking-wide shadow-sm shadow-emerald-200 disabled:opacity-60"
+              className="flex-[2] min-h-[44px] py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all uppercase tracking-wide shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
             >
               {paying === purchase.id ? 'Procesando...' : '✓ Confirmar Pago'}
             </button>
@@ -245,7 +245,7 @@ const OrderCard = ({
               <button
                 onClick={() => onPay(purchase.id)}
                 disabled={paying === purchase.id}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60"
+                className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
               >
                 {paying === purchase.id ? (
                   <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -260,11 +260,11 @@ const OrderCard = ({
               </button>
             )}
 
-            {/* RELEASE button */}
+            {/* RELEASE button - touch target 44px */}
             {!isPaid && !isCancelled && (
               <button
                 onClick={() => onRelease(purchase.id)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-500 active:scale-95 text-slate-500 rounded-xl text-xs font-bold transition-all"
+                className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-500 rounded-xl text-xs font-bold transition-all touch-manipulation"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -277,7 +277,7 @@ const OrderCard = ({
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(v => !v)}
-                className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                className="flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
@@ -286,10 +286,10 @@ const OrderCard = ({
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
+                <div className="absolute right-0 top-full mt-1 w-52 min-w-[200px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
                   <button
                     onClick={() => { onEdit(purchase); setMenuOpen(false); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
                   >
                     <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -299,7 +299,7 @@ const OrderCard = ({
                   <div className="border-t border-slate-50" />
                   <button
                     onClick={() => { setShowProof(true); setMenuOpen(false); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
                   >
                     <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -312,7 +312,7 @@ const OrderCard = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
                   >
                     <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
@@ -325,7 +325,7 @@ const OrderCard = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 active:bg-green-100 transition-colors touch-manipulation"
                   >
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                       <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
