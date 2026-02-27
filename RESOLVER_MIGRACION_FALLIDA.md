@@ -1,25 +1,38 @@
 # Resolver migración fallida en Railway
 
-Si el backend falla con **P3009** (migración fallida), hay que marcar la migración como "rolled back" para que Prisma pueda volver a intentarla.
+Si el backend falla con **P3009** (migración fallida), hay que marcar la migración como "rolled back" para que Prisma pueda volver a intentarla. Como Railway no ofrece terminal, se hace desde tu PC con la **DATABASE_URL** de Railway.
 
-## Paso 1: Marcar la migración como resuelta (rolled back)
+## Paso 1: Copiar DATABASE_URL desde Railway
 
-En **Railway** → **BACKEND** → **Settings** → **Variables**, asegúrate de tener `DATABASE_URL`.
+1. Entra en **Railway** → tu proyecto → **BACKEND** (o el servicio de PostgreSQL).
+2. Ve a **Variables** (o **Connect** en la base de datos).
+3. Copia el valor de **DATABASE_URL** (PostgreSQL connection string).
 
-Luego, en **Railway** → **BACKEND** → **Deployments** → abre la **Terminal** del último deployment y ejecuta:
+## Paso 2: Ejecutar el script desde tu PC
 
-```bash
-npx prisma migrate resolve --rolled-back 20260226130000_add_payment_settings_fields
-```
+1. En Railway → **Variables** → copia el valor completo de **DATABASE_URL** (clic en el valor para copiar).
+2. Abre **PowerShell** o **CMD** en tu PC.
+3. En la terminal, ve a la carpeta **backend** de tu proyecto (ej. `cd ruta\al\proyecto\backend`) y ejecuta (pega tu URL donde dice PEGA_AQUI_TU_DATABASE_URL):
 
-O desde tu máquina (con `DATABASE_URL` configurada):
-
-```bash
+**PowerShell (recomendado):**
+```powershell
 cd backend
-set DATABASE_URL=<tu-database-url-de-railway>
-npx prisma migrate resolve --rolled-back 20260226130000_add_payment_settings_fields
+$env:DATABASE_URL="PEGA_AQUI_TU_DATABASE_URL"
+npm run resolve-migration
 ```
 
-## Paso 2: Redeploy
+**CMD:**
+```cmd
+cd backend
+set DATABASE_URL=PEGA_AQUI_TU_DATABASE_URL
+npm run resolve-migration
+```
 
-Después de marcar la migración como rolled back, haz un nuevo deploy del backend (push o redeploy manual). La migración se ejecutará de nuevo y debería completarse correctamente.
+- Sustituye `PEGA_AQUI_TU_DATABASE_URL` por la URL que copiaste (empieza por `postgresql://`).
+- En PowerShell, si la URL tiene `&` o caracteres raros, usa comillas simples: `$env:DATABASE_URL='postgresql://...'`
+
+Si todo va bien verás: **`✅ Migración "20260226130000_add_payment_settings_fields" marcada como rolled back.`**
+
+## Paso 3: Redeploy en Railway
+
+Haz un **Redeploy** del backend en Railway (Deployments → ⋮ → Redeploy, o un nuevo push). La migración se volverá a ejecutar y debería aplicarse bien.

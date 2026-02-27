@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "npx prisma migrate deploy && node dist/index.js",
+    "start": "node dist/scripts/resolve-failed-migration.js && npx prisma migrate deploy && node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "clean": "rm -rf dist",
     "railway:deploy": "npm run prisma:migrate && npm start",
-    "railway:setup": "npm run prisma:migrate && npx tsx src/scripts/seed.ts"
+    "railway:setup": "npm run prisma:migrate && npx tsx src/scripts/seed.ts",
+    "resolve-migration": "tsx src/scripts/resolve-failed-migration.ts"
   },
   "keywords": [],
   "author": "",
