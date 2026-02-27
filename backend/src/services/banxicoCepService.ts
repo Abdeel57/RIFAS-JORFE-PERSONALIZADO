@@ -163,8 +163,8 @@ export async function verifyWithBanxico(
             await page.$eval('form', (form: any) => form.submit());
         }
 
-        // Esperar resultado
-        await page.waitForTimeout(5000);
+        // Esperar resultado (waitForTimeout fue eliminado en Puppeteer v22+)
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // Leer el resultado de la página
         const pageContent = await page.content();

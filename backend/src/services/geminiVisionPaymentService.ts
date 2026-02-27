@@ -43,7 +43,7 @@ export async function extractPaymentData(imageBase64: string): Promise<Extracted
 
     try {
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         // Limpiar el prefijo data:image/...;base64, si existe
         const base64Data = imageBase64.includes(',')
