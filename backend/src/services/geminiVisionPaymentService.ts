@@ -16,7 +16,7 @@ const EXTRACTION_PROMPT = `Analiza esta imagen de un comprobante de pago SPEI (t
 
 Extrae EXACTAMENTE los siguientes datos en formato JSON (sin markdown, solo JSON puro):
 {
-  "claveRastreo": "string o null — la clave de rastreo SPEI de 18-22 dígitos numéricos (también puede llamarse Referencia, Folio, o Tracking). Si no está visible o legible → null",
+  "claveRastreo": "string o null — la clave de rastreo o referencia de la transferencia. Puede ser numérica (ej: 123456789012345678) o alfanumérica (ej: NU39K83SFP318O9A4MP9JOP0LO9R). Buscar campos llamados: 'Clave de rastreo', 'Referencia', 'Número de referencia', 'Folio', 'Tracking', 'ID de transacción'. Extraer el valor EXACTAMENTE como aparece. Si no está visible → null",
   "monto": "número decimal o null — el monto total transferido (solo números, sin símbolo de moneda)",
   "fecha": "string formato DD/MM/YYYY o null — la fecha de la operación",
   "bancoEmisor": "string o null — nombre del banco que ENVIÓ el dinero",
@@ -27,7 +27,7 @@ Extrae EXACTAMENTE los siguientes datos en formato JSON (sin markdown, solo JSON
 }
 
 IMPORTANTE:
-- La clave de rastreo es el dato MÁS IMPORTANTE. Si no está visible → null
+- La clave de rastreo es el dato MÁS IMPORTANTE. Puede ser alfanumérica (ej Nu, BBVA, etc). Extraerla tal cual aparece. Si no está visible → null
 - Si el monto tiene coma de miles (ej: 1,500.00) → devuelve 1500
 - No inventes datos. Si algo no está visible → null`;
 
