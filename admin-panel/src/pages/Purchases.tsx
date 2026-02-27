@@ -39,7 +39,7 @@ const Purchases = () => {
   };
 
   const handleUpdateStatus = (purchaseId: string, status: 'pending' | 'paid' | 'cancelled', paymentMethod?: string, paymentReference?: string) => {
-    const msg = status === 'paid' ? '¿Confirmar pago?' : status === 'cancelled' ? '¿Cancelar esta compra?' : '¿Guardar cambios?';
+    const msg = status === 'paid' ? '¿Confirmar pago?' : status === 'cancelled' ? '¿Cancelar / liberar esta compra?' : status === 'pending' ? '¿Marcar como pendiente?' : '¿Guardar cambios?';
     showConfirm({
       message: msg,
       onConfirm: async () => {
@@ -47,7 +47,7 @@ const Purchases = () => {
           await adminService.updatePurchaseStatus(purchaseId, status, paymentMethod, paymentReference);
           loadPurchases();
           setSelectedPurchase(null);
-          toast.success(status === 'paid' ? 'Pago confirmado' : status === 'cancelled' ? 'Compra cancelada' : 'Cambios guardados');
+          toast.success(status === 'paid' ? 'Pago confirmado' : status === 'cancelled' ? 'Compra cancelada' : status === 'pending' ? 'Marcada como pendiente' : 'Cambios guardados');
         } catch (error: any) {
           toast.error(error.response?.data?.error || 'Error al actualizar la compra');
           throw error;
@@ -200,6 +200,16 @@ const Purchases = () => {
                   </button>
                   <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'cancelled')} className="flex-1 min-h-[44px] bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 font-black py-3 rounded-xl text-sm transition-colors touch-manipulation">
                     Cancelar
+                  </button>
+                </div>
+              )}
+              {selectedPurchase.status === 'paid' && (
+                <div className="flex gap-3">
+                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'pending')} className="flex-1 min-h-[44px] bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-black py-3 rounded-xl text-sm transition-colors touch-manipulation">
+                    Marcar como Pendiente
+                  </button>
+                  <button onClick={() => handleUpdateStatus(selectedPurchase.id, 'cancelled')} className="flex-1 min-h-[44px] bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 font-black py-3 rounded-xl text-sm transition-colors touch-manipulation">
+                    Liberar orden
                   </button>
                 </div>
               )}

@@ -142,6 +142,23 @@ export const updatePurchaseStatus = async (req: Request, res: Response, next: Ne
           },
         });
       });
+    } else if (data.status === 'pending' && purchase.status === 'paid') {
+      // De pagado a pendiente: boletos vuelven a reservados
+      await prisma.$transaction(async (tx) => {
+        await tx.purchase.update({
+          where: { id },
+          data: { status: 'pending' },
+        });
+
+        await tx.ticket.updateMany({
+          where: {
+            purchaseId: id,
+          },
+          data: {
+            status: 'reserved',
+          },
+        });
+      });
     } else {
       // Solo actualizar estado sin cambiar boletos
       await prisma.purchase.update({

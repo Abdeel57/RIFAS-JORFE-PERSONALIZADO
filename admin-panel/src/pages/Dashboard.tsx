@@ -100,12 +100,14 @@ const ProofViewerModal = ({
 const OrderCard = ({
   purchase,
   onPay,
+  onSetPending,
   onRelease,
   onEdit,
   paying,
 }: {
   purchase: any;
   onPay: (id: string) => void;
+  onSetPending: (id: string) => void;
   onRelease: (id: string) => void;
   onEdit: (p: any) => void;
   paying: string | null;
@@ -273,6 +275,29 @@ const OrderCard = ({
                 </svg>
                 Liberar
               </button>
+            )}
+
+            {/* Para órdenes PAGADAS: opción de marcar pendiente o liberar */}
+            {isPaid && (
+              <>
+                <button
+                  onClick={() => onSetPending(purchase.id)}
+                  className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-700 rounded-xl text-xs font-bold transition-all touch-manipulation border border-amber-200"
+                  title="Marcar como pendiente"
+                >
+                  Pendiente
+                </button>
+                <button
+                  onClick={() => onRelease(purchase.id)}
+                  className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-500 rounded-xl text-xs font-bold transition-all touch-manipulation"
+                  title="Liberar orden y devolver boletos"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Liberar
+                </button>
+              </>
             )}
 
             {/* OPTIONS button - menú abre hacia arriba para no taparse con la orden de abajo */}
@@ -483,6 +508,24 @@ const Dashboard = () => {
     });
   };
 
+  const handleSetPending = (id: string) => {
+    showConfirm({
+      message: '¿Marcar esta orden como pendiente? Los boletos quedarán reservados.',
+      onConfirm: async () => {
+        try {
+          await adminService.updatePurchaseStatus(id, 'pending');
+          setPurchases(prev =>
+            prev.map(p => p.id === id ? { ...p, status: 'pending' } : p)
+          );
+          toast.success('Orden marcada como pendiente');
+        } catch (e: any) {
+          toast.error(e.response?.data?.error || 'Error al actualizar');
+          throw e;
+        }
+      },
+    });
+  };
+
   const handleRelease = (id: string) => {
     showConfirm({
       message: '¿Liberar (cancelar) esta orden y devolver los boletos?',
@@ -573,6 +616,7 @@ const Dashboard = () => {
               key={purchase.id}
               purchase={purchase}
               onPay={handlePay}
+              onSetPending={handleSetPending}
               onRelease={handleRelease}
               onEdit={setEditTarget}
               paying={paying}
