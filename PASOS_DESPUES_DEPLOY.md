@@ -215,6 +215,8 @@ La verificación automática **solo se dispara cuando el cliente sube el comprob
 
 **Variables necesarias para verificación automática:** `GEMINI_API_KEY` (y opcionalmente Banxico/Puppeteer en el servidor).
 
+**Solo si tras el deploy sigue fallando Banxico** (en logs: "Failed to launch the browser process" o "libglib"): en Railway → servicio **Backend** → **Settings** → **Builder**, asegúrate de que el build use el **Dockerfile** (no Nixpacks). El Dockerfile del backend instala Chromium para que Puppeteer pueda abrir la página de Banxico CEP.
+
 ## ✅ Checklist Final
 
 - [ ] Admin panel accesible en `/admin`

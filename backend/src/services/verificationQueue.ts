@@ -19,10 +19,12 @@ export function schedulePaymentVerification(purchaseId: string, imageBase64: str
 
     console.log(`⏳ Job de verificación programado para orden ${purchaseId.slice(-8)} en 2 minutos...`);
 
-    const timeoutId = setTimeout(async () => {
+    const timeoutId = setTimeout(() => {
         pendingJobs.delete(purchaseId);
         console.log(`⏰ [VERIFICACIÓN] Ejecutando job ahora para orden ${purchaseId.slice(-8)} (2 min tras comprobante).`);
-        await runVerification(purchaseId, imageBase64);
+        runVerification(purchaseId, imageBase64).catch((err: any) => {
+            console.error(`❌ [VERIFICACIÓN] Job falló para orden ${purchaseId.slice(-8)}:`, err?.message);
+        });
     }, VERIFICATION_DELAY_MS);
 
     pendingJobs.set(purchaseId, timeoutId);
@@ -87,9 +89,12 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             // ✅ PAGO VERIFICADO — Confirmar automáticamente
             await autoConfirmPurchase(purchaseId, paymentData.claveRastreo);
         } else {
-            // ❌ Banxico no lo encontró → pendiente manual
-            await markPendingManual(purchaseId, banxicoResult.error || 'banxico_not_found',
-                `Banxico no pudo verificar el pago. Clave: ${paymentData.claveRastreo}. Error: ${banxicoResult.error || 'no encontrado'}`);
+            // ❌ Banxico no lo encontró o no pudo ejecutarse (ej. Puppeteer sin Chrome)
+            const isPuppeteerError = (banxicoResult.error || '').includes('puppeteer') || (banxicoResult.error || '').includes('browser process');
+            const note = isPuppeteerError
+                ? `Clave de rastreo extraída: ${paymentData.claveRastreo}. Revisar manualmente en https://www.banxico.org.mx/cep/ (el servidor no pudo abrir el navegador).`
+                : `Banxico no pudo verificar el pago. Clave: ${paymentData.claveRastreo}. Error: ${banxicoResult.error || 'no encontrado'}`;
+            await markPendingManual(purchaseId, banxicoResult.error || 'banxico_not_found', note);
         }
 
     } catch (error: any) {

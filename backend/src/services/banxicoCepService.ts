@@ -53,6 +53,16 @@ function getBankCode(bankName: string): string | null {
     return null;
 }
 
+/** Convierte DD/MM/YYYY (Gemini) a YYYY-MM-DD (input type="date") */
+function toDateInputValue(fecha: string): string | null {
+    if (!fecha || !fecha.includes('/')) return null;
+    const parts = fecha.trim().split('/');
+    if (parts.length !== 3) return null;
+    const [d, m, y] = parts.map(p => p.padStart(2, '0'));
+    if (d.length === 2 && m.length === 2 && y.length === 4) return `${y}-${m}-${d}`;
+    return null;
+}
+
 export async function verifyWithBanxico(
     paymentData: ExtractedPaymentData
 ): Promise<BanxicoCepResult> {
@@ -112,10 +122,13 @@ export async function verifyWithBanxico(
             console.warn('⚠️  No se encontró el campo de clave de rastreo');
         }
 
-        // Llenar fecha si está disponible
+        // Llenar fecha si está disponible (input type="date" requiere YYYY-MM-DD)
         if (paymentData.fecha) {
+            const dateValue = toDateInputValue(paymentData.fecha);
             const fechaInput = await page.$('input[name="fecha"], input[id="fecha"], input[type="date"]');
-            if (fechaInput) {
+            if (fechaInput && dateValue) {
+                await fechaInput.evaluate((el: HTMLInputElement, v: string) => { el.value = v; }, dateValue);
+            } else if (fechaInput) {
                 await fechaInput.click({ clickCount: 3 });
                 await fechaInput.type(paymentData.fecha, { delay: 30 });
             }
