@@ -2,6 +2,8 @@ import prisma from '../config/database';
 import { analyzePaymentProof, PaymentAnalysisResult } from './geminiVisionPaymentService';
 
 const VERIFICATION_DELAY_MS = 2 * 60 * 1000; // 2 minutos
+const MAX_RETRIES = 3;        // reintentos si Gemini falla por error de red/timeout
+const RETRY_DELAY_MS = 30000; // 30 segundos entre reintentos
 
 const pendingJobs = new Map<string, NodeJS.Timeout>();
 
@@ -52,15 +54,15 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
         // Extraer últimos 4 dígitos de la CLABE (ignorar espacios)
         const accountLastDigits = clabe ? clabe.replace(/\s/g, '').slice(-4) : undefined;
 
-        // Analizar comprobante con Gemini
+        // Analizar comprobante con Gemini (con reintentos ante fallos de red)
         console.log(`🤖 Analizando comprobante con Gemini Vision...`);
-        const analysis = await analyzePaymentProof(imageBase64, {
+        const analysis = await analyzeWithRetry(imageBase64, {
             expectedAmount: purchase.totalAmount,
             customerName: purchase.user.name,
             beneficiaryName,
             clabe,
             accountLastDigits,
-        });
+        }, purchaseId);
 
         console.log(`📊 Resultado del análisis:`, {
             ordenante: analysis.ordenante,
@@ -74,6 +76,13 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             veredicto: analysis.verdict,
             razon: analysis.verdictReason,
         });
+
+        // Si la confianza es baja, no auto-aprobar aunque Gemini diga "approve"
+        if (analysis.verdict === 'approve' && analysis.confidence === 'low') {
+            console.log(`⚠️  Confianza baja → forzando revisión manual por seguridad`);
+            analysis.verdict = 'review';
+            analysis.verdictReason = `Confianza insuficiente (low). ${analysis.verdictReason}`;
+        }
 
         // Seguridad extra: override del veredicto en casos críticos
         // (por si Gemini comete un error y dice "approve" cuando no debe)
@@ -110,6 +119,46 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             },
         }).catch(() => {});
     }
+}
+
+/**
+ * Llama a Gemini con reintentos ante errores transitorios (red, timeout, rate limit).
+ * Si todos los intentos fallan, devuelve resultado de revisión manual.
+ */
+async function analyzeWithRetry(
+    imageBase64: string,
+    options: Parameters<typeof analyzePaymentProof>[1],
+    purchaseId: string
+): Promise<PaymentAnalysisResult> {
+    let lastError = '';
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const result = await analyzePaymentProof(imageBase64, options);
+            // Si Gemini devolvió un resultado con confidence (no vino de catch interno), éxito
+            if (attempt > 1) {
+                console.log(`✅ Gemini respondió en intento ${attempt} para orden ${purchaseId.slice(-8)}`);
+            }
+            return result;
+        } catch (err: any) {
+            lastError = err?.message || 'Error desconocido';
+            console.warn(`⚠️  Gemini intento ${attempt}/${MAX_RETRIES} falló: ${lastError}`);
+            if (attempt < MAX_RETRIES) {
+                await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+            }
+        }
+    }
+
+    console.error(`❌ Gemini falló ${MAX_RETRIES} veces para orden ${purchaseId.slice(-8)}`);
+    return {
+        claveRastreo: null, monto: null, fecha: null,
+        bancoEmisor: null, bancoDestino: null,
+        ordenante: null, beneficiario: null, cuentaDestino: null,
+        authenticity: 'suspicious', manipulationSigns: [],
+        amountMatch: null, nameMatch: null, accountMatch: null,
+        confidence: 'low', verdict: 'review',
+        verdictReason: `Análisis automático no disponible tras ${MAX_RETRIES} intentos: ${lastError}`,
+    };
 }
 
 async function autoConfirmPurchase(purchaseId: string, analysis: PaymentAnalysisResult): Promise<void> {
