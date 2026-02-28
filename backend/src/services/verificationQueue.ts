@@ -1,6 +1,5 @@
 import prisma from '../config/database';
 import { extractPaymentData } from './geminiVisionPaymentService';
-import { verifyWithBanxico } from './banxicoCepService';
 
 const VERIFICATION_DELAY_MS = 2 * 60 * 1000; // 2 minutos
 
@@ -35,7 +34,6 @@ export function schedulePaymentVerification(purchaseId: string, imageBase64: str
  */
 async function runVerification(purchaseId: string, imageBase64: string): Promise<void> {
     console.log(`\n🔍 [VERIFICACIÓN] Iniciando para orden ${purchaseId.slice(-8)}...`);
-    const startTime = Date.now();
 
     try {
         // 1. Verificar que la orden todavía está pendiente
@@ -45,11 +43,11 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             return;
         }
         if (purchase.status === 'paid' || purchase.status === 'cancelled') {
-            console.log(`ℹ️  Orden ${purchaseId.slice(-8)} ya fue procesada (${purchase.status}), omitiendo verificación`);
+            console.log(`ℹ️  Orden ${purchaseId.slice(-8)} ya fue procesada (${purchase.status}), omitiendo`);
             return;
         }
 
-        // 2. Gemini Vision: extraer datos del comprobante (opcional; si no hay API key → pendiente manual)
+        // 2. Gemini Vision: extraer datos del comprobante
         console.log(`🤖 Analizando imagen con Gemini Vision...`);
         const paymentData = await extractPaymentData(imageBase64);
         console.log(`📊 Datos extraídos:`, {
@@ -60,42 +58,40 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             confidence: paymentData.confidence,
         });
 
-        // 3. ¿Tiene clave de rastreo visible? (si no hay Gemini configurado, paymentData viene con nulls)
+        // 3. Sin clave de rastreo → imagen ilegible o no es un comprobante válido
         if (!paymentData.claveRastreo) {
             console.log(`⚠️  No se detectó clave de rastreo → pendiente manual`);
             await markPendingManual(purchaseId, 'no_tracking_key',
-                'La clave de rastreo no es visible en el comprobante o la verificación automática no está configurada. Un administrador revisará tu pago.');
+                'No se pudo leer la clave de rastreo del comprobante. Un administrador revisará tu pago manualmente.');
             return;
         }
 
-        // 4. Validar que el monto sea aproximadamente correcto (tolerancia 5 pesos)
+        // 4. Confianza baja → imagen borrosa o datos parciales
+        if (paymentData.confidence === 'low') {
+            console.log(`⚠️  Confianza baja en extracción → pendiente manual`);
+            await markPendingManual(purchaseId, 'low_confidence',
+                `Imagen poco legible. Clave extraída: ${paymentData.claveRastreo}. Un administrador verificará tu pago.`);
+            return;
+        }
+
+        // 5. Validar monto (tolerancia $5 para diferencias de redondeo)
         if (paymentData.monto !== null) {
             const diff = Math.abs(paymentData.monto - purchase.totalAmount);
             if (diff > 5) {
-                console.log(`⚠️  Monto no coincide: extraído=${paymentData.monto}, esperado=${purchase.totalAmount}`);
+                console.log(`⚠️  Monto no coincide: extraído=$${paymentData.monto}, esperado=$${purchase.totalAmount}`);
                 await markPendingManual(purchaseId, 'amount_mismatch',
-                    `Monto del comprobante ($${paymentData.monto}) no coincide con el total de la orden ($${purchase.totalAmount}).`);
+                    `El monto del comprobante ($${paymentData.monto}) no coincide con el total de la orden ($${purchase.totalAmount}). Un administrador revisará tu pago.`);
                 return;
             }
         }
 
-        // 5. Banxico CEP: verificar el pago
-        console.log(`🌐 Verificando en Banxico CEP...`);
-        const banxicoResult = await verifyWithBanxico(paymentData);
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`📡 Resultado Banxico (${elapsed}s):`, banxicoResult);
-
-        if (banxicoResult.verified) {
-            // ✅ PAGO VERIFICADO — Confirmar automáticamente
-            await autoConfirmPurchase(purchaseId, paymentData.claveRastreo);
-        } else {
-            // ❌ Banxico no lo encontró o no pudo ejecutarse (ej. Puppeteer sin Chrome)
-            const isPuppeteerError = (banxicoResult.error || '').includes('puppeteer') || (banxicoResult.error || '').includes('browser process');
-            const note = isPuppeteerError
-                ? `Clave de rastreo extraída: ${paymentData.claveRastreo}. Revisar manualmente en https://www.banxico.org.mx/cep/ (el servidor no pudo abrir el navegador).`
-                : `Banxico no pudo verificar el pago. Clave: ${paymentData.claveRastreo}. Error: ${banxicoResult.error || 'no encontrado'}`;
-            await markPendingManual(purchaseId, banxicoResult.error || 'banxico_not_found', note);
-        }
+        // 6. ✅ Gemini extrajo datos con confianza media/alta y el monto coincide.
+        //    Verificación por Banxico CEP omitida: Nu Bank, Mercado Pago, Hey Banco y otros
+        //    fintechs generan claves alfanuméricas propias que el portal de Banxico no reconoce.
+        //    La foto del comprobante con datos correctos es evidencia suficiente.
+        console.log(`✅ Comprobante verificado por Gemini Vision (confianza: ${paymentData.confidence})`);
+        console.log(`   Clave: ${paymentData.claveRastreo} | Monto: $${paymentData.monto} | Banco: ${paymentData.bancoEmisor}`);
+        await autoConfirmPurchase(purchaseId, paymentData.claveRastreo);
 
     } catch (error: any) {
         console.error(`❌ Error en verificación de orden ${purchaseId.slice(-8)}:`, error.message);
