@@ -75,10 +75,26 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             razon: analysis.verdictReason,
         });
 
-        // Aplicar veredicto
-        if (analysis.verdict === 'approve') {
+        // Seguridad extra: override del veredicto en casos críticos
+        // (por si Gemini comete un error y dice "approve" cuando no debe)
+        let finalVerdict = analysis.verdict;
+
+        if (analysis.authenticity === 'fake') {
+            finalVerdict = 'reject'; // comprobante claramente falso → siempre a revisión urgente
+        } else if (analysis.accountMatch === false) {
+            finalVerdict = 'review'; // cuenta destino incorrecta → nunca auto-aprobar
+        } else if (analysis.amountMatch === false) {
+            finalVerdict = 'review'; // monto incorrecto → nunca auto-aprobar
+        }
+
+        if (finalVerdict !== analysis.verdict) {
+            console.log(`⚠️  Veredicto Gemini "${analysis.verdict}" sobreescrito a "${finalVerdict}" por regla de seguridad`);
+        }
+
+        // Aplicar veredicto final
+        if (finalVerdict === 'approve') {
             await autoConfirmPurchase(purchaseId, analysis);
-        } else if (analysis.verdict === 'reject') {
+        } else if (finalVerdict === 'reject') {
             await markSuspiciousManual(purchaseId, analysis);
         } else {
             await markPendingManual(purchaseId, analysis);
