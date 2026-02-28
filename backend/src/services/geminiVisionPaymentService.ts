@@ -10,6 +10,7 @@ export interface PaymentAnalysisResult {
     bancoDestino: string | null;
     ordenante: string | null;    // nombre de quien ENVÍA
     beneficiario: string | null; // nombre de quien RECIBE
+    cuentaDestino: string | null; // número/CLABE de cuenta destino visible en el comprobante
 
     // Análisis de autenticidad
     authenticity: 'authentic' | 'suspicious' | 'fake';
@@ -18,6 +19,7 @@ export interface PaymentAnalysisResult {
     // Validaciones contra los datos de la orden
     amountMatch: boolean | null;
     nameMatch: boolean | null;
+    accountMatch: boolean | null; // si los últimos 4 dígitos de la cuenta destino coinciden
 
     // Veredicto final
     confidence: 'high' | 'medium' | 'low';
@@ -28,11 +30,14 @@ export interface PaymentAnalysisResult {
 export interface AnalysisOptions {
     expectedAmount: number;
     customerName: string;
-    beneficiaryName: string; // nombre del beneficiario de la cuenta (ej. "RIFAS NAO MÉXICO")
-    clabe?: string;          // últimos dígitos o CLABE completa para validar cuenta destino
+    beneficiaryName: string;   // nombre del beneficiario de la cuenta (ej. "RIFAS NAO MÉXICO")
+    clabe?: string;            // CLABE completa para extraer últimos 4 dígitos
+    accountLastDigits?: string; // últimos 4 dígitos de la CLABE destino (calculados en el backend)
 }
 
 function buildPrompt(opts: AnalysisOptions): string {
+    const last4 = opts.accountLastDigits || (opts.clabe ? opts.clabe.replace(/\s/g, '').slice(-4) : null);
+
     return `Eres un experto en verificación de comprobantes de pago bancarios mexicanos (SPEI).
 Analiza esta imagen con máxima precisión y devuelve ÚNICAMENTE el JSON solicitado.
 
@@ -41,18 +46,19 @@ DATOS DE LA ORDEN A VERIFICAR:
 - Monto esperado: $${opts.expectedAmount} pesos MXN
 - Nombre del cliente registrado: "${opts.customerName}"
 - Beneficiario esperado (cuenta destino): "${opts.beneficiaryName}"
-${opts.clabe ? `- CLABE/cuenta destino (parcial): "${opts.clabe}"` : ''}
+${last4 ? `- Últimos 4 dígitos de la CLABE destino: "${last4}"` : ''}
 ═══════════════════════════════════════════════════
 
 TAREA 1 — EXTRACCIÓN DE DATOS:
 Extrae EXACTAMENTE los valores visibles en el comprobante:
-- claveRastreo: cualquier código de rastreo, referencia, folio o tracking (puede ser numérico O alfanumérico, extrae el valor exacto)
+- claveRastreo: código de rastreo, referencia, folio o tracking (numérico O alfanumérico, valor exacto)
 - monto: importe de la transferencia (número sin símbolos)
 - fecha: fecha de la operación en formato DD/MM/YYYY
 - bancoEmisor: banco que ENVÍA
 - bancoDestino: banco que RECIBE
-- ordenante: nombre completo de quien ENVÍA el dinero
-- beneficiario: nombre de quien RECIBE el dinero
+- ordenante: nombre completo de quien ENVÍA
+- beneficiario: nombre de quien RECIBE
+- cuentaDestino: número de cuenta, CLABE o CLABE parcial visible en el comprobante (ej. "****6010", "012180...2410")
 
 TAREA 2 — ANÁLISIS DE AUTENTICIDAD:
 Busca ACTIVAMENTE señales de manipulación digital:
@@ -69,11 +75,13 @@ TAREA 3 — VALIDACIÓN DE DATOS:
 1. ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? (tolerancia ±$5 pesos)
 2. ¿El nombre del ordenante contiene al menos 1 nombre Y 1 apellido del cliente "${opts.customerName}"?
    (ignora acentos, mayúsculas/minúsculas, orden de nombres, abreviaciones)
+${last4 ? `3. ¿La cuenta destino visible en el comprobante termina en "${last4}"? 
+   Busca campos como CLABE, cuenta, número de cuenta, ****XXXX. Si no es visible → null.` : ''}
 
 CRITERIOS DE VEREDICTO:
-- "approve": autenticidad alta/media, monto coincide, y nombre coincide (o no es legible pero todo lo demás es consistente)
-- "review": algo sospechoso sin ser concluyente, o monto/nombre no coincide pero el comprobante parece auténtico
-- "reject": signos CLAROS de edición o falsificación detectados en la imagen
+- "approve": autenticidad alta/media, monto coincide, nombre coincide, Y cuenta destino coincide (o no visible)
+- "review": comprobante parece auténtico pero algún dato no coincide o no es visible
+- "reject": signos CLAROS de edición/falsificación, O la cuenta destino claramente NO coincide con "${last4 || 'la cuenta registrada'}"
 
 RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
 {
@@ -84,10 +92,12 @@ RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
   "bancoDestino": "nombre o null",
   "ordenante": "nombre completo o null",
   "beneficiario": "nombre completo o null",
+  "cuentaDestino": "número o CLABE parcial visible, o null",
   "authenticity": "authentic|suspicious|fake",
   "manipulationSigns": ["señal1", "señal2"],
   "amountMatch": true_o_false_o_null,
   "nameMatch": true_o_false_o_null,
+  "accountMatch": true_o_false_o_null,
   "confidence": "high|medium|low",
   "verdict": "approve|review|reject",
   "verdictReason": "explicación breve en español del veredicto"
@@ -101,10 +111,10 @@ export async function analyzePaymentProof(
     const empty: PaymentAnalysisResult = {
         claveRastreo: null, monto: null, fecha: null,
         bancoEmisor: null, bancoDestino: null,
-        ordenante: null, beneficiario: null,
+        ordenante: null, beneficiario: null, cuentaDestino: null,
         authenticity: 'suspicious',
         manipulationSigns: [],
-        amountMatch: null, nameMatch: null,
+        amountMatch: null, nameMatch: null, accountMatch: null,
         confidence: 'low',
         verdict: 'review',
         verdictReason: 'No se pudo analizar el comprobante automáticamente.',
@@ -157,10 +167,12 @@ export async function analyzePaymentProof(
             bancoDestino: parsed.bancoDestino || null,
             ordenante: parsed.ordenante || null,
             beneficiario: parsed.beneficiario || null,
+            cuentaDestino: parsed.cuentaDestino || null,
             authenticity: parsed.authenticity || 'suspicious',
             manipulationSigns: Array.isArray(parsed.manipulationSigns) ? parsed.manipulationSigns : [],
             amountMatch: parsed.amountMatch ?? null,
             nameMatch: parsed.nameMatch ?? null,
+            accountMatch: parsed.accountMatch ?? null,
             confidence: parsed.confidence || 'low',
             verdict: parsed.verdict || 'review',
             verdictReason: parsed.verdictReason || 'Sin razón especificada',

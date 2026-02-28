@@ -49,6 +49,8 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
         const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
         const beneficiaryName = settings?.beneficiary || 'RIFAS NAO';
         const clabe = settings?.clabe || undefined;
+        // Extraer últimos 4 dígitos de la CLABE (ignorar espacios)
+        const accountLastDigits = clabe ? clabe.replace(/\s/g, '').slice(-4) : undefined;
 
         // Analizar comprobante con Gemini
         console.log(`🤖 Analizando comprobante con Gemini Vision...`);
@@ -57,16 +59,18 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             customerName: purchase.user.name,
             beneficiaryName,
             clabe,
+            accountLastDigits,
         });
 
         console.log(`📊 Resultado del análisis:`, {
             ordenante: analysis.ordenante,
             monto: analysis.monto,
-            fecha: analysis.fecha,
+            cuentaDestino: analysis.cuentaDestino,
             autenticidad: analysis.authenticity,
             señales: analysis.manipulationSigns,
             montoCoincide: analysis.amountMatch,
             nombreCoincide: analysis.nameMatch,
+            cuentaCoincide: analysis.accountMatch,
             veredicto: analysis.verdict,
             razon: analysis.verdictReason,
         });
@@ -123,7 +127,8 @@ async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysi
             ? `Señales detectadas: ${analysis.manipulationSigns.join('; ')}`
             : '',
         `Razón: ${analysis.verdictReason}`,
-        `Monto comprobante: $${analysis.monto ?? '?'} | Esperado: coincide=${analysis.amountMatch}`,
+        `Monto comprobante: $${analysis.monto ?? '?'} | Coincide: ${analysis.amountMatch}`,
+        `Cuenta destino visible: ${analysis.cuentaDestino ?? '?'} | Coincide últimos 4 dígitos: ${analysis.accountMatch}`,
         `Ordenante: ${analysis.ordenante ?? '?'} | Nombre cliente coincide: ${analysis.nameMatch}`,
         `Clave rastreo: ${analysis.claveRastreo ?? 'no visible'}`,
     ].filter(Boolean).join('\n');
@@ -146,6 +151,7 @@ async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisRe
         `Autenticidad: ${analysis.authenticity} | Confianza: ${analysis.confidence}`,
         `Razón: ${analysis.verdictReason}`,
         `Monto comprobante: $${analysis.monto ?? '?'} | Coincide: ${analysis.amountMatch}`,
+        `Cuenta destino visible: ${analysis.cuentaDestino ?? '?'} | Coincide últimos 4 dígitos: ${analysis.accountMatch}`,
         `Ordenante: ${analysis.ordenante ?? '?'} | Nombre coincide: ${analysis.nameMatch}`,
         `Clave rastreo: ${analysis.claveRastreo ?? 'no visible'}`,
     ].filter(Boolean).join('\n');
@@ -166,6 +172,7 @@ function buildApproveNote(analysis: PaymentAnalysisResult): string {
         `✅ Verificado automáticamente por Gemini Vision.`,
         `Ordenante: ${analysis.ordenante ?? '?'}`,
         `Monto: $${analysis.monto ?? '?'} | Banco: ${analysis.bancoEmisor ?? '?'}`,
+        `Cuenta destino: ${analysis.cuentaDestino ?? '?'} | Coincide: ${analysis.accountMatch}`,
         `Fecha: ${analysis.fecha ?? '?'}`,
         `Clave rastreo: ${analysis.claveRastreo ?? 'no visible'}`,
         `Confianza: ${analysis.confidence}`,
