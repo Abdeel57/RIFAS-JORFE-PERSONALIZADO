@@ -23,6 +23,8 @@ import {
 } from '../controllers/admin/user.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
+import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
+import prisma from '../config/database';
 
 const router = Router();
 
@@ -56,6 +58,52 @@ router.put('/purchases/:id/status', updatePurchaseStatus);
 // Users
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
+
+// Push Notifications
+router.get('/push/vapid-key', (_req, res) => {
+    const key = getVapidPublicKey();
+    if (!key) return res.status(503).json({ error: 'Push notifications no configuradas (falta VAPID_PUBLIC_KEY)' });
+    res.json({ publicKey: key });
+});
+
+router.post('/push/subscribe', async (req, res) => {
+    try {
+        const { endpoint, keys } = req.body;
+        if (!endpoint || !keys?.p256dh || !keys?.auth) {
+            return res.status(400).json({ error: 'Datos de suscripción inválidos' });
+        }
+        await prisma.pushSubscription.upsert({
+            where: { endpoint },
+            create: { endpoint, p256dh: keys.p256dh, auth: keys.auth },
+            update: { p256dh: keys.p256dh, auth: keys.auth },
+        });
+        console.log('📲 Nueva suscripción push registrada');
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/push/subscribe', async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        if (!endpoint) return res.status(400).json({ error: 'endpoint requerido' });
+        await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Test de notificación (solo en desarrollo o para el admin)
+router.post('/push/test', async (_req, res) => {
+    await sendPushToAdmins({
+        title: '🔔 Prueba de notificación',
+        body: 'Las notificaciones push funcionan correctamente.',
+        tag: 'test',
+    });
+    res.json({ success: true });
+});
 
 export default router;
 

@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { analyzePaymentProof, PaymentAnalysisResult } from './geminiVisionPaymentService';
+import { sendPushToAdmins } from './pushNotificationService';
 
 const VERIFICATION_DELAY_MS = 2 * 60 * 1000; // 2 minutos
 const MAX_RETRIES = 3;        // reintentos si Gemini falla por error de red/timeout
@@ -182,6 +183,13 @@ async function autoConfirmPurchase(purchaseId: string, analysis: PaymentAnalysis
 
     console.log(`✅ [AUTO-CONFIRM] Orden ${purchaseId.slice(-8)} confirmada automáticamente`);
     console.log(`   Razón: ${analysis.verdictReason}`);
+
+    await sendPushToAdmins({
+        title: '✅ Pago verificado automáticamente',
+        body: `Orden ${purchaseId.slice(-8)} — $${analysis.monto ?? '?'} de ${analysis.ordenante ?? 'cliente'}. Boletos confirmados.`,
+        url: '/admin',
+        tag: 'verificacion',
+    }).catch(() => {});
 }
 
 async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysisResult): Promise<void> {
@@ -208,6 +216,13 @@ async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysi
 
     console.log(`🚨 [SOSPECHOSO] Orden ${purchaseId.slice(-8)} marcada para revisión manual urgente`);
     console.log(`   Señales: ${analysis.manipulationSigns.join(', ') || 'ninguna específica'}`);
+
+    await sendPushToAdmins({
+        title: '🚨 Comprobante sospechoso — revisión urgente',
+        body: `Orden ${purchaseId.slice(-8)} — posible falsificación. Revisar en el panel admin.`,
+        url: '/admin',
+        tag: 'alerta',
+    }).catch(() => {});
 }
 
 async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisResult): Promise<void> {
@@ -230,6 +245,13 @@ async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisRe
     });
 
     console.log(`👁  [REVISIÓN] Orden ${purchaseId.slice(-8)} → revisión manual. Razón: ${analysis.verdictReason}`);
+
+    await sendPushToAdmins({
+        title: '👁 Comprobante requiere revisión',
+        body: `Orden ${purchaseId.slice(-8)} — ${analysis.verdictReason}`,
+        url: '/admin',
+        tag: 'revision',
+    }).catch(() => {});
 }
 
 function buildApproveNote(analysis: PaymentAnalysisResult): string {
