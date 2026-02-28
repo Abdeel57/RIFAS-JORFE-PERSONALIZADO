@@ -1,6 +1,6 @@
 import puppeteerExtra from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { ExtractedPaymentData } from './geminiVisionPaymentService';
+import { PaymentAnalysisResult as ExtractedPaymentData } from './geminiVisionPaymentService';
 
 // Aplicar plugin stealth para evitar detección como bot
 puppeteerExtra.use(StealthPlugin());
