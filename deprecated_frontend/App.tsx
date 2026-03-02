@@ -136,7 +136,11 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-xl italic tracking-tighter">N</span>
                 </div>
               )}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse shadow-sm"></div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             </div>
             <div className="flex flex-col">
               <span className="font-black text-sm md:text-lg tracking-tighter text-slate-800 leading-none">RIFAS NAO</span>

@@ -234,13 +234,19 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
                 >
                   <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 border-2 md:border-4 border-white rounded-full"></div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                  <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
               </div>
               <div className="space-y-0.5 md:space-y-1">
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <h4 className="text-lg md:text-2xl font-black text-slate-800 tracking-tighter">Rifas Nao Oficial</h4>
-                  <div className="w-4 h-4 md:w-5 md:h-5 bg-[#1877F2] rounded-full flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white fill-current" viewBox="0 0 20 20"><path d="M19.43 3.42l-2.85-2.85c-.78-.78-2.05-.78-2.83 0l-10.4 10.4-3.13-3.13c-.78-.78-2.05-.78-2.83 0-.78.78-.78 2.05 0 2.83l4.54 4.54c.39.39.9.59 1.41.59s1.02-.2 1.41-.59l11.82-11.82c.78-.78.78-2.05 0-2.83z" /></svg>
+                  <div className="w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                    <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
                   </div>
                 </div>
                 <p className="text-slate-500 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em]">Comunidad Verificada</p>
