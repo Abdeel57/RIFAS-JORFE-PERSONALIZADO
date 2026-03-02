@@ -356,6 +356,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <div
           ref={scrollContainerRef}
           className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {/* Inner div sized to the TOTAL virtual height — creates the scrollbar track */}
           <div
@@ -462,7 +463,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
+              <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {selectedTickets.sort((a, b) => a - b).map(num => (
                   <div
                     key={num}
