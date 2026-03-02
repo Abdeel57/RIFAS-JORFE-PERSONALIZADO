@@ -130,6 +130,7 @@ model SystemSettings {
   contactEmail             String   @default("contacto@rifasnao.com")
   instagram                String   @default("@rifasnao_oficial")
   autoVerificationEnabled  Boolean  @default(true)
+  siteName                 String   @default("RIFAS NAO")
   logoUrl                  String?  @db.Text
   primaryColor             String   @default("#3b82f6")
   secondaryColor           String   @default("#6366f1")

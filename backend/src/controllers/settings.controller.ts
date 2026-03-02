@@ -13,6 +13,7 @@ const updateSettingsSchema = z.object({
     contactEmail: z.string().email().optional(),
     instagram: z.string().optional(),
     autoVerificationEnabled: z.boolean().optional(),
+    siteName: z.string().min(1).max(40).optional(),
     logoUrl: z.string().optional().nullable(),
     primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),

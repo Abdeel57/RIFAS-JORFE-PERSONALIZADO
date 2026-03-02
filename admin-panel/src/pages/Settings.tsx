@@ -178,6 +178,7 @@ const Settings: React.FC = () => {
     const logoInputRef = useRef<HTMLInputElement>(null);
 
     const [settings, setSettings] = useState({
+        siteName: 'RIFAS NAO',
         bankName: '',
         clabe: '',
         beneficiary: '',
@@ -208,6 +209,7 @@ const Settings: React.FC = () => {
                     const secondary = data.secondaryColor || '#6366f1';
                     const savedLogo = data.logoUrl || '';
                     setSettings({
+                        siteName: data.siteName || 'RIFAS NAO',
                         bankName: data.bankName || '',
                         clabe: data.clabe || '',
                         beneficiary: data.beneficiary || '',
@@ -339,7 +341,52 @@ const Settings: React.FC = () => {
                             <p className="text-[10px] text-slate-400 font-medium">Aparece en la parte superior izquierda de tu página</p>
                         </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 space-y-6">
+                        {/* Nombre de la página */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                Nombre de la Página
+                            </label>
+                            <p className="text-[10px] text-slate-400 ml-1">
+                                Se muestra en el encabezado y pie de página. Máximo 40 caracteres.
+                            </p>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    className="admin-input font-black tracking-tighter uppercase pr-16"
+                                    value={settings.siteName}
+                                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value.slice(0, 40) })}
+                                    placeholder="RIFAS NAO"
+                                    maxLength={40}
+                                />
+                                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold tabular-nums ${settings.siteName.length > 32 ? 'text-amber-500' : 'text-slate-300'}`}>
+                                    {settings.siteName.length}/40
+                                </span>
+                            </div>
+                            {/* Mini preview del nombre en header */}
+                            <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 w-fit">
+                                <div className="w-5 h-5 rounded-lg flex-shrink-0 overflow-hidden"
+                                    style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}>
+                                    {settings.logoUrl
+                                        ? <img src={settings.logoUrl} alt="" className="w-full h-full object-contain" />
+                                        : <span className="w-full h-full flex items-center justify-center text-white font-black text-[8px] italic">N</span>}
+                                </div>
+                                <span
+                                    className="font-black tracking-tighter text-slate-800 leading-none"
+                                    style={{
+                                        fontSize: settings.siteName.length <= 10 ? '14px'
+                                            : settings.siteName.length <= 16 ? '12px'
+                                            : settings.siteName.length <= 22 ? '10px'
+                                            : '9px',
+                                    }}
+                                >
+                                    {settings.siteName || 'RIFAS NAO'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-50 pt-2"></div>
+
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                             {/* Preview actual */}
                             <div className="flex-shrink-0">

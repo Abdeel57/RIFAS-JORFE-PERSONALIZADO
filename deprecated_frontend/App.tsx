@@ -13,16 +13,36 @@ import { apiService } from './services/apiService.ts';
 import { Raffle } from './types.ts';
 
 interface BrandSettings {
+  siteName: string;
   logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
 }
 
 const DEFAULT_BRAND: BrandSettings = {
+  siteName: 'RIFAS NAO',
   logoUrl: '',
   primaryColor: '#3b82f6',
   secondaryColor: '#6366f1',
 };
+
+// Tamaño de fuente adaptativo para el header según longitud del nombre
+function headerNameSize(name: string): string {
+  const n = name.length;
+  if (n <= 10) return 'text-sm md:text-lg';
+  if (n <= 16) return 'text-xs md:text-sm';
+  if (n <= 22) return 'text-[10px] md:text-xs';
+  return 'text-[9px] md:text-[10px]';
+}
+
+// Tamaño adaptativo para el footer
+function footerNameSize(name: string): string {
+  const n = name.length;
+  if (n <= 10) return 'text-xl';
+  if (n <= 16) return 'text-lg';
+  if (n <= 22) return 'text-base';
+  return 'text-sm';
+}
 
 function applyBrandCssVars(brand: BrandSettings) {
   const root = document.documentElement;
@@ -54,6 +74,7 @@ const App: React.FC = () => {
       .then((data: any) => {
         if (data) {
           const b: BrandSettings = {
+            siteName: data.siteName || DEFAULT_BRAND.siteName,
             logoUrl: data.logoUrl || '',
             primaryColor: data.primaryColor || DEFAULT_BRAND.primaryColor,
             secondaryColor: data.secondaryColor || DEFAULT_BRAND.secondaryColor,
@@ -143,7 +164,9 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-sm md:text-lg tracking-tighter text-slate-800 leading-none">RIFAS NAO</span>
+              <span className={`font-black tracking-tighter text-slate-800 leading-none ${headerNameSize(brand.siteName)}`}>
+                {brand.siteName}
+              </span>
               <span className="font-bold uppercase tracking-[0.2em] leading-none mt-1 hidden md:block" style={{ fontSize: '8px', color: 'var(--brand-primary)' }}>Sorteos Certificados</span>
             </div>
           </div>
@@ -302,7 +325,9 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-lg italic">N</span>
                 )}
               </div>
-              <span className="font-black text-xl tracking-tighter text-slate-800">RIFAS NAO</span>
+              <span className={`font-black tracking-tighter text-slate-800 ${footerNameSize(brand.siteName)}`}>
+                {brand.siteName}
+              </span>
             </div>
             <p className="text-slate-400 text-[10px] font-medium uppercase tracking-widest">
               Seguridad y transparencia total en México.
