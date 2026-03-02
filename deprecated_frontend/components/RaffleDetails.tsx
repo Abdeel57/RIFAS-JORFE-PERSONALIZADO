@@ -47,14 +47,25 @@ interface FAQItemProps {
 
 const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   return (
     <div className="border-b border-slate-100 last:border-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className="w-full py-5 flex items-center justify-between text-left group active:bg-slate-50/50 transition-colors px-2 rounded-lg"
       >
-        <span className="text-sm md:text-base font-bold text-slate-700 group-hover:text-blue-600 transition-colors tracking-tight">{question}</span>
-        <span className={`transform transition-transform duration-300 text-blue-500 ${isOpen ? 'rotate-180' : ''}`}>
+        <span
+          className="text-sm md:text-base font-bold transition-colors tracking-tight"
+          style={{ color: isHovered ? 'var(--brand-primary)' : undefined }}
+        >
+          {question}
+        </span>
+        <span
+          className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--brand-primary)' }}
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
         </span>
       </button>
@@ -144,11 +155,17 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
       {/* Sección "Conoce cada Detalle": Imagen 2, Imagen 3 y opcionalmente Video (en el lugar de Imagen 2) */}
       <div className="max-w-5xl mx-auto px-4 space-y-12 md:space-y-20">
         <div className="space-y-6 md:space-y-10 text-center md:text-left">
-          <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+          <div
+            className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]"
+            style={{
+              color: 'var(--brand-primary)',
+              backgroundColor: 'rgba(var(--brand-primary-rgb, 59, 130, 246), 0.08)',
+            }}
+          >
             Descripción del Premio
           </div>
           <h3 className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
-            Conoce cada <span className="text-blue-600 italic">Detalle</span>
+            Conoce cada <span className="italic" style={{ color: 'var(--brand-primary)' }}>Detalle</span>
           </h3>
           <p className="text-slate-500 text-sm md:text-xl leading-relaxed max-w-4xl font-medium">
             {raffle.description}
@@ -211,7 +228,10 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
               <div className="relative">
-                <div className="w-14 h-14 md:w-20 md:h-20 bg-blue-600 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-blue-100 transform hover:rotate-6 transition-transform">
+                <div
+                  className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-slate-100 transform hover:rotate-6 transition-transform"
+                  style={{ backgroundColor: 'var(--brand-primary)' }}
+                >
                   <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-500 border-2 md:border-4 border-white rounded-full"></div>
@@ -230,7 +250,8 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
             <a
               href="https://facebook.com"
               target="_blank"
-              className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
+              className="w-full md:w-auto text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-100 active:scale-95 hover:opacity-90"
+              style={{ backgroundColor: 'var(--brand-primary)' }}
             >
               Seguir en Facebook
             </a>
@@ -260,14 +281,21 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
 
             <div className="space-y-4 md:space-y-8 text-center md:text-left">
               <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
-                Transparencia <span className="text-blue-600 italic">Total</span>
+                Transparencia <span className="italic" style={{ color: 'var(--brand-primary)' }}>Total</span>
               </h5>
               <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
                 Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
               </p>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
                 <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
-                <span className="bg-blue-50 text-blue-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-blue-100 uppercase tracking-widest">#EnVivo</span>
+                <span
+                  className="text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border uppercase tracking-widest"
+                  style={{
+                    color: 'var(--brand-primary)',
+                    backgroundColor: 'rgba(var(--brand-primary-rgb, 59, 130, 246), 0.08)',
+                    borderColor: 'rgba(var(--brand-primary-rgb, 59, 130, 246), 0.2)',
+                  }}
+                >#EnVivo</span>
               </div>
             </div>
           </div>
@@ -291,7 +319,8 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
           <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
             <button
               onClick={onOpenSupport}
-              className="group flex items-center gap-3 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] hover:text-blue-700 transition-all py-3 px-6 rounded-2xl active:bg-blue-50"
+              className="group flex items-center gap-3 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] transition-all py-3 px-6 rounded-2xl active:bg-slate-50 hover:opacity-80"
+              style={{ color: 'var(--brand-primary)' }}
             >
               Hablar con Nao Assist
               <span className="transform group-hover:translate-x-2 transition-transform">→</span>
