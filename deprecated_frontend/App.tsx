@@ -249,22 +249,20 @@ const App: React.FC = () => {
                         className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
                         loading="eager"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
-                    </div>
-
-                    {/* Price pill — floats between image and ticket selector */}
-                    <div className="flex justify-center -mt-5 relative z-10">
-                      <div className="bg-white shadow-lg border border-slate-100 rounded-full pl-4 pr-5 py-2.5 flex items-center gap-2.5 animate-in slide-in-from-bottom-2 duration-500">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Boleto</span>
-                        <span className="w-px h-3 bg-slate-200 inline-block" />
-                        <span className="text-xl font-black tracking-tighter leading-none" style={{ color: 'var(--brand-primary)' }}>
-                          ${featuredRaffle.ticketPrice}
-                        </span>
-                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest leading-none">c/u</span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                      {/* Price pill — small, inside image at bottom-center */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-in slide-in-from-bottom-2 duration-500 delay-300">
+                        <div className="bg-white/90 backdrop-blur-sm shadow-md rounded-full px-3 py-1.5 flex items-center gap-2">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none">Boleto</span>
+                          <span className="w-px h-2.5 bg-slate-200 inline-block" />
+                          <span className="text-sm font-black tracking-tighter leading-none" style={{ color: 'var(--brand-primary)' }}>
+                            ${featuredRaffle.ticketPrice}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="relative pt-3">
+                    <div className="relative pt-4">
                       <TicketSelector
                         raffleId={featuredRaffle.id}
                         totalTickets={featuredRaffle.totalTickets}

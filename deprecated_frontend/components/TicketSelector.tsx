@@ -8,6 +8,26 @@ import { apiService } from '../services/apiService.ts';
 const GAP = 8;       // gap-2 = 8px between items/rows
 const OVERSCAN = 5;  // extra rows rendered above/below viewport (buffer)
 
+// ─── Decorative background ticket SVG ─────────────────────────────────────────
+// Ticket shape: rectangle with rounded corners + semicircle notches on each side
+const TICKET_SVG_PATH = 'M 8,0 h 44 a 8,8 0 0,1 8,8 v 3 a 5,5 0 0,0 0,10 v 3 a 8,8 0 0,1 -8,8 h -44 a 8,8 0 0,1 -8,-8 v -3 a 5,5 0 0,0 0,-10 v -3 a 8,8 0 0,1 8,-8 z';
+
+const TICKET_DECORS: Array<{
+  style: React.CSSProperties;
+  width: number;
+  rotate: number;
+  opacity: number;
+}> = [
+  { style: { top: '-8%',  left: '-5%'  }, width: 96,  rotate: -28, opacity: 0.09 },
+  { style: { top: '4%',   right: '-4%' }, width: 72,  rotate:  22, opacity: 0.07 },
+  { style: { top: '42%',  left: '-7%'  }, width: 64,  rotate: -12, opacity: 0.06 },
+  { style: { top: '60%',  right: '-3%' }, width: 80,  rotate:  40, opacity: 0.08 },
+  { style: { bottom: '-6%', left: '6%' }, width: 84,  rotate:  18, opacity: 0.07 },
+  { style: { bottom: '4%', right: '5%' }, width: 68,  rotate: -38, opacity: 0.06 },
+  { style: { top: '27%',  left: '36%'  }, width: 56,  rotate:   8, opacity: 0.04 },
+  { style: { top: '74%',  left: '22%'  }, width: 74,  rotate: -22, opacity: 0.05 },
+];
+
 /**
  * Determines optimal column count, font size and aspect ratio based on:
  * - containerWidth: measured inner width of the scroll container (px)
@@ -279,6 +299,27 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   return (
     <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-5 md:p-8 space-y-6 relative transition-all duration-300">
 
+      {/* Decorative red ticket shapes — background only, clipped to card */}
+      <div className="absolute inset-0 overflow-hidden rounded-[2rem] pointer-events-none select-none" aria-hidden>
+        {TICKET_DECORS.map((d, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              ...d.style,
+              width: d.width,
+              opacity: d.opacity,
+              transform: `rotate(${d.rotate}deg)`,
+              color: 'rgb(239,68,68)',
+            }}
+          >
+            <svg viewBox="0 0 68 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d={TICKET_SVG_PATH} />
+            </svg>
+          </div>
+        ))}
+      </div>
+
       {isAnimating && (
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300 rounded-[2rem]">
           <div className="text-5xl animate-bounce mb-4">🎰</div>
@@ -288,11 +329,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-black text-slate-800 tracking-tight">Elige tus Boletos</h2>
-          <p className="text-slate-400 text-xs font-medium">Pulsa los números para elegir</p>
-        </div>
+      <div className="text-center">
+        <h2 className="text-xl font-black text-slate-800 tracking-tight">Elige tus Boletos</h2>
+        <p className="text-slate-400 text-xs font-medium mt-0.5">Pulsa los números para elegir</p>
       </div>
 
       {/* Search + Lucky machine */}
