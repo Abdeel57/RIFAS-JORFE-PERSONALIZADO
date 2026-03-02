@@ -12,6 +12,26 @@ import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
 import { Raffle } from './types.ts';
 
+// ─── Ticket background decoration (shown only behind the TicketSelector) ──────
+const TICKET_PATH = 'M 8,0 h 44 a 8,8 0 0,1 8,8 v 3 a 5,5 0 0,0 0,10 v 3 a 8,8 0 0,1 -8,8 h -44 a 8,8 0 0,1 -8,-8 v -3 a 5,5 0 0,0 0,-10 v -3 a 8,8 0 0,1 8,-8 z';
+
+const TICKET_BG: Array<{ style: React.CSSProperties; width: number; rotate: number; opacity: number }> = [
+  // left edge — peek from outside the card
+  { style: { top: '10%',    left: '-1%'  }, width: 90,  rotate: -22, opacity: 0.13 },
+  { style: { top: '48%',    left: '-2%'  }, width: 74,  rotate:  12, opacity: 0.11 },
+  { style: { bottom: '10%', left: '0%'   }, width: 82,  rotate: -38, opacity: 0.12 },
+  // right edge
+  { style: { top: '6%',     right: '-1%' }, width: 78,  rotate:  28, opacity: 0.12 },
+  { style: { top: '54%',    right: '-2%' }, width: 88,  rotate: -14, opacity: 0.13 },
+  { style: { bottom: '8%',  right: '0%'  }, width: 70,  rotate:  42, opacity: 0.10 },
+  // top strip
+  { style: { top: '0%',     left: '18%'  }, width: 68,  rotate: -10, opacity: 0.09 },
+  { style: { top: '1%',     right: '16%' }, width: 76,  rotate:  16, opacity: 0.08 },
+  // bottom strip
+  { style: { bottom: '0%',  left: '12%'  }, width: 80,  rotate:  22, opacity: 0.09 },
+  { style: { bottom: '1%',  right: '10%' }, width: 64,  rotate: -28, opacity: 0.08 },
+];
+
 interface BrandSettings {
   siteName: string;
   logoUrl: string;
@@ -262,7 +282,29 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="relative pt-4">
+                    {/* Wrapper with decorative ticket background in the page — NOT inside the card */}
+                    <div className="relative -mx-4 px-4 pt-10 pb-8 overflow-hidden">
+                      {/* Background tickets — behind the white card, clipped to this section */}
+                      <div className="absolute inset-0 pointer-events-none select-none" aria-hidden>
+                        {TICKET_BG.map((d, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              position: 'absolute',
+                              ...d.style,
+                              width: d.width,
+                              opacity: d.opacity,
+                              transform: `rotate(${d.rotate}deg)`,
+                              color: 'rgb(239,68,68)',
+                            }}
+                          >
+                            <svg viewBox="0 0 68 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                              <path d={TICKET_PATH} />
+                            </svg>
+                          </div>
+                        ))}
+                      </div>
+                      {/* TicketSelector card sits on top of the decorations */}
                       <TicketSelector
                         raffleId={featuredRaffle.id}
                         totalTickets={featuredRaffle.totalTickets}
