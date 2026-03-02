@@ -1,16 +1,14 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Ticket } from '../types';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const BATCH_SIZE = 500;          // tickets added per scroll event
-const PRELOAD_MARGIN = '400px';  // IntersectionObserver rootMargin — loads before user hits bottom
-const MAX_VELOCITY_BATCHES = 8;  // cap extra batches on fast scroll (8 × 500 = 4000 extra)
-const VELOCITY_SCALE = 800;      // px/s per extra batch (800 → 1 extra batch, 1600 → 2, etc.)
+const GAP = 8;       // gap-2 = 8px between items/rows
+const OVERSCAN = 5;  // extra rows rendered above/below viewport (buffer)
 
-// ─── TicketItem (memoized) ────────────────────────────────────────────────────
+// ─── TicketItem (memoized — never re-renders unless its own props change) ─────
 const TicketItem = React.memo(({
   number,
   status,
@@ -27,23 +25,29 @@ const TicketItem = React.memo(({
   onClick: (num: number, status: string) => void;
 }) => {
   const isUnavailable = status === 'sold' || status === 'reserved';
-
   return (
     <button
       id={`ticket-${number}`}
       onClick={() => onClick(number, status)}
       disabled={isUnavailable}
+      style={{ width: '100%', aspectRatio: '1 / 1' }}
       className={`
-        aspect-square flex items-center justify-center text-[10px] font-black rounded-lg transition-all duration-200 relative will-change-transform
-        ${status === 'sold' ? 'bg-slate-50 text-slate-200 cursor-not-allowed' :
-          status === 'reserved' ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed' :
-          isLucky ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce' :
-          isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10' :
-          isHighlighted ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105' :
-          'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
+        flex items-center justify-center text-[10px] font-black rounded-lg
+        transition-colors duration-150 relative
+        ${status === 'sold'
+          ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
+          : status === 'reserved'
+          ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed'
+          : isLucky
+          ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce'
+          : isSelected
+          ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10'
+          : isHighlighted
+          ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105'
+          : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
       `}
     >
-      {number.toString().padStart(String(number).length <= 3 ? 3 : String(number).length, '0')}
+      {number.toString().padStart(number <= 999 ? 3 : number <= 9999 ? 4 : 5, '0')}
     </button>
   );
 });
@@ -71,75 +75,89 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState(false);
   const [lastLuckyNumbers, setLastLuckyNumbers] = useState<number[]>([]);
-  const [initialTickets, setInitialTickets] = useState<Array<{ number: number; status: string }>>([]);
+  const [allTickets, setAllTickets] = useState<Array<{ number: number; status: string }>>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
 
-  // ── Progressive rendering state ──────────────────────────────────────────
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const scrollVelocityRef = useRef({ lastY: 0, lastTime: 0 });
+  // ── Layout measurement (for dynamic row height) ───────────────────────────
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [columnsCount, setColumnsCount] = useState(10);
+  const [rowHeight, setRowHeight] = useState(52);
 
-  // ── Load tickets from API ─────────────────────────────────────────────────
   useEffect(() => {
-    const loadTickets = async () => {
-      setIsLoadingTickets(true);
-      setVisibleCount(BATCH_SIZE); // reset visible window on refresh
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const recalculate = (width: number) => {
+      const cols = width < 400 ? 5 : width < 560 ? 8 : 10;
+      // item width fills the row evenly with gaps
+      const itemW = (width - (cols - 1) * GAP) / cols;
+      setColumnsCount(cols);
+      setRowHeight(Math.ceil(itemW) + GAP); // item height (= width) + bottom gap
+    };
+
+    const observer = new ResizeObserver(([entry]) => {
+      recalculate(entry.contentRect.width);
+    });
+
+    observer.observe(container);
+    recalculate(container.clientWidth || 300);
+    return () => observer.disconnect();
+  }, []);
+
+  // ── Load tickets ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!raffleId) return;
+    setIsLoadingTickets(true);
+    const load = async () => {
       try {
         const tickets = await apiService.getRaffleTickets(raffleId);
-        const ticketsMap = new Map(tickets.map((t: any) => [t.number, t.status]));
-        const allTickets = Array.from({ length: totalTickets }, (_, i) => ({
-          number: i + 1,
-          status: ticketsMap.get(i + 1) || 'available',
-        }));
-        setInitialTickets(allTickets);
+        const statusMap = new Map(tickets.map((t: any) => [t.number, t.status]));
+        setAllTickets(
+          Array.from({ length: totalTickets }, (_, i) => ({
+            number: i + 1,
+            status: statusMap.get(i + 1) ?? 'available',
+          }))
+        );
       } catch {
-        setInitialTickets(Array.from({ length: totalTickets }, (_, i) => ({
-          number: i + 1,
-          status: 'available',
-        })));
+        setAllTickets(
+          Array.from({ length: totalTickets }, (_, i) => ({
+            number: i + 1,
+            status: 'available',
+          }))
+        );
       } finally {
         setIsLoadingTickets(false);
       }
     };
-    if (raffleId) loadTickets();
+    load();
   }, [raffleId, totalTickets, refreshTrigger]);
 
-  // ── Track scroll velocity ─────────────────────────────────────────────────
+  // ── Group tickets into rows for virtualizer ───────────────────────────────
+  const rows = useMemo(() => {
+    const result: Array<Array<{ number: number; status: string }>> = [];
+    for (let i = 0; i < allTickets.length; i += columnsCount) {
+      result.push(allTickets.slice(i, i + columnsCount));
+    }
+    return result;
+  }, [allTickets, columnsCount]);
+
+  // ── Virtualizer setup ─────────────────────────────────────────────────────
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => rowHeight,
+    overscan: OVERSCAN,
+  });
+
+  // Update size estimates when rowHeight changes (e.g. on window resize)
   useEffect(() => {
-    const onScroll = () => {
-      scrollVelocityRef.current = { lastY: window.scrollY, lastTime: performance.now() };
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    virtualizer.measure();
+  }, [rowHeight]);
 
-  // ── IntersectionObserver: load next batch when sentinel enters viewport ───
-  useEffect(() => {
-    if (!sentinelRef.current || visibleCount >= initialTickets.length) return;
+  // ── O(1) selection lookup ─────────────────────────────────────────────────
+  const selectedSet = useMemo(() => new Set(selectedTickets), [selectedTickets]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0].isIntersecting) return;
-
-        const now = performance.now();
-        const { lastY, lastTime } = scrollVelocityRef.current;
-        const elapsed = now - lastTime;
-        const velocity = elapsed > 0 ? Math.abs(window.scrollY - lastY) / elapsed * 1000 : 0;
-
-        // Extra batches proportional to scroll speed (capped)
-        const extraBatches = Math.min(Math.floor(velocity / VELOCITY_SCALE), MAX_VELOCITY_BATCHES);
-        const loadAmount = BATCH_SIZE * (1 + extraBatches);
-
-        setVisibleCount(prev => Math.min(prev + loadAmount, initialTickets.length));
-      },
-      { threshold: 0, rootMargin: PRELOAD_MARGIN }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [visibleCount, initialTickets.length]);
-
-  // ── Ticket selection ──────────────────────────────────────────────────────
+  // ── Toggle ticket selection ───────────────────────────────────────────────
   const toggleTicket = useCallback((num: number, status: string) => {
     if (status !== 'available' || isAnimating) return;
     setSelectedTickets(prev => {
@@ -152,9 +170,6 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     });
   }, [isAnimating]);
 
-  // O(1) lookup set — avoids O(n) .includes() per rendered ticket
-  const selectedSet = useMemo(() => new Set(selectedTickets), [selectedTickets]);
-
   // ── Lucky machine ─────────────────────────────────────────────────────────
   const runLuckyMachine = (count: number) => {
     setIsMachineOpen(false);
@@ -163,11 +178,14 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     soundService.playMachineRoll();
 
     setTimeout(() => {
-      const available = initialTickets.filter(
+      const available = allTickets.filter(
         t => t.status === 'available' && !selectedSet.has(t.number)
       );
-      const shuffled = [...available].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, count).map(t => t.number);
+      const selected = [...available]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, count)
+        .map(t => t.number);
+
       setLastLuckyNumbers(selected);
       setSelectedTickets(prev => [...prev, ...selected]);
       setIsAnimating(false);
@@ -176,36 +194,23 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     }, 1200);
   };
 
-  // ── Search highlight ──────────────────────────────────────────────────────
+  // ── Search ────────────────────────────────────────────────────────────────
   const highlightedTicket = useMemo(() => {
     const num = parseInt(searchTerm);
-    if (isNaN(num) || num < 1 || num > totalTickets) return null;
-    return num;
+    return !isNaN(num) && num >= 1 && num <= totalTickets ? num : null;
   }, [searchTerm, totalTickets]);
 
-  // Auto-expand visible range when searching for a ticket beyond current window
+  // Scroll virtualizer to the searched ticket's row instantly
   useEffect(() => {
-    if (!highlightedTicket) return;
-    if (highlightedTicket > visibleCount) {
-      setVisibleCount(Math.min(highlightedTicket + BATCH_SIZE, initialTickets.length));
-    }
-    // Scroll to ticket after a brief tick so the DOM has rendered it
-    setTimeout(() => {
-      const el = document.getElementById(`ticket-${highlightedTicket}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 60);
-  }, [highlightedTicket]);
+    if (!highlightedTicket || !rows.length) return;
+    const rowIndex = Math.floor((highlightedTicket - 1) / columnsCount);
+    virtualizer.scrollToIndex(rowIndex, { align: 'center', behavior: 'smooth' });
+  }, [highlightedTicket, columnsCount, rows.length]);
 
   useEffect(() => {
     if (selectedTickets.length === 0) setIsTrayExpanded(false);
   }, [selectedTickets]);
 
-  // ── Derived data ──────────────────────────────────────────────────────────
-  const visibleTickets = useMemo(
-    () => initialTickets.slice(0, visibleCount),
-    [initialTickets, visibleCount]
-  );
-  const hasMore = visibleCount < initialTickets.length;
   const totalPrice = selectedTickets.length * pricePerTicket;
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -215,7 +220,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       {isAnimating && (
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300 rounded-[2rem]">
           <div className="text-5xl animate-bounce mb-4">🎰</div>
-          <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">BUSCANDO TU SUERTE...</h3>
+          <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">
+            BUSCANDO TU SUERTE...
+          </h3>
         </div>
       )}
 
@@ -226,106 +233,122 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         </div>
       </div>
 
-      {/* Search + Lucky */}
-      <div className="flex flex-col gap-3">
-        <div className="flex gap-2">
-          <div className="relative flex-grow">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-300">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </span>
-            <input
-              type="number"
-              placeholder="Ej. 777"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-base font-bold text-slate-600"
-            />
-          </div>
+      {/* Search + Lucky machine */}
+      <div className="flex gap-2">
+        <div className="relative flex-grow">
+          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-300">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="number"
+            placeholder="Ej. 777"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-base font-bold text-slate-600"
+          />
+        </div>
 
-          <div className="relative">
-            <button
-              onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
-              className={`h-full px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group
-                ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
-            >
-              {!isMachineOpen && (
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-[length:200%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity"></div>
-              )}
-              <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
-                🎰 <span className="hidden sm:inline">Suerte</span>
-              </span>
-            </button>
-
-            {isMachineOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
-                {[1, 5, 10, 20].map(qty => (
-                  <button
-                    key={qty}
-                    onClick={() => runLuckyMachine(qty)}
-                    className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all"
-                  >
-                    +{qty}
-                  </button>
-                ))}
-              </div>
+        <div className="relative">
+          <button
+            onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
+            className={`h-full px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group
+              ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
+          >
+            {!isMachineOpen && (
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-[length:200%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" />
             )}
-          </div>
+            <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
+              🎰 <span className="hidden sm:inline">Suerte</span>
+            </span>
+          </button>
+
+          {isMachineOpen && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
+              {[1, 5, 10, 20].map(qty => (
+                <button
+                  key={qty}
+                  onClick={() => runLuckyMachine(qty)}
+                  className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all"
+                >
+                  +{qty}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Ticket grid */}
+      {/* Virtual ticket grid */}
       {isLoadingTickets ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
           {totalTickets > 5000 && (
             <p className="text-slate-400 text-xs font-bold animate-pulse">
-              Cargando {totalTickets.toLocaleString()} boletos...
+              Preparando {totalTickets.toLocaleString()} boletos...
             </p>
           )}
         </div>
       ) : (
-        <div className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y">
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
-            {visibleTickets.map((ticket) => (
-              <TicketItem
-                key={ticket.number}
-                number={ticket.number}
-                status={ticket.status}
-                isSelected={selectedSet.has(ticket.number)}
-                isHighlighted={highlightedTicket === ticket.number}
-                isLucky={lastLuckyNumbers.includes(ticket.number)}
-                onClick={toggleTicket}
-              />
+        /* Scroll container — this is what the virtualizer watches */
+        <div
+          ref={scrollContainerRef}
+          className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y"
+        >
+          {/* Inner div sized to the TOTAL virtual height — creates the scrollbar track */}
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {/* Only the visible rows are rendered */}
+            {virtualizer.getVirtualItems().map(virtualRow => (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                  paddingBottom: `${GAP}px`,
+                }}
+              >
+                {/* Row: flex with equal-width items */}
+                <div style={{ display: 'flex', gap: `${GAP}px` }}>
+                  {rows[virtualRow.index]?.map(ticket => (
+                    <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
+                      <TicketItem
+                        number={ticket.number}
+                        status={ticket.status}
+                        isSelected={selectedSet.has(ticket.number)}
+                        isHighlighted={highlightedTicket === ticket.number}
+                        isLucky={lastLuckyNumbers.includes(ticket.number)}
+                        onClick={toggleTicket}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Sentinel: triggers next batch load when scrolled into view */}
-          {hasMore && (
-            <div ref={sentinelRef} className="w-full flex flex-col items-center gap-1.5 pt-4 pb-2">
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full animate-bounce" style={{ animationDelay: '120ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-slate-200 rounded-full animate-bounce" style={{ animationDelay: '240ms' }}></div>
-              </div>
-              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
-                {visibleCount.toLocaleString()} / {initialTickets.length.toLocaleString()} boletos
-              </span>
-            </div>
-          )}
         </div>
       )}
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 px-1 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-100 rounded-full"></div><span>Libre</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-600 rounded-full"></div><span>Mío</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-100 rounded-full"></div><span>Apartado</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-50 rounded-full opacity-50"></div><span>Vendido</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-100 rounded-full" /><span>Libre</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-600 rounded-full" /><span>Mío</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-100 rounded-full" /><span>Apartado</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-50 rounded-full opacity-50" /><span>Vendido</span></div>
       </div>
 
-      {/* Bottom tray */}
+      {/* Selected tickets tray */}
       {selectedTickets.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-[60] px-4 pb-4 animate-in slide-in-from-bottom-5 will-change-transform">
           <div
@@ -337,9 +360,13 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               className="px-4 py-2.5 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors"
             >
               <div className="flex flex-col pl-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total a pagar</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                  Total a pagar
+                </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-800 font-black text-xl tracking-tighter">${totalPrice.toLocaleString()}</span>
+                  <span className="text-slate-800 font-black text-xl tracking-tighter">
+                    ${totalPrice.toLocaleString()}
+                  </span>
                   <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-0.5 rounded-full">
                     {selectedTickets.length} boleto(s)
                   </span>
@@ -349,7 +376,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-green-100 animate-soft-glow"
-                  onClick={(e) => { e.stopPropagation(); onCheckout(selectedTickets); }}
+                  onClick={e => { e.stopPropagation(); onCheckout(selectedTickets); }}
                 >
                   Pagar
                 </button>
@@ -365,7 +392,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               <div className="flex items-center justify-between mb-4 border-t border-slate-50 pt-4">
                 <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Tus números</span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); soundService.playDeselect(); setSelectedTickets([]); }}
+                  onClick={e => { e.stopPropagation(); soundService.playDeselect(); setSelectedTickets([]); }}
                   className="text-red-400 text-[9px] font-black uppercase"
                 >
                   Vaciar
@@ -376,13 +403,17 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 {selectedTickets.sort((a, b) => a - b).map(num => (
                   <div
                     key={num}
-                    onClick={(e) => { e.stopPropagation(); toggleTicket(num, 'available'); }}
+                    onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }}
                     className="group bg-slate-50 border border-slate-100 rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:border-red-100 hover:bg-red-50 relative cursor-pointer active:scale-90"
                   >
-                    <span className="text-slate-700 font-black text-[11px]">#{num.toString().padStart(3, '0')}</span>
-                    <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
+                    <span className="text-slate-700 font-black text-[11px]">
+                      #{num.toString().padStart(3, '0')}
+                    </span>
+                    <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">
+                      Quitar
+                    </span>
                     <div className="absolute top-1 right-1 sm:hidden">
-                      <div className="w-1.5 h-1.5 bg-red-400 rounded-full"></div>
+                      <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                     </div>
                   </div>
                 ))}
@@ -405,9 +436,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         .animate-rainbow-bg { animation: rainbow-bg 3s linear infinite; }
 
         @keyframes soft-glow {
-          0%   { box-shadow: 0 0 0 0   rgba(22,163,74,0.4); }
+          0%   { box-shadow: 0 0 0 0    rgba(22,163,74,0.4); }
           70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0);   }
-          100% { box-shadow: 0 0 0 0   rgba(22,163,74,0);   }
+          100% { box-shadow: 0 0 0 0    rgba(22,163,74,0);   }
         }
         .animate-soft-glow { animation: soft-glow 2s infinite ease-in-out; }
 
