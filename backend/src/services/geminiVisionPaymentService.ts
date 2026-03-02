@@ -73,14 +73,19 @@ Busca ACTIVAMENTE señales de manipulación digital:
 
 TAREA 3 — VALIDACIÓN DE DATOS:
 1. ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? (tolerancia ±$5 pesos)
-2. ¿El nombre del ordenante contiene al menos 1 nombre Y 1 apellido del cliente "${opts.customerName}"?
-   (ignora acentos, mayúsculas/minúsculas, orden de nombres, abreviaciones)
+2. REGLA DE NOMBRE (obligatoria):
+   - Divide el nombre del ordenante del comprobante en palabras individuales.
+   - Divide el nombre del cliente registrado "${opts.customerName}" en palabras individuales.
+   - Ignora acentos, mayúsculas/minúsculas y palabras cortas (partículas: "de", "del", "la", "el", "los", "las", o cualquier palabra de 1-2 letras).
+   - nameMatch = true  → si AL MENOS 2 palabras coinciden entre ambos nombres (ej. "Juan" + "Pérez", o "García" + "López", o "María" + "García").
+   - nameMatch = false → si solo coincide 1 palabra, ninguna, o el nombre del ordenante NO es visible.
+   - IMPORTANTE: NO se requiere que el nombre esté completo. Nombre parcial con 2 coincidencias es suficiente.
 ${last4 ? `3. ¿La cuenta destino visible en el comprobante termina en "${last4}"? 
    Busca campos como CLABE, cuenta, número de cuenta, ****XXXX. Si no es visible → null.` : ''}
 
 CRITERIOS DE VEREDICTO:
-- "approve": autenticidad alta/media, monto coincide, nombre coincide, Y cuenta destino coincide (o no visible)
-- "review": comprobante parece auténtico pero algún dato no coincide o no es visible
+- "approve": autenticidad alta/media, monto coincide, al menos 2 palabras del nombre coinciden, Y cuenta destino coincide (o no visible)
+- "review": comprobante parece auténtico pero algún dato no coincide, solo 1 palabra del nombre coincide, o no es visible
 - "reject": signos CLAROS de edición/falsificación, O la cuenta destino claramente NO coincide con "${last4 || 'la cuenta registrada'}"
 
 RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):

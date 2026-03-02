@@ -3,6 +3,27 @@ import { analyzePaymentProof, PaymentAnalysisResult } from './geminiVisionPaymen
 import { sendPushToAdmins } from './pushNotificationService';
 
 const VERIFICATION_DELAY_MS = 3 * 1000; // 3 segundos (verificación casi instantánea)
+
+// ─── Helpers de fecha México ───────────────────────────────────────────────────
+
+/** Devuelve la fecha/hora actual en la zona horaria de México (UTC-6 CST). */
+function getMexicoNow(): Date {
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utcMs - 6 * 60 * 60 * 1000); // UTC-6 (hora estándar del centro de México)
+}
+
+/**
+ * Parsea una fecha en formato DD/MM/YYYY.
+ * Devuelve un Date con la medianoche de ese día (sin hora) o null si no parsea.
+ */
+function parseFechaMX(fecha: string | null): Date | null {
+    if (!fecha) return null;
+    const m = fecha.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    const [, dd, mm, yyyy] = m;
+    return new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+}
 const MAX_RETRIES = 3;        // reintentos si Gemini falla por error de red/timeout
 const RETRY_DELAY_MS = 30000; // 30 segundos entre reintentos
 
@@ -100,6 +121,45 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
         if (finalVerdict !== analysis.verdict) {
             console.log(`⚠️  Veredicto Gemini "${analysis.verdict}" sobreescrito a "${finalVerdict}" por regla de seguridad`);
         }
+
+        // ── Validación de fecha (zona horaria México, UTC-6) ────────────────────
+        // Acepta: hoy y ayer  →  cubre pagos tardíos o comprobantes subidos horas después
+        // Rechaza (→ review): fechas de 2+ días atrás o fechas futuras
+        const comprobanteFecha = parseFechaMX(analysis.fecha);
+        if (comprobanteFecha !== null) {
+            const mexicoHoy = getMexicoNow();
+            const hoyMidnight = new Date(mexicoHoy.getFullYear(), mexicoHoy.getMonth(), mexicoHoy.getDate());
+            const diffDias = Math.round(
+                (hoyMidnight.getTime() - comprobanteFecha.getTime()) / 86_400_000
+            );
+
+            if (diffDias < 0) {
+                // Fecha futura en el comprobante — sospechoso
+                finalVerdict = 'review';
+                analysis.verdictReason =
+                    `Fecha futura en el comprobante (${analysis.fecha}). ${analysis.verdictReason}`;
+                console.log(`⚠️  [FECHA] Futura detectada: ${analysis.fecha} → revisión manual`);
+            } else if (diffDias > 1) {
+                // Comprobante con más de 1 día de antigüedad — fuera del margen aceptado
+                finalVerdict = 'review';
+                analysis.verdictReason =
+                    `Comprobante con fecha antigua (${analysis.fecha}, hace ${diffDias} día(s)). `
+                    + `Solo se aceptan comprobantes de hoy o ayer. ${analysis.verdictReason}`;
+                console.log(`⚠️  [FECHA] Antigua detectada: ${analysis.fecha} (${diffDias} días atrás) → revisión manual`);
+            } else {
+                // diffDias === 0 (hoy) o diffDias === 1 (ayer) → válido, sin cambio
+                console.log(`✅ [FECHA] Comprobante del ${analysis.fecha} (${diffDias === 0 ? 'hoy' : 'ayer'}) — fecha válida`);
+            }
+        } else if (analysis.fecha === null) {
+            // Gemini no pudo leer la fecha → no auto-aprobar si el veredicto era approve
+            if (finalVerdict === 'approve') {
+                finalVerdict = 'review';
+                analysis.verdictReason =
+                    `Fecha no legible en el comprobante, se requiere revisión manual. ${analysis.verdictReason}`;
+                console.log(`⚠️  [FECHA] No legible → rebajando de approve a review`);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────────
 
         // Aplicar veredicto final
         if (finalVerdict === 'approve') {
