@@ -215,7 +215,7 @@ async function analyzeWithRetry(
     return {
         claveRastreo: null, monto: null, fecha: null,
         bancoEmisor: null, bancoDestino: null,
-        ordenante: null, beneficiario: null, cuentaDestino: null,
+        ordenante: null, concepto: null, beneficiario: null, cuentaDestino: null,
         authenticity: 'suspicious', manipulationSigns: [],
         amountMatch: null, nameMatch: null, accountMatch: null,
         confidence: 'low', verdict: 'review',
