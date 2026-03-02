@@ -9,35 +9,57 @@ const GAP = 8;       // gap-2 = 8px between items/rows
 const OVERSCAN = 5;  // extra rows rendered above/below viewport (buffer)
 
 /**
- * Determines optimal column count and font size based on:
+ * Determines optimal column count, font size and aspect ratio based on:
  * - containerWidth: measured inner width of the scroll container (px)
  * - maxTickets: total tickets → determines digit count
  *
- * Minimum readable button widths (font-black, including padding):
- *   3 digits → 34px   4 digits → 42px   5 digits → 62px
+ * 5-digit numbers get wide rectangular buttons (aspectRatio 2.5:1) with fewer
+ * columns so each number has generous horizontal space and is easy to read.
+ * ≤4-digit numbers keep the original square (1:1) layout.
  */
-function computeLayout(containerWidth: number, maxTickets: number): { cols: number; fontSize: string } {
+function computeLayout(
+  containerWidth: number,
+  maxTickets: number,
+): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
-  const minBtnSize = digits <= 3 ? 34 : digits === 4 ? 42 : 62;
 
-  // Preferred column counts for each breakpoint (tries widest first)
+  // ── 5-digit numbers: wide rectangular buttons ──────────────────────────────
+  if (digits >= 5) {
+    const preferred =
+      containerWidth < 380 ? [3, 2] :
+      containerWidth < 560 ? [4, 3] :
+      [6, 5, 4];
+
+    const minBtnWidth = 76; // min px for comfortable 5-digit number
+    let cols = preferred[preferred.length - 1];
+    for (const c of preferred) {
+      const btnW = (containerWidth - (c - 1) * GAP) / c;
+      if (btnW >= minBtnWidth) { cols = c; break; }
+    }
+
+    const btnW = (containerWidth - (cols - 1) * GAP) / cols;
+    const fontSize = btnW >= 96 ? '13px' : btnW >= 82 ? '12px' : '11px';
+
+    return { cols, fontSize, aspectRatio: 2.5 };
+  }
+
+  // ── ≤4-digit numbers: original square layout ───────────────────────────────
+  const minBtnSize = digits <= 3 ? 34 : 42;
   const preferred =
     containerWidth < 380 ? [5, 4, 3, 2] :
     containerWidth < 560 ? [8, 7, 6, 5, 4] :
     [10, 9, 8, 7];
 
-  // Pick the first count where buttons are ≥ minBtnSize
-  let cols = preferred[preferred.length - 1]; // safe fallback
+  let cols = preferred[preferred.length - 1];
   for (const c of preferred) {
     const btnW = (containerWidth - (c - 1) * GAP) / c;
     if (btnW >= minBtnSize) { cols = c; break; }
   }
 
-  // Font size scales with actual button width
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
   const fontSize = btnW >= 68 ? '11px' : btnW >= 50 ? '10px' : '9px';
 
-  return { cols, fontSize };
+  return { cols, fontSize, aspectRatio: 1 };
 }
 
 // ─── TicketItem (memoized — never re-renders unless its own props change) ─────
@@ -48,6 +70,7 @@ const TicketItem = React.memo(({
   isHighlighted,
   isLucky,
   fontSize,
+  aspectRatio,
   onClick,
 }: {
   number: number;
@@ -56,19 +79,22 @@ const TicketItem = React.memo(({
   isHighlighted: boolean;
   isLucky: boolean;
   fontSize: string;
+  aspectRatio: number;
   onClick: (num: number, status: string) => void;
 }) => {
   const isUnavailable = status === 'sold' || status === 'reserved';
   const digits = number <= 999 ? 3 : number <= 9999 ? 4 : 5;
+  const padded = number.toString().padStart(digits, '0');
+
   return (
     <button
       id={`ticket-${number}`}
       onClick={() => onClick(number, status)}
       disabled={isUnavailable}
-      style={{ width: '100%', aspectRatio: '1 / 1', fontSize }}
+      style={{ width: '100%', aspectRatio: `${aspectRatio} / 1`, fontSize }}
       className={`
         flex items-center justify-center font-black rounded-lg
-        transition-colors duration-150 relative leading-none
+        transition-colors duration-150 relative leading-none tracking-tight
         ${status === 'sold'
           ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
           : status === 'reserved'
@@ -82,7 +108,7 @@ const TicketItem = React.memo(({
           : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
       `}
     >
-      {number.toString().padStart(digits, '0')}
+      {padded}
     </button>
   );
 });
@@ -113,22 +139,25 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [allTickets, setAllTickets] = useState<Array<{ number: number; status: string }>>([]);
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
 
-  // ── Layout measurement (columns + font size adapt to width AND digit count) ─
+  // ── Layout measurement (columns + font size + aspect ratio adapt to width) ─
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [columnsCount, setColumnsCount] = useState(10);
   const [rowHeight, setRowHeight] = useState(52);
   const [ticketFontSize, setTicketFontSize] = useState('10px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(1);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const recalculate = (width: number) => {
-      const { cols, fontSize } = computeLayout(width, totalTickets);
+      const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets);
       const itemW = (width - (cols - 1) * GAP) / cols;
+      const itemH = itemW / aspectRatio; // height derived from aspect ratio
       setColumnsCount(cols);
-      setRowHeight(Math.ceil(itemW) + GAP); // item height (= width, aspect-square) + bottom gap
+      setRowHeight(Math.ceil(itemH) + GAP);
       setTicketFontSize(fontSize);
+      setTicketAspectRatio(aspectRatio);
     };
 
     const observer = new ResizeObserver(([entry]) => recalculate(entry.contentRect.width));
@@ -363,6 +392,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                         isHighlighted={highlightedTicket === ticket.number}
                         isLucky={lastLuckyNumbers.includes(ticket.number)}
                         fontSize={ticketFontSize}
+                        aspectRatio={ticketAspectRatio}
                         onClick={toggleTicket}
                       />
                     </div>
