@@ -12,6 +12,24 @@ import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
 import { Raffle } from './types.ts';
 
+interface BrandSettings {
+  logoUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+}
+
+const DEFAULT_BRAND: BrandSettings = {
+  logoUrl: '',
+  primaryColor: '#3b82f6',
+  secondaryColor: '#6366f1',
+};
+
+function applyBrandCssVars(brand: BrandSettings) {
+  const root = document.documentElement;
+  root.style.setProperty('--brand-primary', brand.primaryColor);
+  root.style.setProperty('--brand-secondary', brand.secondaryColor);
+}
+
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms'>('raffle');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -21,6 +39,25 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
+  const [brand, setBrand] = useState<BrandSettings>(DEFAULT_BRAND);
+
+  // Load brand settings (logo + colors) from the backend
+  useEffect(() => {
+    applyBrandCssVars(DEFAULT_BRAND);
+    apiService.getSettings()
+      .then((data: any) => {
+        if (data) {
+          const b: BrandSettings = {
+            logoUrl: data.logoUrl || '',
+            primaryColor: data.primaryColor || DEFAULT_BRAND.primaryColor,
+            secondaryColor: data.secondaryColor || DEFAULT_BRAND.secondaryColor,
+          };
+          setBrand(b);
+          applyBrandCssVars(b);
+        }
+      })
+      .catch(() => {/* fallback to defaults silently */});
+  }, []);
 
   useEffect(() => {
     const loadRaffle = async () => {
@@ -79,27 +116,40 @@ const App: React.FC = () => {
 
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
             <div className="relative">
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300">
-                <span className="text-white font-black text-xl italic tracking-tighter">N</span>
-              </div>
+              {brand.logoUrl ? (
+                <img
+                  src={brand.logoUrl}
+                  alt="Logo"
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-2xl object-contain shadow-lg transform group-hover:rotate-6 transition-transform duration-300 bg-white"
+                />
+              ) : (
+                <div
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300"
+                  style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
+                >
+                  <span className="text-white font-black text-xl italic tracking-tighter">N</span>
+                </div>
+              )}
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse shadow-sm"></div>
             </div>
             <div className="flex flex-col">
               <span className="font-black text-sm md:text-lg tracking-tighter text-slate-800 leading-none">RIFAS NAO</span>
-              <span className="text-[8px] font-bold text-blue-500 uppercase tracking-[0.2em] leading-none mt-1 hidden md:block">Sorteos Certificados</span>
+              <span className="font-bold uppercase tracking-[0.2em] leading-none mt-1 hidden md:block" style={{ fontSize: '8px', color: 'var(--brand-primary)' }}>Sorteos Certificados</span>
             </div>
           </div>
 
           <div className="relative flex bg-white/40 p-1 rounded-2xl border border-white/80 z-10 shadow-inner">
             <button
               onClick={() => handleViewChange('raffle')}
-              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'raffle' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'raffle' ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              style={activeView === 'raffle' ? { color: 'var(--brand-primary)' } : {}}
             >
               Sorteo
             </button>
             <button
               onClick={() => handleViewChange('verify')}
-              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'verify' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              style={activeView === 'verify' ? { color: 'var(--brand-primary)' } : {}}
             >
               Verificar
             </button>
@@ -110,7 +160,8 @@ const App: React.FC = () => {
             <button
               onClick={toggleMute}
               className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90
-                ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white text-blue-600 shadow-sm'}`}
+                ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white shadow-sm'}`}
+              style={!isMuted ? { color: 'var(--brand-primary)' } : {}}
               title={isMuted ? "Activar Sonido" : "Silenciar Sonido"}
             >
               {isMuted ? (
@@ -147,7 +198,7 @@ const App: React.FC = () => {
                 {featuredRaffle ? (
                   <>
                     <div className="text-center max-w-4xl mx-auto space-y-3 mb-8">
-                      <div className="inline-block px-4 py-1.5 bg-white shadow-sm border border-slate-100 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                      <div className="inline-block px-4 py-1.5 bg-white shadow-sm border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--brand-primary)' }}>
                         Edición Especial
                       </div>
                       <h1 className="text-4xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
@@ -169,7 +220,7 @@ const App: React.FC = () => {
                       <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
                         <div className="bg-white/95 backdrop-blur-md p-6 rounded-[2.5rem] shadow-2xl border border-white text-center min-w-[160px] animate-in slide-in-from-top-4 duration-500 delay-200">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-3">Costo Boleto</p>
-                          <p className="text-4xl font-black text-blue-600 tracking-tighter">${featuredRaffle.ticketPrice}</p>
+                          <p className="text-4xl font-black tracking-tighter" style={{ color: 'var(--brand-primary)' }}>${featuredRaffle.ticketPrice}</p>
                         </div>
                       </div>
                     </div>
@@ -234,8 +285,12 @@ const App: React.FC = () => {
         <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 justify-center cursor-pointer" onClick={() => handleViewChange('raffle')}>
-              <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                <span className="text-white font-black text-lg italic">N</span>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md overflow-hidden" style={{ backgroundColor: 'var(--brand-primary)' }}>
+                {brand.logoUrl ? (
+                  <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                ) : (
+                  <span className="text-white font-black text-lg italic">N</span>
+                )}
               </div>
               <span className="font-black text-xl tracking-tighter text-slate-800">RIFAS NAO</span>
             </div>

@@ -1,10 +1,126 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 
+// ─── Color utility functions ─────────────────────────────────────────────────
+
+function hexToHsl(hex: string): [number, number, number] {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+    h /= 360; s /= 100; l /= 100;
+    const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    };
+    if (s === 0) {
+        const v = Math.round(l * 255).toString(16).padStart(2, '0');
+        return `#${v}${v}${v}`;
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    return `#${[hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)]
+        .map(v => Math.round(v * 255).toString(16).padStart(2, '0'))
+        .join('')}`;
+}
+
+function autoSecondary(primaryHex: string): string {
+    try {
+        const [h, s, l] = hexToHsl(primaryHex);
+        return hslToHex((h + 30) % 360, Math.min(s + 5, 100), Math.max(l - 5, 10));
+    } catch {
+        return '#6366f1';
+    }
+}
+
+function isValidHex(hex: string): boolean {
+    return /^#[0-9a-fA-F]{6}$/.test(hex);
+}
+
+// ─── Preset palettes ──────────────────────────────────────────────────────────
+
+const PALETTES = [
+    { name: 'Azul Índigo', primary: '#3b82f6', secondary: '#6366f1', emoji: '💙' },
+    { name: 'Violeta', primary: '#8b5cf6', secondary: '#7c3aed', emoji: '💜' },
+    { name: 'Verde', primary: '#10b981', secondary: '#059669', emoji: '💚' },
+    { name: 'Rosa', primary: '#ec4899', secondary: '#db2777', emoji: '🌸' },
+    { name: 'Naranja', primary: '#f97316', secondary: '#f59e0b', emoji: '🔶' },
+    { name: 'Rojo', primary: '#ef4444', secondary: '#dc2626', emoji: '❤️' },
+];
+
+// ─── Mini preview component ───────────────────────────────────────────────────
+
+const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: string }> = ({
+    primary, secondary, logoUrl,
+}) => {
+    const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;
+    return (
+        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista previa</p>
+            {/* Mini navbar */}
+            <div className="bg-white/80 backdrop-blur rounded-2xl px-3 py-2 flex items-center gap-2 shadow-sm border border-slate-100">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center shadow overflow-hidden flex-shrink-0"
+                    style={{ background: gradient }}>
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="logo" className="w-full h-full object-contain" />
+                    ) : (
+                        <span className="text-white font-black text-xs italic">N</span>
+                    )}
+                </div>
+                <span className="font-black text-xs text-slate-700 tracking-tight">RIFAS NAO</span>
+                <div className="ml-auto flex gap-1">
+                    <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black shadow-sm border"
+                        style={{ color: primary }}>Sorteo</span>
+                    <span className="px-2 py-0.5 rounded-lg text-[9px] font-black text-slate-400">Verificar</span>
+                </div>
+            </div>
+            {/* Precio + botón */}
+            <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-xl text-white text-xs font-black shadow-sm"
+                    style={{ background: gradient }}>$150</div>
+                <div className="px-4 py-1.5 rounded-xl text-white text-xs font-black shadow-sm flex-1 text-center"
+                    style={{ backgroundColor: primary }}>
+                    COMPRAR BOLETO
+                </div>
+            </div>
+            {/* Badge */}
+            <div className="flex gap-2">
+                <span className="px-2 py-0.5 bg-white rounded-full text-[9px] font-black border shadow-sm"
+                    style={{ color: primary }}>✦ Edición Especial</span>
+                <span className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0"
+                    style={{ backgroundColor: secondary }}></span>
+            </div>
+        </div>
+    );
+};
+
+// ─── Main Settings component ──────────────────────────────────────────────────
+
 const Settings: React.FC = () => {
     const { showConfirm } = useConfirm();
+    const logoInputRef = useRef<HTMLInputElement>(null);
+
     const [settings, setSettings] = useState({
         bankName: '',
         clabe: '',
@@ -15,9 +131,14 @@ const Settings: React.FC = () => {
         contactEmail: '',
         instagram: '',
         autoVerificationEnabled: true,
+        logoUrl: '',
+        primaryColor: '#3b82f6',
+        secondaryColor: '#6366f1',
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [primaryHexInput, setPrimaryHexInput] = useState('#3b82f6');
+    const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -25,6 +146,8 @@ const Settings: React.FC = () => {
                 const response = await api.get('/settings');
                 if (response.data?.success) {
                     const data = response.data.data || {};
+                    const primary = data.primaryColor || '#3b82f6';
+                    const secondary = data.secondaryColor || '#6366f1';
                     setSettings({
                         bankName: data.bankName || '',
                         clabe: data.clabe || '',
@@ -35,9 +158,14 @@ const Settings: React.FC = () => {
                         contactEmail: data.contactEmail || '',
                         instagram: data.instagram || '',
                         autoVerificationEnabled: data.autoVerificationEnabled !== false,
+                        logoUrl: data.logoUrl || '',
+                        primaryColor: primary,
+                        secondaryColor: secondary,
                     });
+                    setPrimaryHexInput(primary);
+                    setSecondaryHexInput(secondary);
                 }
-            } catch (error) {
+            } catch {
                 toast.error('Error al cargar la configuración');
             } finally {
                 setIsLoading(false);
@@ -45,6 +173,50 @@ const Settings: React.FC = () => {
         };
         fetchSettings();
     }, []);
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 600 * 1024) {
+            toast.error('El logo no debe superar 600 KB');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setSettings(prev => ({ ...prev, logoUrl: ev.target?.result as string }));
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
+    const handlePrimaryChange = (hex: string) => {
+        setSettings(prev => ({
+            ...prev,
+            primaryColor: hex,
+            secondaryColor: autoSecondary(hex),
+        }));
+        setPrimaryHexInput(hex);
+        setSecondaryHexInput(autoSecondary(hex));
+    };
+
+    const handlePrimaryHexInput = (value: string) => {
+        setPrimaryHexInput(value);
+        if (isValidHex(value)) {
+            handlePrimaryChange(value);
+        }
+    };
+
+    const handleSecondaryChange = (hex: string) => {
+        setSettings(prev => ({ ...prev, secondaryColor: hex }));
+        setSecondaryHexInput(hex);
+    };
+
+    const handleSecondaryHexInput = (value: string) => {
+        setSecondaryHexInput(value);
+        if (isValidHex(value)) {
+            setSettings(prev => ({ ...prev, secondaryColor: value }));
+        }
+    };
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,9 +229,8 @@ const Settings: React.FC = () => {
                     if (response.data?.success) {
                         toast.success('Configuración guardada correctamente');
                     }
-                } catch (error) {
+                } catch {
                     toast.error('Error al guardar la configuración');
-                    throw error;
                 } finally {
                     setIsSaving(false);
                 }
@@ -79,11 +250,219 @@ const Settings: React.FC = () => {
         <div className="max-w-4xl mx-auto w-full min-w-0 space-y-8 animate-in fade-in duration-500 overflow-x-hidden">
             <div>
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight">Configuración del Sistema</h1>
-                <p className="text-slate-500 mt-1">Gestiona los datos bancarios y de contacto que ven tus clientes.</p>
+                <p className="text-slate-500 mt-1">Gestiona los datos bancarios, contacto e identidad visual de tu página.</p>
             </div>
 
             <form onSubmit={handleSave} className="space-y-6">
-                {/* Datos Bancarios */}
+
+                {/* ── Identidad Visual: Logotipo ── */}
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="font-black text-slate-800 uppercase tracking-wider text-sm">Logotipo</h2>
+                            <p className="text-[10px] text-slate-400 font-medium">Aparece en la parte superior izquierda de tu página</p>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                            {/* Preview actual */}
+                            <div className="flex-shrink-0">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Logo actual</p>
+                                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50">
+                                    {settings.logoUrl ? (
+                                        <img
+                                            src={settings.logoUrl}
+                                            alt="Logo actual"
+                                            className="w-full h-full object-contain p-2"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="w-14 h-14 rounded-xl flex items-center justify-center shadow-md"
+                                            style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}
+                                        >
+                                            <span className="text-white font-black text-2xl italic">N</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex-1 space-y-3">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-bold text-slate-700">
+                                        {settings.logoUrl ? 'Cambiar logo' : 'Subir logo'}
+                                    </p>
+                                    <p className="text-xs text-slate-400">PNG, JPG o SVG — máximo 600 KB. Recomendado: cuadrado 256×256px o mayor.</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => logoInputRef.current?.click()}
+                                        className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-sm"
+                                    >
+                                        {settings.logoUrl ? 'Cambiar imagen' : 'Seleccionar imagen'}
+                                    </button>
+                                    {settings.logoUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSettings(prev => ({ ...prev, logoUrl: '' }))}
+                                            className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95"
+                                        >
+                                            Eliminar logo
+                                        </button>
+                                    )}
+                                </div>
+                                <input
+                                    ref={logoInputRef}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                                    className="hidden"
+                                    onChange={handleLogoChange}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Identidad Visual: Colores ── */}
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-pink-100 rounded-xl flex items-center justify-center text-pink-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="font-black text-slate-800 uppercase tracking-wider text-sm">Colores de Marca</h2>
+                            <p className="text-[10px] text-slate-400 font-medium">Personaliza los colores del logo, botones y acentos de tu página</p>
+                        </div>
+                    </div>
+                    <div className="p-6 space-y-6">
+
+                        {/* Paletas rápidas */}
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paletas predefinidas</p>
+                            <div className="flex flex-wrap gap-2">
+                                {PALETTES.map(palette => (
+                                    <button
+                                        key={palette.name}
+                                        type="button"
+                                        onClick={() => {
+                                            setSettings(prev => ({
+                                                ...prev,
+                                                primaryColor: palette.primary,
+                                                secondaryColor: palette.secondary,
+                                            }));
+                                            setPrimaryHexInput(palette.primary);
+                                            setSecondaryHexInput(palette.secondary);
+                                        }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all hover:shadow-sm active:scale-95 ${settings.primaryColor === palette.primary && settings.secondaryColor === palette.secondary
+                                            ? 'border-slate-300 bg-slate-50 shadow-inner text-slate-700'
+                                            : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                                            }`}
+                                    >
+                                        <span
+                                            className="w-4 h-4 rounded-full flex-shrink-0"
+                                            style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
+                                        ></span>
+                                        {palette.emoji} {palette.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Selectores de color */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Color primario */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Color Primario
+                                </label>
+                                <p className="text-[10px] text-slate-400 -mt-1">Botones, logo, texto activo en navegación</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <input
+                                            type="color"
+                                            value={settings.primaryColor}
+                                            onChange={(e) => handlePrimaryChange(e.target.value)}
+                                            className="w-14 h-14 rounded-2xl cursor-pointer border-2 border-slate-100 p-1 bg-white"
+                                            style={{ colorScheme: 'light' }}
+                                        />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <input
+                                            type="text"
+                                            value={primaryHexInput}
+                                            onChange={(e) => handlePrimaryHexInput(e.target.value)}
+                                            className={`admin-input font-mono text-sm uppercase ${!isValidHex(primaryHexInput) ? 'border-red-300 focus:border-red-500' : ''}`}
+                                            placeholder="#3b82f6"
+                                            maxLength={7}
+                                        />
+                                        {!isValidHex(primaryHexInput) && (
+                                            <p className="text-[10px] text-red-500 font-bold">Formato inválido (ej: #3b82f6)</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Color secundario */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Color Secundario
+                                </label>
+                                <p className="text-[10px] text-slate-400 -mt-1">Gradientes y acentos (auto-sugerido al cambiar primario)</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <input
+                                            type="color"
+                                            value={settings.secondaryColor}
+                                            onChange={(e) => handleSecondaryChange(e.target.value)}
+                                            className="w-14 h-14 rounded-2xl cursor-pointer border-2 border-slate-100 p-1 bg-white"
+                                            style={{ colorScheme: 'light' }}
+                                        />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <input
+                                            type="text"
+                                            value={secondaryHexInput}
+                                            onChange={(e) => handleSecondaryHexInput(e.target.value)}
+                                            className={`admin-input font-mono text-sm uppercase ${!isValidHex(secondaryHexInput) ? 'border-red-300 focus:border-red-500' : ''}`}
+                                            placeholder="#6366f1"
+                                            maxLength={7}
+                                        />
+                                        {!isValidHex(secondaryHexInput) && (
+                                            <p className="text-[10px] text-red-500 font-bold">Formato inválido (ej: #6366f1)</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const suggested = autoSecondary(settings.primaryColor);
+                                        handleSecondaryChange(suggested);
+                                    }}
+                                    className="text-[10px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-wider transition-colors flex items-center gap-1"
+                                >
+                                    ↺ Auto-sugerir secundario
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Vista previa */}
+                        <BrandPreview
+                            primary={settings.primaryColor}
+                            secondary={settings.secondaryColor}
+                            logoUrl={settings.logoUrl}
+                        />
+                    </div>
+                </div>
+
+                {/* ── Datos de Transferencia (SPEI) ── */}
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
                         <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
@@ -147,10 +526,10 @@ const Settings: React.FC = () => {
                                         onChange={(e) => setSettings({ ...settings, autoVerificationEnabled: e.target.checked })}
                                         className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                     />
-                                    <span className="text-sm font-bold text-slate-700">Habilitada (Banxico CEP + IA)</span>
+                                    <span className="text-sm font-bold text-slate-700">Habilitada (IA)</span>
                                 </label>
                             </div>
-                            <p className="text-[10px] text-slate-500 ml-1">Verifica comprobantes SPEI automáticamente usando IA y Banxico. Desactiva para revisión 100% manual.</p>
+                            <p className="text-[10px] text-slate-500 ml-1">Verifica comprobantes automáticamente usando IA. Desactiva para revisión 100% manual.</p>
                         </div>
                         <div className="space-y-1.5 md:col-span-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrucciones extra de pago (opcional)</label>
@@ -165,7 +544,7 @@ const Settings: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Contacto y Redes */}
+                {/* ── Contacto y Redes ── */}
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
                         <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center text-green-600">

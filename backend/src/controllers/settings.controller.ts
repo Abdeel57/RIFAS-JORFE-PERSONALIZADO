@@ -13,6 +13,9 @@ const updateSettingsSchema = z.object({
     contactEmail: z.string().email().optional(),
     instagram: z.string().optional(),
     autoVerificationEnabled: z.boolean().optional(),
+    logoUrl: z.string().optional().nullable(),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
 });
 
 export const getSettings = async (req: Request, res: Response, next: NextFunction) => {
@@ -44,6 +47,7 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
         const data: Record<string, any> = { ...validated };
         if (data.accountNumber === '') data.accountNumber = null;
         if (data.paymentInstructions === '') data.paymentInstructions = null;
+        if (data.logoUrl === '') data.logoUrl = null;
 
         const settings = await prisma.systemSettings.upsert({
             where: { id: 'default' },
