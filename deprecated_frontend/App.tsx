@@ -250,15 +250,21 @@ const App: React.FC = () => {
                         loading="eager"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
-                      <div className="absolute top-6 right-6 flex flex-col items-end gap-2">
-                        <div className="bg-white/95 backdrop-blur-md p-6 rounded-[2.5rem] shadow-2xl border border-white text-center min-w-[160px] animate-in slide-in-from-top-4 duration-500 delay-200">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-3">Costo Boleto</p>
-                          <p className="text-4xl font-black tracking-tighter" style={{ color: 'var(--brand-primary)' }}>${featuredRaffle.ticketPrice}</p>
-                        </div>
+                    </div>
+
+                    {/* Price pill — floats between image and ticket selector */}
+                    <div className="flex justify-center -mt-5 relative z-10">
+                      <div className="bg-white shadow-lg border border-slate-100 rounded-full pl-4 pr-5 py-2.5 flex items-center gap-2.5 animate-in slide-in-from-bottom-2 duration-500">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Boleto</span>
+                        <span className="w-px h-3 bg-slate-200 inline-block" />
+                        <span className="text-xl font-black tracking-tighter leading-none" style={{ color: 'var(--brand-primary)' }}>
+                          ${featuredRaffle.ticketPrice}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest leading-none">c/u</span>
                       </div>
                     </div>
 
-                    <div className="relative pt-4">
+                    <div className="relative pt-3">
                       <TicketSelector
                         raffleId={featuredRaffle.id}
                         totalTickets={featuredRaffle.totalTickets}
