@@ -8,7 +8,8 @@ export interface PaymentAnalysisResult {
     fecha: string | null;
     bancoEmisor: string | null;
     bancoDestino: string | null;
-    ordenante: string | null;    // nombre de quien ENVÍA
+    ordenante: string | null;    // nombre de quien ENVÍA (puede no estar visible en muchos bancos)
+    concepto: string | null;     // concepto / referencia / descripción del pago (aquí el cliente escribe su nombre)
     beneficiario: string | null; // nombre de quien RECIBE
     cuentaDestino: string | null; // número/CLABE de cuenta destino visible en el comprobante
 
@@ -56,7 +57,8 @@ Extrae EXACTAMENTE los valores visibles en el comprobante:
 - fecha: fecha de la operación en formato DD/MM/YYYY
 - bancoEmisor: banco que ENVÍA
 - bancoDestino: banco que RECIBE
-- ordenante: nombre completo de quien ENVÍA
+- ordenante: nombre de quien ENVÍA si aparece (en muchos bancos no es visible → null si no aparece)
+- concepto: texto del campo "Concepto", "Descripción", "Referencia" o similar — aquí el cliente escribe su nombre. Extrae el valor EXACTO visible. Si no hay campo concepto → null.
 - beneficiario: nombre de quien RECIBE
 - cuentaDestino: número de cuenta, CLABE o CLABE parcial visible en el comprobante (ej. "****6010", "012180...2410")
 
@@ -73,13 +75,23 @@ Busca ACTIVAMENTE señales de manipulación digital:
 
 TAREA 3 — VALIDACIÓN DE DATOS:
 1. ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? (tolerancia ±$5 pesos)
-2. REGLA DE NOMBRE (obligatoria):
-   - Divide el nombre del ordenante del comprobante en palabras individuales.
+2. REGLA DE NOMBRE — busca en CONCEPTO y en ORDENANTE (en ese orden de prioridad):
+   FUENTE PRINCIPAL: campo "Concepto" / "Descripción" / "Referencia" del comprobante.
+     Muchos bancos mexicanos no muestran el nombre del emisor, pero el cliente escribe
+     su nombre en el concepto de pago. Busca PRIMERO ahí.
+   FUENTE SECUNDARIA: campo "Ordenante" / "Nombre emisor" si es visible.
+   
+   PROCESO:
+   - Toma el texto del CONCEPTO (si existe) o del ORDENANTE (si existe). Si ambos existen, evalúa los dos.
    - Divide el nombre del cliente registrado "${opts.customerName}" en palabras individuales.
-   - Ignora acentos, mayúsculas/minúsculas y palabras cortas (partículas: "de", "del", "la", "el", "los", "las", o cualquier palabra de 1-2 letras).
-   - nameMatch = true  → si AL MENOS 2 palabras coinciden entre ambos nombres (ej. "Juan" + "Pérez", o "García" + "López", o "María" + "García").
-   - nameMatch = false → si solo coincide 1 palabra, ninguna, o el nombre del ordenante NO es visible.
-   - IMPORTANTE: NO se requiere que el nombre esté completo. Nombre parcial con 2 coincidencias es suficiente.
+   - Ignora acentos, mayúsculas/minúsculas y partículas cortas ("de", "del", "la", "el", "los", "las", palabras de 1-2 letras).
+   - nameMatch = true  → si AL MENOS 2 palabras del cliente aparecen en el CONCEPTO o en el ORDENANTE.
+     Ejemplos válidos: concepto "Juan Pérez" con cliente "Juan Carlos Pérez García" ✓
+                       concepto "Pago rifa Juan Garcia" con cliente "Juan García López" ✓
+                       ordenante "GARCIA LOPEZ JUAN" con cliente "Juan García López" ✓
+   - nameMatch = false → si solo coincide 1 palabra o ninguna en NINGUNA de las dos fuentes.
+   - nameMatch = null  → si TANTO el concepto como el ordenante son null o están vacíos (no visibles).
+   - IMPORTANTE: NO se requiere el nombre completo. Con 2 coincidencias es suficiente.
 ${last4 ? `3. ¿La cuenta destino visible en el comprobante termina en "${last4}"? 
    Busca campos como CLABE, cuenta, número de cuenta, ****XXXX. Si no es visible → null.` : ''}
 
@@ -96,6 +108,7 @@ RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
   "bancoEmisor": "nombre o null",
   "bancoDestino": "nombre o null",
   "ordenante": "nombre completo o null",
+  "concepto": "texto exacto del concepto/descripción/referencia del pago, o null",
   "beneficiario": "nombre completo o null",
   "cuentaDestino": "número o CLABE parcial visible, o null",
   "authenticity": "authentic|suspicious|fake",
@@ -116,7 +129,7 @@ export async function analyzePaymentProof(
     const empty: PaymentAnalysisResult = {
         claveRastreo: null, monto: null, fecha: null,
         bancoEmisor: null, bancoDestino: null,
-        ordenante: null, beneficiario: null, cuentaDestino: null,
+        ordenante: null, concepto: null, beneficiario: null, cuentaDestino: null,
         authenticity: 'suspicious',
         manipulationSigns: [],
         amountMatch: null, nameMatch: null, accountMatch: null,
@@ -171,6 +184,7 @@ export async function analyzePaymentProof(
             bancoEmisor: parsed.bancoEmisor || null,
             bancoDestino: parsed.bancoDestino || null,
             ordenante: parsed.ordenante || null,
+            concepto: parsed.concepto || null,
             beneficiario: parsed.beneficiario || null,
             cuentaDestino: parsed.cuentaDestino || null,
             authenticity: parsed.authenticity || 'suspicious',

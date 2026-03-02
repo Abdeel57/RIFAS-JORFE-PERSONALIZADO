@@ -88,6 +88,7 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
 
         console.log(`📊 Resultado del análisis:`, {
             ordenante: analysis.ordenante,
+            concepto: analysis.concepto,
             monto: analysis.monto,
             cuentaDestino: analysis.cuentaDestino,
             autenticidad: analysis.authenticity,
@@ -262,7 +263,7 @@ async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysi
         `Razón: ${analysis.verdictReason}`,
         `Monto comprobante: $${analysis.monto ?? '?'} | Coincide: ${analysis.amountMatch}`,
         `Cuenta destino visible: ${analysis.cuentaDestino ?? '?'} | Coincide últimos 4 dígitos: ${analysis.accountMatch}`,
-        `Ordenante: ${analysis.ordenante ?? '?'} | Nombre cliente coincide: ${analysis.nameMatch}`,
+        `Ordenante: ${analysis.ordenante ?? 'no visible'} | Concepto: ${analysis.concepto ?? 'no visible'} | Nombre coincide: ${analysis.nameMatch}`,
         `Clave rastreo: ${analysis.claveRastreo ?? 'no visible'}`,
     ].filter(Boolean).join('\n');
 
@@ -292,7 +293,7 @@ async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisRe
         `Razón: ${analysis.verdictReason}`,
         `Monto comprobante: $${analysis.monto ?? '?'} | Coincide: ${analysis.amountMatch}`,
         `Cuenta destino visible: ${analysis.cuentaDestino ?? '?'} | Coincide últimos 4 dígitos: ${analysis.accountMatch}`,
-        `Ordenante: ${analysis.ordenante ?? '?'} | Nombre coincide: ${analysis.nameMatch}`,
+        `Ordenante: ${analysis.ordenante ?? 'no visible'} | Concepto: ${analysis.concepto ?? 'no visible'} | Nombre coincide: ${analysis.nameMatch}`,
         `Clave rastreo: ${analysis.claveRastreo ?? 'no visible'}`,
     ].filter(Boolean).join('\n');
 
