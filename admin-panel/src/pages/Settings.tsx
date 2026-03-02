@@ -353,7 +353,7 @@ const Settings: React.FC = () => {
                             <div className="relative">
                                 <input
                                     type="text"
-                                    className="admin-input font-black tracking-tighter uppercase pr-16"
+                                    className="admin-input font-black tracking-tighter pr-16"
                                     value={settings.siteName}
                                     onChange={(e) => setSettings({ ...settings, siteName: e.target.value.slice(0, 40) })}
                                     placeholder="RIFAS NAO"
