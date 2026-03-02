@@ -250,8 +250,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
             <a
               href="https://facebook.com"
               target="_blank"
-              className="w-full md:w-auto text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-100 active:scale-95 hover:opacity-90"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
+              className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
             >
               Seguir en Facebook
             </a>
@@ -288,14 +287,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
               </p>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
                 <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
-                <span
-                  className="text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border uppercase tracking-widest"
-                  style={{
-                    color: 'var(--brand-primary)',
-                    backgroundColor: 'rgba(var(--brand-primary-rgb, 59, 130, 246), 0.08)',
-                    borderColor: 'rgba(var(--brand-primary-rgb, 59, 130, 246), 0.2)',
-                  }}
-                >#EnVivo</span>
+                <span className="bg-red-50 text-red-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-red-100 uppercase tracking-widest">#EnVivo</span>
               </div>
             </div>
           </div>
