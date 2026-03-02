@@ -136,9 +136,9 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-xl italic tracking-tighter">N</span>
                 </div>
               )}
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                <svg className="w-1.5 h-1.5 text-white" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                 </svg>
               </div>
             </div>
