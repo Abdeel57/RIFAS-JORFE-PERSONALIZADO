@@ -58,16 +58,72 @@ function isValidHex(hex: string): boolean {
     return /^#[0-9a-fA-F]{6}$/.test(hex);
 }
 
-// ─── Preset palettes ──────────────────────────────────────────────────────────
+// ─── Image compression via Canvas ────────────────────────────────────────────
 
-const PALETTES = [
-    { name: 'Azul Índigo', primary: '#3b82f6', secondary: '#6366f1', emoji: '💙' },
-    { name: 'Violeta', primary: '#8b5cf6', secondary: '#7c3aed', emoji: '💜' },
-    { name: 'Verde', primary: '#10b981', secondary: '#059669', emoji: '💚' },
-    { name: 'Rosa', primary: '#ec4899', secondary: '#db2777', emoji: '🌸' },
-    { name: 'Naranja', primary: '#f97316', secondary: '#f59e0b', emoji: '🔶' },
-    { name: 'Rojo', primary: '#ef4444', secondary: '#dc2626', emoji: '❤️' },
-];
+const MAX_LOGO_DIMENSION = 512; // px — cubre pantallas retina 3× hasta 170px de display
+
+function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }> {
+    return new Promise((resolve, reject) => {
+        // SVGs son vectoriales: leer como data URL sin re-renderizar en canvas
+        if (file.type === 'image/svg+xml') {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const dataUrl = ev.target?.result as string;
+                resolve({ dataUrl, sizeKb: Math.round(file.size / 1024) });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            let { width, height } = img;
+
+            // Escalar manteniendo proporción
+            if (width > MAX_LOGO_DIMENSION || height > MAX_LOGO_DIMENSION) {
+                if (width >= height) {
+                    height = Math.round(height * MAX_LOGO_DIMENSION / width);
+                    width = MAX_LOGO_DIMENSION;
+                } else {
+                    width = Math.round(width * MAX_LOGO_DIMENSION / height);
+                    height = MAX_LOGO_DIMENSION;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('Canvas no disponible')); return; }
+
+            // Fondo transparente para logos con transparencia
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Intentar WebP primero, fallback a PNG (para mantener transparencia)
+            const tryFormats = ['image/webp', 'image/png'];
+            let dataUrl = '';
+            for (const fmt of tryFormats) {
+                const candidate = canvas.toDataURL(fmt, fmt === 'image/webp' ? 0.88 : undefined);
+                if (candidate.startsWith(`data:${fmt}`)) {
+                    dataUrl = candidate;
+                    break;
+                }
+            }
+            if (!dataUrl) dataUrl = canvas.toDataURL('image/png');
+
+            const sizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+            resolve({ dataUrl, sizeKb });
+        };
+
+        img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('No se pudo leer la imagen')); };
+        img.src = objectUrl;
+    });
+}
 
 // ─── Mini preview component ───────────────────────────────────────────────────
 
@@ -137,6 +193,8 @@ const Settings: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
+    const [logoSizeKb, setLogoSizeKb] = useState(0);
     const [primaryHexInput, setPrimaryHexInput] = useState('#3b82f6');
     const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
 
@@ -148,6 +206,7 @@ const Settings: React.FC = () => {
                     const data = response.data.data || {};
                     const primary = data.primaryColor || '#3b82f6';
                     const secondary = data.secondaryColor || '#6366f1';
+                    const savedLogo = data.logoUrl || '';
                     setSettings({
                         bankName: data.bankName || '',
                         clabe: data.clabe || '',
@@ -158,10 +217,13 @@ const Settings: React.FC = () => {
                         contactEmail: data.contactEmail || '',
                         instagram: data.instagram || '',
                         autoVerificationEnabled: data.autoVerificationEnabled !== false,
-                        logoUrl: data.logoUrl || '',
+                        logoUrl: savedLogo,
                         primaryColor: primary,
                         secondaryColor: secondary,
                     });
+                    if (savedLogo) {
+                        setLogoSizeKb(Math.round((savedLogo.length * 3) / 4 / 1024));
+                    }
                     setPrimaryHexInput(primary);
                     setSecondaryHexInput(secondary);
                 }
@@ -174,19 +236,28 @@ const Settings: React.FC = () => {
         fetchSettings();
     }, []);
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = '';
         if (!file) return;
-        if (file.size > 600 * 1024) {
-            toast.error('El logo no debe superar 600 KB');
+
+        const maxOriginalMb = 8;
+        if (file.size > maxOriginalMb * 1024 * 1024) {
+            toast.error(`El archivo no debe superar ${maxOriginalMb} MB`);
             return;
         }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            setSettings(prev => ({ ...prev, logoUrl: ev.target?.result as string }));
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
+
+        setIsCompressing(true);
+        try {
+            const { dataUrl, sizeKb } = await compressImage(file);
+            setSettings(prev => ({ ...prev, logoUrl: dataUrl }));
+            setLogoSizeKb(sizeKb);
+            toast.success(`Logo listo (${sizeKb} KB optimizado)`);
+        } catch {
+            toast.error('No se pudo procesar la imagen. Intenta con otro archivo.');
+        } finally {
+            setIsCompressing(false);
+        }
     };
 
     const handlePrimaryChange = (hex: string) => {
@@ -297,20 +368,39 @@ const Settings: React.FC = () => {
                                     <p className="text-sm font-bold text-slate-700">
                                         {settings.logoUrl ? 'Cambiar logo' : 'Subir logo'}
                                     </p>
-                                    <p className="text-xs text-slate-400">PNG, JPG o SVG — máximo 600 KB. Recomendado: cuadrado 256×256px o mayor.</p>
+                                    <p className="text-xs text-slate-400">
+                                        PNG, JPG, WebP o SVG — hasta 8 MB. Se optimiza automáticamente
+                                        al tamaño ideal (máx. 512 px) para todas las pantallas.
+                                    </p>
+                                    {settings.logoUrl && logoSizeKb > 0 && (
+                                        <p className="text-[10px] font-bold text-green-600 flex items-center gap-1">
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Optimizado — {logoSizeKb} KB guardado
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <button
                                         type="button"
                                         onClick={() => logoInputRef.current?.click()}
-                                        className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-sm"
+                                        disabled={isCompressing}
+                                        className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center gap-2"
                                     >
-                                        {settings.logoUrl ? 'Cambiar imagen' : 'Seleccionar imagen'}
+                                        {isCompressing ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                Optimizando...
+                                            </>
+                                        ) : (
+                                            settings.logoUrl ? 'Cambiar imagen' : 'Seleccionar imagen'
+                                        )}
                                     </button>
-                                    {settings.logoUrl && (
+                                    {settings.logoUrl && !isCompressing && (
                                         <button
                                             type="button"
-                                            onClick={() => setSettings(prev => ({ ...prev, logoUrl: '' }))}
+                                            onClick={() => { setSettings(prev => ({ ...prev, logoUrl: '' })); setLogoSizeKb(0); }}
                                             className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95"
                                         >
                                             Eliminar logo
@@ -343,38 +433,6 @@ const Settings: React.FC = () => {
                         </div>
                     </div>
                     <div className="p-6 space-y-6">
-
-                        {/* Paletas rápidas */}
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paletas predefinidas</p>
-                            <div className="flex flex-wrap gap-2">
-                                {PALETTES.map(palette => (
-                                    <button
-                                        key={palette.name}
-                                        type="button"
-                                        onClick={() => {
-                                            setSettings(prev => ({
-                                                ...prev,
-                                                primaryColor: palette.primary,
-                                                secondaryColor: palette.secondary,
-                                            }));
-                                            setPrimaryHexInput(palette.primary);
-                                            setSecondaryHexInput(palette.secondary);
-                                        }}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all hover:shadow-sm active:scale-95 ${settings.primaryColor === palette.primary && settings.secondaryColor === palette.secondary
-                                            ? 'border-slate-300 bg-slate-50 shadow-inner text-slate-700'
-                                            : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
-                                            }`}
-                                    >
-                                        <span
-                                            className="w-4 h-4 rounded-full flex-shrink-0"
-                                            style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
-                                        ></span>
-                                        {palette.emoji} {palette.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
 
                         {/* Selectores de color */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
