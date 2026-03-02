@@ -247,7 +247,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         {step <= 2 && (
           <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-black italic text-sm">N</div>
+              {/* Logo "N" con color de marca */}
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black italic text-sm"
+                style={{ background: 'linear-gradient(135deg, var(--brand-primary), rgba(var(--brand-primary-rgb),0.75))' }}
+              >N</div>
               <div>
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
                   {step === 1 ? 'Tus Datos' : 'Pago y Comprobante'}
@@ -256,7 +260,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   {[1, 2].map(s => (
                     <div
                       key={s}
-                      className={`h-1 rounded-full transition-all duration-500 ${s === step ? 'w-6 bg-blue-600' : s < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-100'}`}
+                      className={`h-1 rounded-full transition-all duration-500 ${s === step ? 'w-6' : 'w-3'}`}
+                      style={{
+                        backgroundColor: s === step
+                          ? 'var(--brand-primary)'
+                          : s < step
+                            ? 'rgba(var(--brand-primary-rgb), 0.35)'
+                            : 'rgb(241 245 249)',
+                      }}
                     />
                   ))}
                   <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">Paso {step} de 2</span>
@@ -344,7 +355,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Completo *</label>
                   <input
                     required
-                    className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
+                    className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 brand-input ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100'}`}
                     placeholder="Ej. Juan Pérez García"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
@@ -357,7 +368,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <input
                       required
                       type="tel"
-                      className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50'}`}
+                      className={`w-full px-5 py-3.5 border rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 brand-input ${isAutocompleted ? 'bg-green-50/40 border-green-100' : 'bg-slate-50 border-slate-100'}`}
                       placeholder="10 dígitos"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
@@ -368,7 +379,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado *</label>
                     <select
                       required
-                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 brand-input"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
                     >
@@ -383,7 +394,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <input
                     required
                     type="email"
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-400 outline-none transition-all text-sm font-bold text-slate-700"
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 brand-input"
                     placeholder="correo@ejemplo.com"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
@@ -405,13 +416,17 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
-                  <p className="text-xl font-black text-blue-600 tracking-tighter">${total.toLocaleString()}</p>
+                  <p className="text-xl font-black tracking-tighter" style={{ color: 'var(--brand-primary)' }}>${total.toLocaleString()}</p>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-100"
+                className="w-full text-white font-black py-4 rounded-2xl text-sm uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg hover:opacity-90"
+                style={{
+                  backgroundColor: 'var(--brand-primary)',
+                  boxShadow: '0 8px 25px rgba(var(--brand-primary-rgb), 0.25)',
+                }}
               >
                 Continuar al Pago →
               </button>
@@ -425,20 +440,35 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="p-6 space-y-5 animate-in slide-in-from-right-8 duration-300">
 
               {/* Datos bancarios SPEI */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-5 space-y-4">
+              <div
+                className="border rounded-3xl p-5 space-y-4"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(var(--brand-primary-rgb),0.05) 0%, rgba(var(--brand-primary-rgb),0.09) 100%)',
+                  borderColor: 'rgba(var(--brand-primary-rgb), 0.15)',
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 bg-blue-600 rounded-xl flex items-center justify-center">
+                    <div
+                      className="w-7 h-7 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--brand-primary)' }}
+                    >
                       <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                     <h5 className="font-black text-slate-800 text-sm uppercase tracking-wider">Transferencia SPEI</h5>
                   </div>
-                  <span className="text-[9px] font-black text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase">Rápido</span>
+                  <span
+                    className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase"
+                    style={{
+                      color: 'var(--brand-primary)',
+                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.1)',
+                    }}
+                  >Rápido</span>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-blue-50 divide-y divide-slate-50">
+                <div className="bg-white rounded-2xl divide-y divide-slate-50" style={{ border: '1px solid rgba(var(--brand-primary-rgb), 0.08)' }}>
                   {/* Banco */}
                   <div className="flex justify-between items-center px-4 py-3">
                     <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Banco</span>
@@ -451,7 +481,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       <span className="text-slate-800 font-black text-sm tracking-wider">{bankData.clabe}</span>
                       <button
                         onClick={() => handleCopy(bankData.clabe.replace(/\s/g, ''))}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${copied ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${copied ? 'bg-green-100 text-green-700' : 'hover:opacity-80'}`}
+                        style={!copied ? {
+                          backgroundColor: 'rgba(var(--brand-primary-rgb), 0.08)',
+                          color: 'var(--brand-primary)',
+                        } : {}}
                       >
                         {copied ? (
                           <>
@@ -510,18 +544,35 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     onDrop={handleDrop}
                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                     onDragLeave={() => setIsDragOver(false)}
-                    className={`border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 group ${isDragOver
-                      ? 'border-blue-400 bg-blue-50 scale-[1.02]'
-                      : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50'
-                      }`}
+                    className="border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200"
+                    style={isDragOver ? {
+                      borderColor: 'var(--brand-primary)',
+                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
+                      transform: 'scale(1.02)',
+                    } : {
+                      borderColor: '#e2e8f0',
+                      backgroundColor: '#f8fafc',
+                    }}
                   >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isDragOver ? 'bg-blue-100' : 'bg-white border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50'}`}>
-                      <svg className={`w-6 h-6 transition-colors ${isDragOver ? 'text-blue-500' : 'text-slate-300 group-hover:text-blue-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center transition-colors"
+                      style={isDragOver ? {
+                        backgroundColor: 'rgba(var(--brand-primary-rgb), 0.1)',
+                      } : {
+                        backgroundColor: 'white',
+                        border: '1px solid #f1f5f9',
+                      }}
+                    >
+                      <svg
+                        className="w-6 h-6 transition-colors"
+                        style={{ color: isDragOver ? 'var(--brand-primary)' : '#cbd5e1' }}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-black text-slate-600 group-hover:text-blue-600 transition-colors">
+                      <p className="text-sm font-black text-slate-600 transition-colors" style={isDragOver ? { color: 'var(--brand-primary)' } : {}}>
                         {isDragOver ? 'Suelta aquí tu comprobante' : 'Adjuntar comprobante de pago'}
                       </p>
                       <p className="text-xs text-slate-400 mt-1">Haz clic o arrastra la imagen aquí</p>
@@ -594,10 +645,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   onClick={handleConfirmWithProof}
                   disabled={!proofPreview || isSubmitting}
-                  className={`flex-[2] font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all ${proofPreview && !isSubmitting
-                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg active:scale-95'
-                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                    }`}
+                  className="flex-[2] font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95"
+                  style={proofPreview && !isSubmitting ? {
+                    backgroundColor: 'var(--brand-primary)',
+                    color: 'white',
+                    boxShadow: '0 8px 25px rgba(var(--brand-primary-rgb), 0.25)',
+                  } : {
+                    backgroundColor: '#f1f5f9',
+                    color: '#cbd5e1',
+                    cursor: 'not-allowed',
+                  }}
                 >
                   {isSubmitting
                     ? isUploadingProof
@@ -626,14 +683,18 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <h4 className="text-3xl font-black text-slate-800 tracking-tight leading-none">¡Recibido!</h4>
                 <p className="text-slate-500 font-medium mt-3 leading-relaxed px-4">
                   Tu comprobante fue enviado. El administrador validará tu pago y confirmará tus boletos por WhatsApp al número{' '}
-                  <span className="text-blue-600 font-bold">{formData.phone}</span>.
+                  <span className="font-bold" style={{ color: 'var(--brand-primary)' }}>{formData.phone}</span>.
                 </p>
               </div>
               <div className="bg-slate-50 rounded-2xl p-4 text-left space-y-2">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tu orden</p>
                 <div className="flex flex-wrap gap-1">
                   {selectedTickets.slice(0, 8).map(n => (
-                    <span key={n} className="px-2 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black">#{n.toString().padStart(3, '0')}</span>
+                    <span
+                      key={n}
+                      className="px-2 py-1 text-white rounded-lg text-[10px] font-black"
+                      style={{ backgroundColor: 'var(--brand-primary)' }}
+                    >#{n.toString().padStart(3, '0')}</span>
                   ))}
                   {selectedTickets.length > 8 && (
                     <span className="px-2 py-1 bg-slate-200 text-slate-500 rounded-lg text-[10px] font-black">+{selectedTickets.length - 8} más</span>
@@ -642,7 +703,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
               <div className="flex gap-1 justify-center">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="w-2 h-2 bg-blue-200 rounded-full animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
+                  <div
+                    key={i}
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.3)',
+                      animationDelay: `${i * 0.3}s`,
+                    }}
+                  />
                 ))}
               </div>
               <p className="text-xs text-slate-400">Preparando resumen final...</p>
@@ -662,8 +730,17 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left space-y-2">
-                <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">¿Qué sigue?</p>
+              <div
+                className="rounded-2xl p-4 text-left space-y-2 border"
+                style={{
+                  backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
+                  borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
+                }}
+              >
+                <p
+                  className="text-[9px] font-black uppercase tracking-widest"
+                  style={{ color: 'var(--brand-primary)' }}
+                >¿Qué sigue?</p>
                 <div className="space-y-1.5">
                   {[
                     { icon: '🔍', text: 'El admin verifica tu comprobante' },
@@ -702,6 +779,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         .custom-scrollbar-light::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        /* Input focus states use brand color via CSS variable */
+        .brand-input:focus {
+          background-color: white;
+          border-color: var(--brand-primary) !important;
+          box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.08) !important;
+          outline: none;
+        }
       `}</style>
     </div>
   );
