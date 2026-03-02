@@ -2,7 +2,7 @@ import prisma from '../config/database';
 import { analyzePaymentProof, PaymentAnalysisResult } from './geminiVisionPaymentService';
 import { sendPushToAdmins } from './pushNotificationService';
 
-const VERIFICATION_DELAY_MS = 2 * 60 * 1000; // 2 minutos
+const VERIFICATION_DELAY_MS = 3 * 1000; // 3 segundos (verificación casi instantánea)
 const MAX_RETRIES = 3;        // reintentos si Gemini falla por error de red/timeout
 const RETRY_DELAY_MS = 30000; // 30 segundos entre reintentos
 
@@ -16,7 +16,7 @@ export function schedulePaymentVerification(purchaseId: string, imageBase64: str
         clearTimeout(pendingJobs.get(purchaseId)!);
     }
 
-    console.log(`⏳ Verificación programada para orden ${purchaseId.slice(-8)} en 2 minutos...`);
+    console.log(`⚡ Verificación instantánea programada para orden ${purchaseId.slice(-8)}...`);
 
     const timeoutId = setTimeout(() => {
         pendingJobs.delete(purchaseId);
