@@ -242,11 +242,11 @@ const App: React.FC = () => {
                       </h2>
                     </div>
 
-                    <div className="relative rounded-[3rem] overflow-hidden shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] bg-white border-[6px] border-white group will-change-transform">
+                    <div className="relative rounded-[3rem] overflow-hidden shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] bg-white border-[6px] border-white group will-change-transform aspect-square">
                       <img
                         src={featuredRaffle.prizeImage}
                         alt={featuredRaffle.title}
-                        className="w-full h-72 sm:h-96 md:h-[650px] object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
+                        className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
                         loading="eager"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
