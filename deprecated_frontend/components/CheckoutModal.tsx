@@ -696,8 +696,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div>
                 <h4 className="text-3xl font-black text-slate-800 tracking-tight leading-none">¡Recibido!</h4>
                 <p className="text-slate-500 font-medium mt-3 leading-relaxed px-4">
-                  Tu comprobante fue enviado. El administrador validará tu pago y confirmará tus boletos por WhatsApp al número{' '}
-                  <span className="font-bold" style={{ color: 'var(--brand-primary)' }}>{formData.phone}</span>.
+                  Tu comprobante fue enviado. El administrador validará tu pago y confirmará tus boletos al número{' '}
+                  <span className="font-black text-green-500">{formData.phone}</span>.
                 </p>
               </div>
               <div className="bg-slate-50 rounded-2xl p-4 text-left space-y-2">
@@ -740,7 +740,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <p className="text-4xl">🎟️</p>
                 <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
                 <p className="text-slate-500 text-sm leading-relaxed px-2">
-                  Revisa tu WhatsApp pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
+                  Revisa tus mensajes pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
                 </p>
               </div>
 
@@ -758,7 +758,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div className="space-y-1.5">
                   {[
                     { icon: '🔍', text: 'El admin verifica tu comprobante' },
-                    { icon: '✅', text: 'Te confirmamos por WhatsApp' },
+                    { icon: '✅', text: 'Recibes confirmación por mensaje' },
                     { icon: '🎰', text: 'Participas en el sorteo' },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
@@ -769,19 +769,30 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2.5 px-2">
+              {/* Botones de acción final */}
+              <div className="flex gap-2.5 px-2">
+                {/* Volver a comprar — recarga la página directamente en la boletera */}
                 <button
-                  onClick={() => window.open(`https://wa.me/${(dynamicSettings?.whatsapp || '+521234567890').replace(/\D/g, '')}?text=${encodeURIComponent('Hola, acabo de realizar mi pago de Rifas NAO y subí mi comprobante. Por favor confirma mis boletos 🎟️')}`, '_blank')}
-                  className="w-full flex items-center justify-center gap-2.5 bg-[#25D366] text-white py-3.5 px-6 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-105 transition-all shadow-lg shadow-green-100 active:scale-95"
+                  onClick={() => window.location.reload()}
+                  className="flex-1 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:opacity-90"
+                  style={{
+                    backgroundColor: 'var(--brand-primary)',
+                    boxShadow: '0 6px 20px rgba(var(--brand-primary-rgb), 0.25)',
+                  }}
                 >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" /></svg>
-                  Enviar WhatsApp
+                  Volver a comprar
                 </button>
+
+                {/* Seguir en Facebook — enterarse cuando sean ganadores */}
                 <button
-                  onClick={onClose}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all"
+                  onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
+                  style={{ backgroundColor: '#1877F2' }}
                 >
-                  Cerrar
+                  <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  Facebook
                 </button>
               </div>
             </div>
