@@ -11,6 +11,8 @@ interface CheckoutModalProps {
   pricePerTicket: number;
   /** Se llama cuando la orden se creó y se subió el comprobante correctamente (para refrescar boletos). */
   onPurchaseSuccess?: () => void;
+  logoUrl?: string;
+  siteName?: string;
 }
 
 // Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
@@ -36,6 +38,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   raffleId,
   pricePerTicket,
   onPurchaseSuccess,
+  logoUrl,
+  siteName,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', state: '' });
@@ -247,11 +251,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         {step <= 2 && (
           <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              {/* Logo "N" con color de marca */}
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black italic text-sm"
-                style={{ background: 'linear-gradient(135deg, var(--brand-primary), rgba(var(--brand-primary-rgb),0.75))' }}
-              >N</div>
+              {/* Logo de la página */}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={siteName || 'Logo'}
+                  className="w-8 h-8 rounded-xl object-cover"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black italic text-sm"
+                  style={{ background: 'linear-gradient(135deg, var(--brand-primary), rgba(var(--brand-primary-rgb),0.75))' }}
+                >
+                  {(siteName || 'N').charAt(0).toUpperCase()}
+                </div>
+              )}
               <div>
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
                   {step === 1 ? 'Tus Datos' : 'Pago y Comprobante'}

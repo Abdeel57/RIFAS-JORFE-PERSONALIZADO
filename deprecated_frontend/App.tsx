@@ -333,6 +333,8 @@ const App: React.FC = () => {
           raffleId={featuredRaffle.id}
           pricePerTicket={featuredRaffle.ticketPrice}
           onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
+          logoUrl={brand.logoUrl}
+          siteName={brand.siteName}
         />
       )}
 
