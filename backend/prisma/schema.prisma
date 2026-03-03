@@ -133,6 +133,7 @@ model SystemSettings {
   autoVerificationEnabled  Boolean  @default(true)
   siteName                 String   @default("RIFAS NAO")
   logoUrl                  String?  @db.Text
+  logoSize                 Int      @default(44)
   primaryColor             String   @default("#3b82f6")
   secondaryColor           String   @default("#6366f1")
   updatedAt                DateTime @updatedAt

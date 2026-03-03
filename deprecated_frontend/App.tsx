@@ -18,6 +18,7 @@ interface BrandSettings {
   primaryColor: string;
   secondaryColor: string;
   facebookUrl: string;
+  logoSize: number;
 }
 
 const DEFAULT_BRAND: BrandSettings = {
@@ -26,6 +27,7 @@ const DEFAULT_BRAND: BrandSettings = {
   primaryColor: '#3b82f6',
   secondaryColor: '#6366f1',
   facebookUrl: '',
+  logoSize: 44,
 };
 
 // Tamaño de fuente adaptativo para el header según longitud del nombre
@@ -81,6 +83,7 @@ const App: React.FC = () => {
             primaryColor: data.primaryColor || DEFAULT_BRAND.primaryColor,
             secondaryColor: data.secondaryColor || DEFAULT_BRAND.secondaryColor,
             facebookUrl: data.facebookUrl || '',
+            logoSize: typeof data.logoSize === 'number' ? data.logoSize : DEFAULT_BRAND.logoSize,
           };
           setBrand(b);
           applyBrandCssVars(b);
@@ -172,7 +175,8 @@ const App: React.FC = () => {
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  className="w-11 h-11 md:w-13 md:h-13 object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
+                  className="object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
+                  style={{ width: brand.logoSize, height: brand.logoSize }}
                 />
               ) : (
                 <div

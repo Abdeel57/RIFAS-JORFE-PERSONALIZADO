@@ -132,23 +132,39 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
 
 // ─── Mini brand preview ───────────────────────────────────────────────────────
 
-const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: string }> = ({
-    primary, secondary, logoUrl,
+const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: string; logoSize: number; siteName: string }> = ({
+    primary, secondary, logoUrl, logoSize, siteName,
 }) => {
     const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;
     return (
         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista previa</p>
             <div className="bg-white/80 backdrop-blur rounded-2xl px-3 py-2 flex items-center gap-2 shadow-sm border border-slate-100">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center shadow overflow-hidden flex-shrink-0"
-                    style={{ background: gradient }}>
+                {/* ── Logo with badge ── */}
+                <div className="relative flex-shrink-0">
                     {logoUrl ? (
-                        <img src={logoUrl} alt="logo" className="w-full h-full object-contain" />
+                        <img
+                            src={logoUrl}
+                            alt="logo"
+                            style={{ width: logoSize, height: logoSize }}
+                            className="object-contain drop-shadow-sm"
+                        />
                     ) : (
-                        <span className="text-white font-black text-xs italic">N</span>
+                        <div
+                            className="rounded-xl flex items-center justify-center shadow"
+                            style={{ width: logoSize, height: logoSize, background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+                        >
+                            <span className="text-white font-black italic" style={{ fontSize: logoSize * 0.45 }}>N</span>
+                        </div>
                     )}
+                    {/* Blue checkmark badge */}
+                    <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#1877F2] border-[1.5px] border-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                        <svg className="w-2 h-2 text-white" viewBox="0 0 12 12" fill="currentColor">
+                            <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
+                        </svg>
+                    </div>
                 </div>
-                <span className="font-black text-xs text-slate-700 tracking-tight">RIFAS NAO</span>
+                <span className="font-black text-xs text-slate-700 tracking-tight">{siteName || 'RIFAS NAO'}</span>
                 <div className="ml-auto flex gap-1">
                     <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black shadow-sm border"
                         style={{ color: primary }}>Sorteo</span>
@@ -356,6 +372,7 @@ const Settings: React.FC = () => {
         facebookUrl: '',
         autoVerificationEnabled: true,
         logoUrl: '',
+        logoSize: 44,
         primaryColor: '#3b82f6',
         secondaryColor: '#6366f1',
     });
@@ -388,6 +405,7 @@ const Settings: React.FC = () => {
                         facebookUrl: data.facebookUrl || '',
                         autoVerificationEnabled: data.autoVerificationEnabled !== false,
                         logoUrl: savedLogo,
+                        logoSize: typeof data.logoSize === 'number' ? data.logoSize : 44,
                         primaryColor: primary,
                         secondaryColor: secondary,
                     });
@@ -632,6 +650,84 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* ── Tamaño del logo en la barra de navegación ── */}
+                    {settings.logoUrl && (
+                        <div className="border-t border-slate-50 pt-5 px-6 pb-6 space-y-4">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño del logo en la barra</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Mueve el slider hasta que quede perfecto. La palomita ✓ se posiciona sola.</p>
+                            </div>
+
+                            {/* Live navbar simulation */}
+                            <div
+                                className="rounded-2xl overflow-hidden border border-white/60 shadow-md"
+                                style={{
+                                    background: 'rgba(255,255,255,0.55)',
+                                    backdropFilter: 'blur(20px)',
+                                    WebkitBackdropFilter: 'blur(20px)',
+                                }}
+                            >
+                                <div className="px-4 h-14 flex items-center justify-between gap-3">
+                                    {/* Left: logo + site name */}
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="relative flex-shrink-0">
+                                            <img
+                                                src={settings.logoUrl}
+                                                alt="Logo preview"
+                                                style={{ width: settings.logoSize, height: settings.logoSize }}
+                                                className="object-contain drop-shadow-sm transition-all duration-200"
+                                            />
+                                            {/* Blue checkmark badge */}
+                                            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                                                <svg className="w-2 h-2 text-white" viewBox="0 0 12 12" fill="currentColor">
+                                                    <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="font-black text-[11px] text-slate-800 tracking-tight leading-none">{settings.siteName || 'RIFAS NAO'}</span>
+                                            <span className="font-bold uppercase text-[7px] tracking-widest mt-0.5" style={{ color: settings.primaryColor }}>Sorteos Certificados</span>
+                                        </div>
+                                    </div>
+                                    {/* Right: decorative nav pills */}
+                                    <div className="flex bg-white/40 p-0.5 rounded-xl border border-white/80 gap-0.5">
+                                        <span className="px-2.5 py-1 rounded-lg text-[8px] font-black bg-white text-slate-700 shadow-sm">Sorteo</span>
+                                        <span className="px-2.5 py-1 rounded-lg text-[8px] font-black text-slate-400">Verificar</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Slider */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-500">
+                                        Tamaño actual: <strong className="text-slate-800">{settings.logoSize}px</strong>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettings(prev => ({ ...prev, logoSize: 44 }))}
+                                        className="text-[9px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-wider transition-colors"
+                                    >↺ Restablecer (44px)</button>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={20}
+                                    max={80}
+                                    step={1}
+                                    value={settings.logoSize}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, logoSize: Number(e.target.value) }))}
+                                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                                    style={{ accentColor: settings.primaryColor }}
+                                />
+                                <div className="flex justify-between text-[9px] text-slate-300 font-bold select-none">
+                                    <span>Mínimo</span>
+                                    <span>←  Desliza  →</span>
+                                    <span>Máximo</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ── Identidad Visual: Colores ── */}
@@ -731,6 +827,8 @@ const Settings: React.FC = () => {
                             primary={settings.primaryColor}
                             secondary={settings.secondaryColor}
                             logoUrl={settings.logoUrl}
+                            logoSize={settings.logoSize}
+                            siteName={settings.siteName}
                         />
                     </div>
                 </div>
@@ -881,8 +979,8 @@ const Settings: React.FC = () => {
                                 <input
                                     type="url"
                                     className={`admin-input pr-10 ${settings.facebookUrl && !isValidUrl(settings.facebookUrl)
-                                            ? 'border-red-300 focus:border-red-500'
-                                            : ''
+                                        ? 'border-red-300 focus:border-red-500'
+                                        : ''
                                         }`}
                                     value={settings.facebookUrl}
                                     onChange={(e) => setSettings({ ...settings, facebookUrl: e.target.value.trim() })}

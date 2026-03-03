@@ -16,6 +16,7 @@ const updateSettingsSchema = z.object({
     autoVerificationEnabled: z.boolean().optional(),
     siteName: z.string().min(1).max(40).optional(),
     logoUrl: z.string().optional().nullable(),
+    logoSize: z.number().int().min(20).max(120).optional(),
     primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
 });
