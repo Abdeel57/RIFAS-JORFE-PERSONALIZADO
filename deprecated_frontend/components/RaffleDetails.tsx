@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Raffle } from '../types';
 import { DetailsSkeleton } from './SkeletonLoader.tsx';
+import { apiService } from '../services/apiService.ts';
 
 interface SafeImageProps {
   src: string;
@@ -78,12 +79,208 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
   );
 };
 
+// ─── Facebook OG Preview Data ─────────────────────────────────────────────────
+
+interface OgData {
+  title: string;
+  description: string;
+  image: string;
+  siteName: string;
+  url: string;
+}
+
+// ─── Facebook Section ────────────────────────────────────────────────────────
+
+interface FacebookSectionProps {
+  facebookUrl: string;
+  siteName: string;
+  logoUrl: string;
+}
+
+const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, siteName, logoUrl }) => {
+  const [og, setOg] = useState<OgData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const effectiveUrl = facebookUrl || 'https://facebook.com';
+  const hasFbUrl = !!facebookUrl;
+
+  useEffect(() => {
+    if (!hasFbUrl) { setOg(null); return; }
+    setIsLoading(true);
+    setHasError(false);
+    apiService
+      .getOgPreview(facebookUrl)
+      .then((data) => { setOg(data); })
+      .catch(() => { setHasError(true); })
+      .finally(() => setIsLoading(false));
+  }, [facebookUrl, hasFbUrl]);
+
+  // Derive display name: prefer OG title, then siteName
+  const displayName = og?.title || siteName || 'Página Oficial';
+
+  return (
+    <div className="relative group max-w-5xl mx-auto px-1 md:px-4 pt-4 md:pt-6">
+      <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-400/5 blur-[80px] rounded-full pointer-events-none"></div>
+
+      <div className="relative overflow-hidden bg-white/60 backdrop-blur-[20px] border border-white/70 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.03)] transition-all duration-500 hover:shadow-[0_25px_50px_rgba(0,0,0,0.05)]">
+
+        {/* ── Cover image from OG (full-bleed with overlay) ── */}
+        {isLoading && (
+          <div className="w-full h-36 md:h-48 bg-slate-100 animate-pulse" />
+        )}
+        {!isLoading && og?.image && (
+          <div className="relative w-full h-36 md:h-48 overflow-hidden">
+            <img
+              src={og.image}
+              alt={displayName}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            {/* Dark gradient at bottom so text is readable */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
+            {/* Facebook pill top-left */}
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 shadow-sm">
+              <div className="w-4 h-4 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0">
+                <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black text-slate-700">Facebook</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Card body ── */}
+        <div className="p-6 md:p-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
+              {/* Avatar / Logo */}
+              <div className="relative">
+                <div
+                  className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-slate-100 overflow-hidden transform hover:rotate-6 transition-transform"
+                  style={{ backgroundColor: 'var(--brand-primary)' }}
+                >
+                  {logoUrl ? (
+                    <img src={logoUrl} alt={siteName} className="w-full h-full object-contain p-1" />
+                  ) : (
+                    <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
+                  )}
+                </div>
+                {/* Facebook verified badge */}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                  <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Page name & description */}
+              <div className="space-y-0.5 md:space-y-1 max-w-xs md:max-w-sm">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  {isLoading ? (
+                    <div className="h-6 w-40 bg-slate-100 rounded-full animate-pulse" />
+                  ) : (
+                    <>
+                      <h4 className="text-lg md:text-2xl font-black text-slate-800 tracking-tighter line-clamp-1">
+                        {displayName}
+                      </h4>
+                      <div className="w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                        <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {isLoading ? (
+                  <div className="h-3 w-28 bg-slate-100 rounded-full animate-pulse mx-auto md:mx-0" />
+                ) : og?.description ? (
+                  <p className="text-slate-500 font-medium text-[11px] md:text-sm leading-relaxed line-clamp-2">
+                    {og.description}
+                  </p>
+                ) : (
+                  <p className="text-slate-500 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em]">
+                    Comunidad Verificada
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* CTA button */}
+            <a
+              href={effectiveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
+            >
+              {/* Facebook 'f' icon */}
+              <svg className="w-4 h-4 fill-white flex-shrink-0" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+              Seguir en Facebook
+            </a>
+          </div>
+
+          {/* ── Bottom content: mini post preview + "Transparencia Total" ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
+            <div className="bg-white/70 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/90 shadow-sm space-y-4 md:space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-100 rounded-full border border-slate-200"></div>
+                <div className="flex-1">
+                  <div className="h-2 w-24 md:w-28 bg-slate-100 rounded mb-1"></div>
+                  <div className="h-1.5 w-16 md:w-20 bg-slate-50 rounded"></div>
+                </div>
+              </div>
+              <p className="text-[11px] md:text-base text-slate-600 font-medium leading-relaxed italic">
+                "¡Increíble ambiente en la entrega de ayer! Gracias por la confianza."
+              </p>
+              <div className="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-36">
+                <div className="bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden border border-white">
+                  <SafeImage src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=300" alt="Entrega" className="w-full h-full object-cover" />
+                </div>
+                <div className="bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-[9px] md:text-[10px] font-black uppercase tracking-tighter border border-white">
+                  En Vivo
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 md:space-y-8 text-center md:text-left">
+              <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
+                Transparencia <span className="italic" style={{ color: 'var(--brand-primary)' }}>Total</span>
+              </h5>
+              <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
+                Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
+                <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
+                <span className="bg-red-50 text-red-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-red-100 uppercase tracking-widest">#EnVivo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 interface RaffleDetailsProps {
   raffle: Raffle;
   onOpenSupport: () => void;
+  facebookUrl?: string;
+  siteName?: string;
+  logoUrl?: string;
 }
 
-const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) => {
+const RaffleDetails: React.FC<RaffleDetailsProps> = ({
+  raffle,
+  onOpenSupport,
+  facebookUrl = '',
+  siteName = 'RIFAS NAO',
+  logoUrl = '',
+}) => {
   const [isSectionLoading, setIsSectionLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -152,7 +349,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
   return (
     <div className="space-y-8 md:space-y-16 py-2 animate-in fade-in duration-700">
 
-      {/* Sección "Conoce cada Detalle": Imagen 2, Imagen 3 y opcionalmente Video (en el lugar de Imagen 2) */}
+      {/* Sección "Conoce cada Detalle" */}
       <div className="max-w-5xl mx-auto px-4 space-y-12 md:space-y-20">
         <div className="space-y-6 md:space-y-10 text-center md:text-left">
           <div
@@ -173,7 +370,6 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-          {/* Primer bloque: Video si hay URL, si no Imagen 2 */}
           {hasVideo ? (
             <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-black">
               <iframe
@@ -192,9 +388,11 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
               </div>
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 p-1.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
                 <button type="button" onClick={togglePlay} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-slate-900 hover:scale-105 transition-transform">
-                  {isPlaying ? <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg> : <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>}</button>
+                  {isPlaying ? <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg> : <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>}
+                </button>
                 <button type="button" onClick={toggleMute} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20">
-                  {isMuted ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11.707 5.293L7 10H4a1 1 0 00-1 1v2a1 1 0 001 1h3l4.707 4.707A1 1 0 0013 18V6a1 1 0 00-1.293-.707z" /></svg>}</button>
+                  {isMuted ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11.707 5.293L7 10H4a1 1 0 00-1 1v2a1 1 0 001 1h3l4.707 4.707A1 1 0 0013 18V6a1 1 0 00-1.293-.707z" /></svg>}
+                </button>
                 <button type="button" onClick={toggleFullscreen} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" /></svg>
                 </button>
@@ -209,7 +407,6 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
             </div>
           ) : null}
 
-          {/* Segundo bloque: siempre Imagen 3 (Detalle 2) */}
           {image3 ? (
             <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
               <SafeImage src={image3} alt="Detalle 2" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
@@ -221,85 +418,10 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({ raffle, onOpenSupport }) 
         </div>
       </div>
 
-      <div className="relative group max-w-5xl mx-auto px-1 md:px-4 pt-4 md:pt-6">
-        <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-400/5 blur-[80px] rounded-full pointer-events-none"></div>
+      {/* ── Facebook Section (dinámica) ── */}
+      <FacebookSection facebookUrl={facebookUrl} siteName={siteName} logoUrl={logoUrl} />
 
-        <div className="relative overflow-hidden bg-white/60 backdrop-blur-[20px] border border-white/70 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.03)] p-6 md:p-12 transition-all duration-500 hover:shadow-[0_25px_50px_rgba(0,0,0,0.05)]">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
-            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
-              <div className="relative">
-                <div
-                  className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-[2.2rem] flex items-center justify-center shadow-2xl shadow-slate-100 transform hover:rotate-6 transition-transform"
-                  style={{ backgroundColor: 'var(--brand-primary)' }}
-                >
-                  <span className="text-white font-black text-2xl md:text-4xl italic">N</span>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                  <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-              <div className="space-y-0.5 md:space-y-1">
-                <div className="flex items-center justify-center md:justify-start gap-2">
-                  <h4 className="text-lg md:text-2xl font-black text-slate-800 tracking-tighter">Rifas Nao Oficial</h4>
-                  <div className="w-5 h-5 md:w-6 md:h-6 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                    <svg className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-                <p className="text-slate-500 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em]">Comunidad Verificada</p>
-              </div>
-            </div>
-
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              className="w-full md:w-auto bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-4 md:px-10 md:py-5 rounded-2xl md:rounded-[1.8rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95"
-            >
-              Seguir en Facebook
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
-            <div className="bg-white/70 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/90 shadow-sm space-y-4 md:space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-100 rounded-full border border-slate-200"></div>
-                <div className="flex-1">
-                  <div className="h-2 w-24 md:w-28 bg-slate-100 rounded mb-1"></div>
-                  <div className="h-1.5 w-16 md:w-20 bg-slate-50 rounded"></div>
-                </div>
-              </div>
-              <p className="text-[11px] md:text-base text-slate-600 font-medium leading-relaxed italic">
-                "¡Increíble ambiente en la entrega de ayer! Gracias por la confianza."
-              </p>
-              <div className="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-36">
-                <div className="bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden border border-white">
-                  <SafeImage src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=300" alt="Entrega" className="w-full h-full object-cover" />
-                </div>
-                <div className="bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-[9px] md:text-[10px] font-black uppercase tracking-tighter border border-white">
-                  En Vivo
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 md:space-y-8 text-center md:text-left">
-              <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
-                Transparencia <span className="italic" style={{ color: 'var(--brand-primary)' }}>Total</span>
-              </h5>
-              <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
-                Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
-              </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-                <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
-                <span className="bg-red-50 text-red-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-red-100 uppercase tracking-widest">#EnVivo</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* FAQ */}
       <div className="max-w-4xl mx-auto px-1 md:px-4 py-6 md:py-20">
         <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
           <div className="text-3xl md:text-4xl">🤔</div>

@@ -17,6 +17,7 @@ interface BrandSettings {
   logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
+  facebookUrl: string;
 }
 
 const DEFAULT_BRAND: BrandSettings = {
@@ -24,6 +25,7 @@ const DEFAULT_BRAND: BrandSettings = {
   logoUrl: '',
   primaryColor: '#3b82f6',
   secondaryColor: '#6366f1',
+  facebookUrl: '',
 };
 
 // Tamaño de fuente adaptativo para el header según longitud del nombre
@@ -78,12 +80,13 @@ const App: React.FC = () => {
             logoUrl: data.logoUrl || '',
             primaryColor: data.primaryColor || DEFAULT_BRAND.primaryColor,
             secondaryColor: data.secondaryColor || DEFAULT_BRAND.secondaryColor,
+            facebookUrl: data.facebookUrl || '',
           };
           setBrand(b);
           applyBrandCssVars(b);
         }
       })
-      .catch(() => {/* fallback to defaults silently */});
+      .catch(() => {/* fallback to defaults silently */ });
   }, []);
 
   useEffect(() => {
@@ -292,7 +295,7 @@ const App: React.FC = () => {
                       />
                     </div>
 
-                    <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} />
+                    <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} facebookUrl={brand.facebookUrl} siteName={brand.siteName} logoUrl={brand.logoUrl} />
                   </>
                 ) : (
                   <div className="text-center py-20">

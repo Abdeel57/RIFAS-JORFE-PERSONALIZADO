@@ -143,6 +143,13 @@ class ApiService {
   async getSettings() {
     return this.request<any>('/settings');
   }
+
+  async getOgPreview(url: string) {
+    const encoded = encodeURIComponent(url);
+    return this.request<{ title: string; description: string; image: string; siteName: string; url: string }>(
+      `/settings/og-preview?url=${encoded}`
+    );
+  }
 }
 
 export const apiService = new ApiService();
