@@ -167,10 +167,12 @@ const App: React.FC = () => {
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
             <div className="relative">
               {brand.logoUrl ? (
+                // Render logo without any background so PNG/WebP transparency shows cleanly.
+                // The image floats naturally over the glassmorphism navbar.
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-2xl object-contain shadow-lg transform group-hover:rotate-6 transition-transform duration-300 bg-white"
+                  className="w-9 h-9 md:w-10 md:h-10 object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
                 />
               ) : (
                 <div
@@ -347,13 +349,18 @@ const App: React.FC = () => {
         <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 justify-center cursor-pointer" onClick={() => handleViewChange('raffle')}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md overflow-hidden" style={{ backgroundColor: 'var(--brand-primary)' }}>
-                {brand.logoUrl ? (
-                  <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-contain p-0.5" />
-                ) : (
+              {brand.logoUrl ? (
+                // No container box — logo floats transparently over white footer
+                <img
+                  src={brand.logoUrl}
+                  alt="Logo"
+                  className="w-9 h-9 object-contain drop-shadow-sm"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: 'var(--brand-primary)' }}>
                   <span className="text-white font-black text-lg italic">N</span>
-                )}
-              </div>
+                </div>
+              )}
               <span className={`font-black tracking-tighter text-slate-800 ${footerNameSize(brand.siteName)}`}>
                 {brand.siteName}
               </span>
