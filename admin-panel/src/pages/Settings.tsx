@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -58,13 +58,21 @@ function isValidHex(hex: string): boolean {
     return /^#[0-9a-fA-F]{6}$/.test(hex);
 }
 
+function isValidUrl(url: string): boolean {
+    try {
+        const u = new URL(url);
+        return ['http:', 'https:'].includes(u.protocol);
+    } catch {
+        return false;
+    }
+}
+
 // ─── Image compression via Canvas ────────────────────────────────────────────
 
-const MAX_LOGO_DIMENSION = 512; // px — cubre pantallas retina 3× hasta 170px de display
+const MAX_LOGO_DIMENSION = 512;
 
 function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }> {
     return new Promise((resolve, reject) => {
-        // SVGs son vectoriales: leer como data URL sin re-renderizar en canvas
         if (file.type === 'image/svg+xml') {
             const reader = new FileReader();
             reader.onload = (ev) => {
@@ -83,7 +91,6 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
             URL.revokeObjectURL(objectUrl);
             let { width, height } = img;
 
-            // Escalar manteniendo proporción
             if (width > MAX_LOGO_DIMENSION || height > MAX_LOGO_DIMENSION) {
                 if (width >= height) {
                     height = Math.round(height * MAX_LOGO_DIMENSION / width);
@@ -100,11 +107,9 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
             const ctx = canvas.getContext('2d');
             if (!ctx) { reject(new Error('Canvas no disponible')); return; }
 
-            // Fondo transparente para logos con transparencia
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Intentar WebP primero, fallback a PNG (para mantener transparencia)
             const tryFormats = ['image/webp', 'image/png'];
             let dataUrl = '';
             for (const fmt of tryFormats) {
@@ -125,7 +130,7 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
     });
 }
 
-// ─── Mini preview component ───────────────────────────────────────────────────
+// ─── Mini brand preview ───────────────────────────────────────────────────────
 
 const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: string }> = ({
     primary, secondary, logoUrl,
@@ -134,7 +139,6 @@ const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: stri
     return (
         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista previa</p>
-            {/* Mini navbar */}
             <div className="bg-white/80 backdrop-blur rounded-2xl px-3 py-2 flex items-center gap-2 shadow-sm border border-slate-100">
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center shadow overflow-hidden flex-shrink-0"
                     style={{ background: gradient }}>
@@ -151,7 +155,6 @@ const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: stri
                     <span className="px-2 py-0.5 rounded-lg text-[9px] font-black text-slate-400">Verificar</span>
                 </div>
             </div>
-            {/* Precio + botón */}
             <div className="flex items-center gap-2">
                 <div className="px-3 py-1.5 rounded-xl text-white text-xs font-black shadow-sm"
                     style={{ background: gradient }}>$150</div>
@@ -160,7 +163,6 @@ const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: stri
                     COMPRAR BOLETO
                 </div>
             </div>
-            {/* Badge */}
             <div className="flex gap-2">
                 <span className="px-2 py-0.5 bg-white rounded-full text-[9px] font-black border shadow-sm"
                     style={{ color: primary }}>✦ Edición Especial</span>
@@ -169,6 +171,170 @@ const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: stri
             </div>
         </div>
     );
+};
+
+// ─── OG Preview types ────────────────────────────────────────────────────────
+
+interface OgData {
+    title: string;
+    description: string;
+    image: string;
+    siteName: string;
+    url: string;
+}
+
+type OgStatus = 'idle' | 'loading' | 'success' | 'error';
+
+// ─── Facebook Page Preview component ─────────────────────────────────────────
+
+const FacebookPagePreview: React.FC<{ url: string }> = ({ url }) => {
+    const [status, setStatus] = useState<OgStatus>('idle');
+    const [og, setOg] = useState<OgData | null>(null);
+    const [errorMsg, setErrorMsg] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        // Clear pending debounce
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        if (!url || !isValidUrl(url)) {
+            setStatus('idle');
+            setOg(null);
+            return;
+        }
+
+        setStatus('loading');
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const res = await api.get('/settings/og-preview', {
+                    params: { url },
+                });
+                if (res.data?.success) {
+                    setOg(res.data.data);
+                    setStatus('success');
+                } else {
+                    setErrorMsg('No se pudo obtener el preview.');
+                    setStatus('error');
+                }
+            } catch (err: any) {
+                const msg = err?.response?.data?.error || 'No se pudo conectar a la URL.';
+                setErrorMsg(msg);
+                setStatus('error');
+            }
+        }, 800);
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [url]);
+
+    // ── Skeleton ──
+    if (status === 'loading') {
+        return (
+            <div className="mt-3 rounded-2xl border border-slate-100 overflow-hidden bg-slate-50 animate-pulse">
+                <div className="h-28 bg-slate-200" />
+                <div className="p-4 space-y-2">
+                    <div className="h-3 bg-slate-200 rounded-full w-3/4" />
+                    <div className="h-2.5 bg-slate-200 rounded-full w-full" />
+                    <div className="h-2.5 bg-slate-200 rounded-full w-2/3" />
+                </div>
+            </div>
+        );
+    }
+
+    // ── Error ──
+    if (status === 'error') {
+        return (
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
+                <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.56 1.73-2.89L13.73 4.99c-.77-1.33-2.69-1.33-3.46 0L3.34 16.11C2.57 17.44 3.53 19 5.07 19z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-xs font-black text-red-600">No se pudo cargar el preview</p>
+                    <p className="text-[11px] text-red-400 mt-0.5">{errorMsg}</p>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Success ──
+    if (status === 'success' && og) {
+        const displayDomain = (() => {
+            try { return new URL(og.url).hostname.replace('www.', ''); } catch { return og.url; }
+        })();
+
+        return (
+            <div className="mt-3 rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-sm transition-all duration-300 group">
+                {/* Cover image */}
+                {og.image && (
+                    <div className="relative h-32 bg-slate-100 overflow-hidden">
+                        <img
+                            src={og.image}
+                            alt={og.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        {/* Facebook pill badge */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 shadow-sm">
+                            {/* Facebook 'f' logo */}
+                            <div className="w-4 h-4 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0">
+                                <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-black text-slate-600">{displayDomain}</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Content */}
+                <div className="p-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        {!og.image && (
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-5 h-5 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-3 h-3 fill-white" viewBox="0 0 24 24">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                    </svg>
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400">{displayDomain}</span>
+                            </div>
+                        )}
+                        {og.title && (
+                            <p className="text-sm font-black text-slate-800 leading-tight line-clamp-2">
+                                {og.title}
+                            </p>
+                        )}
+                        {og.description && (
+                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">
+                                {og.description}
+                            </p>
+                        )}
+                        <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-wider">
+                            {displayDomain}
+                        </p>
+                    </div>
+
+                    {/* Open link button */}
+                    <a
+                        href={og.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir página de Facebook"
+                        className="flex-shrink-0 w-8 h-8 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
+                    >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
 };
 
 // ─── Main Settings component ──────────────────────────────────────────────────
@@ -187,6 +353,7 @@ const Settings: React.FC = () => {
         whatsapp: '',
         contactEmail: '',
         instagram: '',
+        facebookUrl: '',
         autoVerificationEnabled: true,
         logoUrl: '',
         primaryColor: '#3b82f6',
@@ -218,6 +385,7 @@ const Settings: React.FC = () => {
                         whatsapp: data.whatsapp || '',
                         contactEmail: data.contactEmail || '',
                         instagram: data.instagram || '',
+                        facebookUrl: data.facebookUrl || '',
                         autoVerificationEnabled: data.autoVerificationEnabled !== false,
                         logoUrl: savedLogo,
                         primaryColor: primary,
@@ -376,8 +544,8 @@ const Settings: React.FC = () => {
                                     style={{
                                         fontSize: settings.siteName.length <= 10 ? '14px'
                                             : settings.siteName.length <= 16 ? '12px'
-                                            : settings.siteName.length <= 22 ? '10px'
-                                            : '9px',
+                                                : settings.siteName.length <= 22 ? '10px'
+                                                    : '9px',
                                     }}
                                 >
                                     {settings.siteName || 'RIFAS NAO'}
@@ -682,16 +850,65 @@ const Settings: React.FC = () => {
                                 required
                             />
                         </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de Usuario Instagram</label>
-                            <input
-                                type="text"
-                                className="admin-input"
-                                value={settings.instagram}
-                                onChange={(e) => setSettings({ ...settings, instagram: e.target.value })}
-                                placeholder="Ej. @rifasnao_oficial"
-                                required
-                            />
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instagram</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold select-none">@</span>
+                                <input
+                                    type="text"
+                                    className="admin-input pl-7"
+                                    value={settings.instagram.replace(/^@/, '')}
+                                    onChange={(e) => setSettings({ ...settings, instagram: e.target.value })}
+                                    placeholder="rifasnao_oficial"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* ── Facebook ── */}
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                                {/* Facebook blue dot */}
+                                <span className="w-3 h-3 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-2 h-2 fill-white" viewBox="0 0 24 24">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                    </svg>
+                                </span>
+                                Página de Facebook
+                                <span className="text-slate-300 font-bold normal-case tracking-normal">(opcional)</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="url"
+                                    className={`admin-input pr-10 ${settings.facebookUrl && !isValidUrl(settings.facebookUrl)
+                                            ? 'border-red-300 focus:border-red-500'
+                                            : ''
+                                        }`}
+                                    value={settings.facebookUrl}
+                                    onChange={(e) => setSettings({ ...settings, facebookUrl: e.target.value.trim() })}
+                                    placeholder="https://www.facebook.com/tu-pagina"
+                                />
+                                {/* Status indicator */}
+                                {settings.facebookUrl && isValidUrl(settings.facebookUrl) && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#1877F2] animate-pulse" />
+                                )}
+                                {settings.facebookUrl && !isValidUrl(settings.facebookUrl) && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-400" />
+                                )}
+                            </div>
+                            {settings.facebookUrl && !isValidUrl(settings.facebookUrl) && (
+                                <p className="text-[10px] text-red-500 font-bold ml-1">
+                                    Ingresa una URL válida (ej: https://www.facebook.com/tu-pagina)
+                                </p>
+                            )}
+                            {settings.facebookUrl && isValidUrl(settings.facebookUrl) && (
+                                <p className="text-[10px] text-slate-400 ml-1">
+                                    Vista previa cargando…
+                                </p>
+                            )}
+
+                            {/* Facebook page preview card */}
+                            <FacebookPagePreview url={settings.facebookUrl} />
                         </div>
                     </div>
                 </div>

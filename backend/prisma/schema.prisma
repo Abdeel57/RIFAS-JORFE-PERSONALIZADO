@@ -129,6 +129,7 @@ model SystemSettings {
   whatsapp                 String   @default("+521234567890")
   contactEmail             String   @default("contacto@rifasnao.com")
   instagram                String   @default("@rifasnao_oficial")
+  facebookUrl              String?
   autoVerificationEnabled  Boolean  @default(true)
   siteName                 String   @default("RIFAS NAO")
   logoUrl                  String?  @db.Text

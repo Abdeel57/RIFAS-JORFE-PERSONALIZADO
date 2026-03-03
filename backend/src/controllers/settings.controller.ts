@@ -12,6 +12,7 @@ const updateSettingsSchema = z.object({
     whatsapp: z.string().min(1).optional(),
     contactEmail: z.string().email().optional(),
     instagram: z.string().optional(),
+    facebookUrl: z.string().url().optional().nullable().or(z.literal('')),
     autoVerificationEnabled: z.boolean().optional(),
     siteName: z.string().min(1).max(40).optional(),
     logoUrl: z.string().optional().nullable(),
@@ -49,6 +50,7 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
         if (data.accountNumber === '') data.accountNumber = null;
         if (data.paymentInstructions === '') data.paymentInstructions = null;
         if (data.logoUrl === '') data.logoUrl = null;
+        if (data.facebookUrl === '') data.facebookUrl = null;
 
         const settings = await prisma.systemSettings.upsert({
             where: { id: 'default' },
