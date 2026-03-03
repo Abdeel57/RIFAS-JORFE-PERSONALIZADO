@@ -80,17 +80,21 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
 
   if (!facebookUrl) return null;
 
-  // Facebook Page Plugin embed URL
+  // Facebook Page Plugin embed URL.
+  // NOTE: adapt_container_width is intentionally FALSE so the plugin always
+  // renders at 500px width, which triggers the large-header mode with the
+  // real cover photo. With adapt=true the narrow mobile container causes FB
+  // to fall back to the small header (no cover photo).
   const pluginSrc =
     `https://www.facebook.com/plugins/page.php` +
     `?href=${encodeURIComponent(facebookUrl)}` +
     `&tabs=` +
     `&width=500` +
-    `&height=280` +
+    `&height=230` +
     `&small_header=false` +
-    `&adapt_container_width=true` +
+    `&adapt_container_width=false` +
     `&hide_cover=false` +
-    `&show_facepile=true` +
+    `&show_facepile=false` +
     `&appid=`;
 
   return (
@@ -102,7 +106,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
       <div className="relative overflow-hidden bg-white/60 backdrop-blur-[20px] border border-white/70 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_25px_50px_rgba(0,0,0,0.06)] transition-all duration-500">
 
         {/* Header strip */}
-        <div className="flex items-center justify-between gap-3 px-6 md:px-10 pt-6 md:pt-8 pb-4">
+        <div className="flex items-center justify-between gap-3 px-5 md:px-8 pt-5 md:pt-6 pb-3">
           <div className="flex items-center gap-2.5">
             {/* Facebook 'f' icon */}
             <div className="w-8 h-8 rounded-xl bg-[#1877F2] flex items-center justify-center shadow-md flex-shrink-0">
@@ -131,21 +135,21 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
         </div>
 
         {/* Divider */}
-        <div className="mx-6 md:mx-10 h-px bg-slate-100" />
+        <div className="mx-5 md:mx-8 h-px bg-slate-100" />
 
-        {/* Facebook Page Plugin iframe */}
-        <div className="relative px-4 md:px-6 py-4 md:py-6">
-          {/* Skeleton shown until iframe fires onLoad */}
+        {/* Facebook Page Plugin iframe — fixed 500px width so FB always
+            renders the large-header mode (cover photo + profile + followers) */}
+        <div className="relative px-3 md:px-5 py-3 md:py-4 overflow-x-auto">
+
+          {/* Skeleton while iframe loads */}
           {!iframeReady && (
-            <div className="absolute inset-0 mx-4 md:mx-6 my-4 md:my-6 rounded-2xl bg-slate-100 animate-pulse flex flex-col gap-3 p-4">
-              {/* Cover skeleton */}
-              <div className="h-28 bg-slate-200 rounded-xl" />
-              {/* Profile + name skeletons */}
-              <div className="flex items-end gap-3 -mt-8 pl-3">
-                <div className="w-16 h-16 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
+            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 230 }}>
+              <div className="h-28 bg-slate-200" />
+              <div className="flex items-end gap-3 -mt-7 px-3">
+                <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
                 <div className="space-y-1 pb-1">
-                  <div className="h-3 w-32 bg-slate-200 rounded-full" />
-                  <div className="h-2.5 w-20 bg-slate-200 rounded-full" />
+                  <div className="h-3 w-36 bg-slate-200 rounded-full" />
+                  <div className="h-2.5 w-24 bg-slate-200 rounded-full" />
                 </div>
               </div>
             </div>
@@ -154,10 +158,12 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
           <iframe
             src={pluginSrc}
             width="500"
-            height="280"
-            className="w-full rounded-2xl border-0 overflow-hidden block"
+            height="230"
+            className="rounded-xl border-0 block mx-auto"
             style={{
-              minHeight: '280px',
+              width: '500px',         /* fixed: forces FB large-header with cover photo */
+              height: '230px',
+              maxWidth: '100%',
               opacity: iframeReady ? 1 : 0,
               transition: 'opacity 0.4s ease',
             }}
@@ -167,21 +173,6 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
             onLoad={() => setIframeReady(true)}
           />
-        </div>
-
-        {/* Bottom CTA full-width */}
-        <div className="px-6 md:px-10 pb-6 md:pb-8">
-          <a
-            href={facebookUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-3 bg-[#1877F2] hover:bg-[#166fe5] active:scale-[.98] text-white py-4 rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-100"
-          >
-            <svg className="w-5 h-5 fill-white flex-shrink-0" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-            Seguir en Facebook
-          </a>
         </div>
       </div>
     </div>
