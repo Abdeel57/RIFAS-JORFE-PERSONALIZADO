@@ -172,7 +172,7 @@ const App: React.FC = () => {
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  className="w-9 h-9 md:w-10 md:h-10 object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
+                  className="w-11 h-11 md:w-13 md:h-13 object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
                 />
               ) : (
                 <div
