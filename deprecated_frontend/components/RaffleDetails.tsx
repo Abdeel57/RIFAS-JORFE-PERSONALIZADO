@@ -153,7 +153,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, siteName
 
         {/* ── Card body ── */}
         <div className="p-6 md:p-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mb-6 md:mb-12 pb-6 md:pb-12 border-b border-slate-200/30">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
               {/* Avatar / Logo */}
               <div className="relative">
@@ -222,42 +222,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, siteName
             </a>
           </div>
 
-          {/* ── Bottom content: mini post preview + "Transparencia Total" ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-14 items-center">
-            <div className="bg-white/70 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/90 shadow-sm space-y-4 md:space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-100 rounded-full border border-slate-200"></div>
-                <div className="flex-1">
-                  <div className="h-2 w-24 md:w-28 bg-slate-100 rounded mb-1"></div>
-                  <div className="h-1.5 w-16 md:w-20 bg-slate-50 rounded"></div>
-                </div>
-              </div>
-              <p className="text-[11px] md:text-base text-slate-600 font-medium leading-relaxed italic">
-                "¡Increíble ambiente en la entrega de ayer! Gracias por la confianza."
-              </p>
-              <div className="grid grid-cols-2 gap-2 md:gap-3 h-28 md:h-36">
-                <div className="bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden border border-white">
-                  <SafeImage src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=300" alt="Entrega" className="w-full h-full object-cover" />
-                </div>
-                <div className="bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-[9px] md:text-[10px] font-black uppercase tracking-tighter border border-white">
-                  En Vivo
-                </div>
-              </div>
-            </div>
 
-            <div className="space-y-4 md:space-y-8 text-center md:text-left">
-              <h5 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter leading-[0.9]">
-                Transparencia <span className="italic" style={{ color: 'var(--brand-primary)' }}>Total</span>
-              </h5>
-              <p className="text-slate-500 text-xs md:text-lg leading-relaxed">
-                Únete a nuestras transmisiones. Sorteos certificados en tiempo real con la Lotería Nacional.
-              </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-                <span className="bg-slate-50 text-slate-400 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-slate-100 uppercase tracking-widest">#RifasNao</span>
-                <span className="bg-red-50 text-red-600 text-[8px] md:text-[10px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-red-100 uppercase tracking-widest">#EnVivo</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
