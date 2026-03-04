@@ -169,18 +169,17 @@ const App: React.FC = () => {
 
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
             {/*
-              Identical structure to admin panel preview:
-              - 80×80px fixed reference box (never changes size)
-              - Logo centered inside, scales freely with brand.logoSize
-              - Badge: independent sibling at top:14 right:14
-                (= top-right corner of a 44px logo centered in an 80px box)
-              Text column is always at the same distance regardless of logoSize.
+              SOLUCIÓN FINAL:
+              Contenedor de 44px en el flex layout → texto y menú NUNCA se mueven.
+              overflow: visible → el logo crece visualmente sin afectar el layout.
+              Logo centrado con flex → crece desde el centro (izquierda y derecha por igual).
+              Badge en top:-4 right:-4 del box de 44px → NUNCA se mueve.
             */}
             <div
               className="relative flex-shrink-0 flex items-center justify-center"
-              style={{ width: 80, height: 80, overflow: 'visible' }}
+              style={{ width: 44, height: 44, overflow: 'visible' }}
             >
-              {/* ① Logo only — scales independently, badge is NOT here */}
+              {/* Logo: centrado, escala visualmente sin afectar el layout */}
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
@@ -201,12 +200,10 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* ② Badge: FIXED at top:14 right:14 of the 80px box.
-                  (80px - 44px default) / 2 = 18px margin → 18 - 4 = 14px
-                  This is the corner of the DEFAULT 44px logo. Never moves. */}
+              {/* Badge: anclado al top-right del box de 44px. Independiente del logo. Nunca se mueve. */}
               <div
                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                style={{ width: 14, height: 14, top: 14, right: 14, zIndex: 10 }}
+                style={{ width: 14, height: 14, top: -4, right: -4, zIndex: 20 }}
               >
                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                   <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
