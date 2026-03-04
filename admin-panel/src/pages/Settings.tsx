@@ -664,7 +664,7 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Live navbar simulation — all measurements are FIXED so text and badge never shift */}
+                            {/* Live navbar simulation — badge is SEPARATE element from the logo */}
                             <div
                                 className="rounded-xl border border-slate-200 shadow-sm"
                                 style={{
@@ -674,25 +674,30 @@ const Settings: React.FC = () => {
                                 }}
                             >
                                 <div className="px-4 h-16 flex items-center justify-between gap-3">
-                                    {/* Left: FIXED 80px slot — logo scales inside, badge stays fixed */}
+                                    {/* Left: logo area + badge (as siblings) + text */}
                                     <div className="flex items-center gap-2.5 min-w-0">
                                         {/*
-                                          FIXED container: always 80×80px regardless of logoSize.
-                                          The logo image is centered inside via flexbox and scales with
-                                          style width/height. This means:
-                                          - Container never changes → text never shifts
-                                          - Badge always at same pixel position → never moves
-                                          - Only the image visually grows/shrinks inside the box
+                                          OUTER WRAPPER: always 80×80px — never changes size.
+                                          Contains TWO SEPARATE siblings:
+                                            1. Logo image: centered via flex, scales with logoSize
+                                            2. Badge:      absolute at FIXED coords top:14 right:14
+                                                           (= corner of the 44px default logo centered in 80px box)
+                                          Badge is NOT a child of the logo — it's an independent element.
                                         */}
                                         <div
                                             className="relative flex-shrink-0 flex items-center justify-center"
                                             style={{ width: 80, height: 80 }}
                                         >
+                                            {/* ① Logo: scales, centered — badge is NOT inside this */}
                                             {settings.logoUrl ? (
                                                 <img
                                                     src={settings.logoUrl}
                                                     alt="Logo preview"
-                                                    style={{ width: settings.logoSize, height: settings.logoSize, transition: 'width 0.12s ease, height 0.12s ease' }}
+                                                    style={{
+                                                        width: settings.logoSize,
+                                                        height: settings.logoSize,
+                                                        transition: 'width 0.12s ease, height 0.12s ease',
+                                                    }}
                                                     className="object-contain drop-shadow-sm"
                                                 />
                                             ) : (
@@ -708,22 +713,31 @@ const Settings: React.FC = () => {
                                                     <span className="text-white font-black italic" style={{ fontSize: Math.max(10, settings.logoSize * 0.4) }}>N</span>
                                                 </div>
                                             )}
-                                            {/* Badge: ALWAYS at top:2 right:2 of the 80px container → never moves */}
+
+                                            {/*
+                                              ② Badge: INDEPENDENT element — NOT inside the logo div.
+                                              Fixed at top:14px right:14px of the 80px container:
+                                                → (80px - 44px) / 2 = 18px margin for default logo
+                                                → 18 - 4 = 14px offset = exactly the corner of the 44px logo
+                                              This position NEVER changes regardless of logoSize.
+                                            */}
                                             <div
-                                                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm"
-                                                style={{ width: 14, height: 14, top: 2, right: 2 }}
+                                                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
+                                                style={{ width: 14, height: 14, top: 14, right: 14 }}
                                             >
                                                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                                                     <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                                                 </svg>
                                             </div>
                                         </div>
+
+                                        {/* Text column: never shifts because outer wrapper is fixed */}
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-black text-[11px] text-slate-800 tracking-tight leading-none truncate">{settings.siteName || 'RIFAS NAO'}</span>
                                             <span className="font-bold uppercase text-[7px] tracking-widest mt-0.5" style={{ color: settings.primaryColor }}>Sorteos Certificados</span>
                                         </div>
                                     </div>
-                                    {/* Right: decorative nav pills — always fixed position */}
+                                    {/* Right: decorative nav pills */}
                                     <div className="flex-shrink-0 flex bg-slate-100/80 p-0.5 rounded-xl gap-0.5">
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black bg-white text-slate-700 shadow-sm">Sorteo</span>
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black text-slate-400">Verificar</span>

@@ -168,16 +168,23 @@ const App: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
 
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
-            {/* Logo wrapper: EXPLICIT size so the badge is always pinned correctly */}
+            {/*
+              Layout: [fixed-44px-reference-box] [text-column]
+              The reference box reserves 44px (default badge anchor point).
+              Inside: logo img (scales freely) + badge (fixed sibling at -4,-4 of the 44px box).
+              Badge is NOT inside the logo element — it's an independent sibling.
+            */}
             <div
-              className="relative flex-shrink-0"
-              style={{ width: brand.logoSize, height: brand.logoSize, overflow: 'visible' }}
+              className="relative flex-shrink-0 flex items-center justify-center"
+              style={{ width: 44, height: 44, overflow: 'visible' }}
             >
+              {/* ① Logo only — no badge here */}
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  className="w-full h-full object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
+                  style={{ width: brand.logoSize, height: brand.logoSize }}
+                  className="object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
                 />
               ) : (
                 <div
@@ -187,16 +194,19 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-xl italic tracking-tighter">N</span>
                 </div>
               )}
-              {/* Badge: fixed pixel offset from the corner — never moves as logo scales */}
+
+              {/* ② Badge: independent element, NOT related to logo size */}
+              {/* Fixed at top-right of the 44px reference box — never moves */}
               <div
-                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm"
-                style={{ width: 14, height: 14, top: -4, right: -4 }}
+                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
+                style={{ width: 14, height: 14, top: -4, right: -4, zIndex: 10 }}
               >
                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                   <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                 </svg>
               </div>
             </div>
+
             <div className="flex flex-col">
               <span className={`font-black tracking-tighter text-slate-800 leading-none ${headerNameSize(brand.siteName)}`}>
                 {brand.siteName}
