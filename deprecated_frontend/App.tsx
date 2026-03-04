@@ -161,116 +161,104 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">
-      {/* Header Estilo "Liquid Glass" */}
-      <div className="fixed top-0 left-0 right-0 z-50 px-4 py-4 md:py-6 flex justify-center pointer-events-none">
-        <nav className="pointer-events-auto relative overflow-visible bg-white/50 backdrop-blur-[20px] border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] px-4 h-14 md:h-16 flex items-center justify-between gap-4 md:gap-8 max-w-7xl w-full transition-all duration-300">
+      {/* ── Navbar "Liquid Glass" ────────────────────────────────── */}
+      <div className="fixed top-0 left-0 right-0 z-50 px-3 py-3 md:px-4 md:py-5 flex justify-center pointer-events-none">
+        <nav
+          className="pointer-events-auto relative w-full max-w-2xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
+          style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 0, paddingLeft: 16, paddingRight: 12 }}
+        >
+          {/* Glassmorphism inner gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-white/10 pointer-events-none rounded-2xl md:rounded-[2rem]" />
 
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
-
-          {/*
-            ══════════════════════════════════════════════════════════
-            GRUPO IZQUIERDO: Logo (absolute) + Texto (en flujo flex)
-            ══════════════════════════════════════════════════════════
-            El logo tiene position:absolute → FUERA del flujo flex.
-            El texto tiene padding-left fijo (56px) para hacer espacio.
-            Cambiar logoSize no mueve NADA en el layout.
-          */}
+          {/* ── COLUMNA IZQUIERDA (1fr): Logo + Nombre ─────────────── */}
+          {/* Logo es position:absolute → nunca afecta el grid layout  */}
+          {/* El nombre es el único elemento en el flujo               */}
           <div
-            className="relative flex items-center cursor-pointer z-10 group"
+            className="relative flex items-center z-10 cursor-pointer group min-w-0"
+            style={{ paddingLeft: 50 }}
             onClick={() => handleViewChange('raffle')}
-            style={{ paddingLeft: 56 }}
           >
-            {/* LOGO: position:absolute → no ocupa espacio en el flex layout */}
+            {/* Logo: position:absolute, fuera del flujo CSS */}
             <div
               className="absolute flex items-center justify-center"
-              style={{
-                left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 44,
-                height: 44,
-                overflow: 'visible',
-                zIndex: 10,
-              }}
+              style={{ left: 0, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, overflow: 'visible', zIndex: 10 }}
             >
-              {/* Imagen del logo — escala desde el centro, no afecta el layout */}
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  style={{ width: brand.logoSize, height: brand.logoSize }}
-                  className="object-contain transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-sm"
+                  className="object-contain drop-shadow-sm transform group-hover:scale-105 transition-transform duration-300"
+                  style={{ position: 'absolute', width: brand.logoSize, height: brand.logoSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
                 />
               ) : (
                 <div
-                  className="rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300"
-                  style={{
-                    width: brand.logoSize,
-                    height: brand.logoSize,
-                    background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))`,
-                  }}
+                  className="rounded-xl flex items-center justify-center shadow-md transform group-hover:scale-105 transition-transform duration-300"
+                  style={{ position: 'absolute', width: brand.logoSize, height: brand.logoSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
                 >
-                  <span className="text-white font-black text-xl italic tracking-tighter">N</span>
+                  <span className="text-white font-black text-lg italic">N</span>
                 </div>
               )}
-
-              {/* Badge: fijo en top:-4 right:-4 del contenedor de 44px. Nunca se mueve. */}
-              <div
-                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                style={{ width: 14, height: 14, top: -4, right: -4, zIndex: 20 }}
-              >
-                <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
+              {/* Palomita azul: siempre en top-right del reference box de 44px */}
+              <div className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm" style={{ width: 13, height: 13, top: -3, right: -3, zIndex: 30 }}>
+                <svg width="7" height="7" viewBox="0 0 12 12" fill="white">
                   <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                 </svg>
               </div>
             </div>
 
-            {/* TEXTO: único elemento en el flujo flex, siempre a 56px del inicio */}
-            <div className="flex flex-col">
-              <span className={`font-black tracking-tighter text-slate-800 leading-none ${headerNameSize(brand.siteName)}`}>
+            {/* Nombre del sitio — único elemento en el flujo del grid */}
+            <div className="flex flex-col min-w-0 overflow-hidden">
+              <span
+                className="font-black tracking-tight text-slate-800 leading-none truncate"
+                style={{ fontSize: brand.siteName.length <= 10 ? 14 : brand.siteName.length <= 16 ? 12 : brand.siteName.length <= 22 ? 10 : 9 }}
+              >
                 {brand.siteName}
               </span>
-              <span className="font-bold uppercase tracking-[0.2em] leading-none mt-1 hidden md:block" style={{ fontSize: '8px', color: 'var(--brand-primary)' }}>Sorteos Certificados</span>
+              <span className="font-bold uppercase leading-none mt-0.5 hidden md:block tracking-widest truncate" style={{ fontSize: 7, color: 'var(--brand-primary)' }}>
+                Sorteos Certificados
+              </span>
             </div>
           </div>
 
-          <div className="relative flex bg-white/40 p-1 rounded-2xl border border-white/80 z-10 shadow-inner">
+          {/* ── COLUMNA CENTRAL (auto): Botones de navegación ──────── */}
+          <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 z-10 shadow-inner">
             <button
               onClick={() => handleViewChange('raffle')}
-              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'raffle' ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'raffle' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
               style={activeView === 'raffle' ? { color: 'var(--brand-primary)' } : {}}
             >
               Sorteo
             </button>
             <button
               onClick={() => handleViewChange('verify')}
-              className={`relative px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black transition-all duration-300 uppercase tracking-widest flex items-center gap-2 ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
               style={activeView === 'verify' ? { color: 'var(--brand-primary)' } : {}}
             >
               Verificar
             </button>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 z-10">
-            {/* Toggle de Sonido Arcade - Único elemento en la derecha para minimalismo */}
+          {/* ── COLUMNA DERECHA (1fr): Botón de sonido ─────────────── */}
+          <div className="flex items-center justify-end z-10">
             <button
               onClick={toggleMute}
-              className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90
-                ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white shadow-sm'}`}
+              className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90 ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white shadow-sm'}`}
               style={!isMuted ? { color: 'var(--brand-primary)' } : {}}
-              title={isMuted ? "Activar Sonido" : "Silenciar Sonido"}
+              title={isMuted ? 'Activar Sonido' : 'Silenciar Sonido'}
             >
               {isMuted ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11.707 5.293L7 10H4a1 1 0 00-1 1v2a1 1 0 001 1h3l4.707 4.707A1 1 0 0013 18V6a1 1 0 00-1.293-.707z" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11.707 5.293L7 10H4a1 1 0 00-1 1v2a1 1 0 001 1h3l4.707 4.707A1 1 0 0013 18V6a1 1 0 00-1.293-.707z" /></svg>
               )}
             </button>
           </div>
         </nav>
       </div>
 
+
       <div className="h-20 md:h-28"></div>
+
 
       <main className="flex-grow max-w-7xl mx-auto px-4 py-6 md:py-10 w-full">
         {activeView === 'raffle' ? (
@@ -368,18 +356,20 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {featuredRaffle && (
-        <CheckoutModal
-          isOpen={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          selectedTickets={selectedTicketsToBuy}
-          raffleId={featuredRaffle.id}
-          pricePerTicket={featuredRaffle.ticketPrice}
-          onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
-          logoUrl={brand.logoUrl}
-          siteName={brand.siteName}
-        />
-      )}
+      {
+        featuredRaffle && (
+          <CheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            selectedTickets={selectedTicketsToBuy}
+            raffleId={featuredRaffle.id}
+            pricePerTicket={featuredRaffle.ticketPrice}
+            onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
+            logoUrl={brand.logoUrl}
+            siteName={brand.siteName}
+          />
+        )
+      }
 
       <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
 
@@ -427,7 +417,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   );
 };
 
