@@ -198,17 +198,10 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-lg italic">N</span>
                 </div>
               )}
-              {/* Palomita: posición dinámica = siempre en la esquina real del logo */}
-              {/* Fórmula: 50% del box (22px) - (logoSize + badgeSize) / 2  */}
+              {/* Palomita: posición FIJA en top-right del box de 44px. NO cambia con logoSize. */}
               <div
                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                style={{
-                  width: 13,
-                  height: 13,
-                  top: `calc(50% - ${(brand.logoSize + 13) / 2}px)`,
-                  right: `calc(50% - ${(brand.logoSize + 13) / 2}px)`,
-                  zIndex: 30,
-                }}
+                style={{ width: 13, height: 13, top: -3, right: -3, zIndex: 30 }}
               >
                 <svg width="7" height="7" viewBox="0 0 12 12" fill="white">
                   <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
