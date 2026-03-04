@@ -170,15 +170,31 @@ const App: React.FC = () => {
           {/* Glassmorphism inner gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-white/10 pointer-events-none rounded-2xl md:rounded-[2rem]" />
 
-          {/* ── COLUMNA IZQUIERDA (1fr): Logo + Nombre ─────────────── */}
-          {/* Logo es position:absolute → nunca afecta el grid layout  */}
-          {/* El nombre es el único elemento en el flujo               */}
+          {/*
+            ╔══════════════════════════════════════════════════════════╗
+            ║  BADGE VERIFICADO — POSICIÓN 100% FIJA                  ║
+            ║  Hijo directo del <nav>, position:absolute               ║
+            ║  Coordenadas en píxeles duros: top:5 left:40            ║
+            ║  No tiene relación con el logo ni con nada más          ║
+            ║  Nunca se moverá sin importar logoSize, nombre, etc.    ║
+            ╚══════════════════════════════════════════════════════════╝
+          */}
+          <div
+            className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
+            style={{ width: 14, height: 14, top: 5, left: 40, zIndex: 50 }}
+          >
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
+              <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
+            </svg>
+          </div>
+
+          {/* ── COLUMNA IZQUIERDA: Logo (absolute) + Nombre ── */}
           <div
             className="relative flex items-center z-10 cursor-pointer group min-w-0"
             style={{ paddingLeft: 50 }}
             onClick={() => handleViewChange('raffle')}
           >
-            {/* Logo: position:absolute, fuera del flujo CSS */}
+            {/* Logo: position:absolute, centrado verticalmente, escala libre */}
             <div
               className="absolute flex items-center justify-center"
               style={{ left: 0, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, overflow: 'visible', zIndex: 10 }}
@@ -198,26 +214,9 @@ const App: React.FC = () => {
                   <span className="text-white font-black text-lg italic">N</span>
                 </div>
               )}
-              {/* Palomita: fórmula dinámica idéntica al preview del admin.
-                  Posición = esquina top-right del logo real, ligeramente solapada.
-                  top AND right = calc(50% del box - (logoSize + badgeSize) / 2) */}
-              <div
-                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                style={{
-                  width: 13,
-                  height: 13,
-                  top: `calc(50% - ${(brand.logoSize + 13) / 2}px)`,
-                  right: `calc(50% - ${(brand.logoSize + 13) / 2}px)`,
-                  zIndex: 30,
-                }}
-              >
-                <svg width="7" height="7" viewBox="0 0 12 12" fill="white">
-                  <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
-                </svg>
-              </div>
             </div>
 
-            {/* Nombre: siempre completo, máximo 2 líneas, empuja el menú si es largo */}
+            {/* Nombre: hasta 2 líneas, empuja el menú */}
             <div className="flex flex-col" style={{ paddingRight: 8 }}>
               <span
                 className="font-black tracking-tight text-slate-800 leading-tight"
@@ -238,6 +237,7 @@ const App: React.FC = () => {
               </span>
             </div>
           </div>
+
 
           {/* ── COLUMNA CENTRAL (auto): Botones de navegación ──────── */}
           <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 z-10 shadow-inner">
