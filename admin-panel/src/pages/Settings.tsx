@@ -664,56 +664,54 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Live navbar simulation */}
-                            {/* overflow-visible so the badge is NOT clipped by rounded corners */}
+                            {/* Live navbar simulation — all measurements are FIXED so text and badge never shift */}
                             <div
-                                className="rounded-xl border border-slate-200 shadow-sm bg-white/80"
+                                className="rounded-xl border border-slate-200 shadow-sm"
                                 style={{
+                                    background: 'rgba(255,255,255,0.82)',
                                     backdropFilter: 'blur(12px)',
                                     WebkitBackdropFilter: 'blur(12px)',
-                                    overflow: 'visible',
                                 }}
                             >
-                                <div
-                                    className="px-4 flex items-center justify-between gap-3 rounded-xl"
-                                    style={{ height: 64, overflow: 'visible' }}
-                                >
-                                    {/* Left: logo + site name */}
-                                    <div className="flex items-center gap-2.5 min-w-0" style={{ overflow: 'visible' }}>
+                                <div className="px-4 h-16 flex items-center justify-between gap-3">
+                                    {/* Left: FIXED 80px slot — logo scales inside, badge stays fixed */}
+                                    <div className="flex items-center gap-2.5 min-w-0">
                                         {/*
-                                          KEY FIX: wrapper has EXPLICIT width+height = logoSize.
-                                          The <img> fills it with w-full h-full so it truly scales.
-                                          The badge is positioned relative to this fixed-size box
-                                          using a constant translate so it never jumps.
+                                          FIXED container: always 80×80px regardless of logoSize.
+                                          The logo image is centered inside via flexbox and scales with
+                                          style width/height. This means:
+                                          - Container never changes → text never shifts
+                                          - Badge always at same pixel position → never moves
+                                          - Only the image visually grows/shrinks inside the box
                                         */}
                                         <div
-                                            className="relative flex-shrink-0"
-                                            style={{ width: settings.logoSize, height: settings.logoSize, overflow: 'visible' }}
+                                            className="relative flex-shrink-0 flex items-center justify-center"
+                                            style={{ width: 80, height: 80 }}
                                         >
                                             {settings.logoUrl ? (
                                                 <img
                                                     src={settings.logoUrl}
                                                     alt="Logo preview"
-                                                    className="w-full h-full object-contain drop-shadow-sm"
-                                                    style={{ transition: 'width 0.15s, height 0.15s' }}
+                                                    style={{ width: settings.logoSize, height: settings.logoSize, transition: 'width 0.12s ease, height 0.12s ease' }}
+                                                    className="object-contain drop-shadow-sm"
                                                 />
                                             ) : (
                                                 <div
-                                                    className="w-full h-full rounded-xl flex items-center justify-center shadow-md"
-                                                    style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}
+                                                    className="rounded-xl flex items-center justify-center shadow-md"
+                                                    style={{
+                                                        width: settings.logoSize,
+                                                        height: settings.logoSize,
+                                                        background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                                                        transition: 'width 0.12s ease, height 0.12s ease',
+                                                    }}
                                                 >
                                                     <span className="text-white font-black italic" style={{ fontSize: Math.max(10, settings.logoSize * 0.4) }}>N</span>
                                                 </div>
                                             )}
-                                            {/* Badge: pinned to top-right of the fixed-size container — never moves */}
+                                            {/* Badge: ALWAYS at top:2 right:2 of the 80px container → never moves */}
                                             <div
                                                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm"
-                                                style={{
-                                                    width: 14,
-                                                    height: 14,
-                                                    top: -4,
-                                                    right: -4,
-                                                }}
+                                                style={{ width: 14, height: 14, top: 2, right: 2 }}
                                             >
                                                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                                                     <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
@@ -725,8 +723,8 @@ const Settings: React.FC = () => {
                                             <span className="font-bold uppercase text-[7px] tracking-widest mt-0.5" style={{ color: settings.primaryColor }}>Sorteos Certificados</span>
                                         </div>
                                     </div>
-                                    {/* Right: decorative nav pills */}
-                                    <div className="flex-shrink-0 flex bg-slate-100 p-0.5 rounded-xl gap-0.5">
+                                    {/* Right: decorative nav pills — always fixed position */}
+                                    <div className="flex-shrink-0 flex bg-slate-100/80 p-0.5 rounded-xl gap-0.5">
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black bg-white text-slate-700 shadow-sm">Sorteo</span>
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black text-slate-400">Verificar</span>
                                     </div>
