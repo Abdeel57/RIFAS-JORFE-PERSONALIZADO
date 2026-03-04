@@ -715,15 +715,18 @@ const Settings: React.FC = () => {
                                             )}
 
                                             {/*
-                                              ② Badge: INDEPENDENT element — NOT inside the logo div.
-                                              Fixed at top:14px right:14px of the 80px container:
-                                                → (80px - 44px) / 2 = 18px margin for default logo
-                                                → 18 - 4 = 14px offset = exactly the corner of the 44px logo
-                                              This position NEVER changes regardless of logoSize.
+                                              Badge: posición dinámica = esquina real del logo.
+                                              Fórmula: 50% del box (40px de 80px) - (logoSize + badgeSize) / 2
+                                              → badge center queda exactamente en el corner del logo a cualquier tamaño.
                                             */}
                                             <div
                                                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                                                style={{ width: 14, height: 14, top: 14, right: 14 }}
+                                                style={{
+                                                    width: 14,
+                                                    height: 14,
+                                                    top: `calc(50% - ${(settings.logoSize + 14) / 2}px)`,
+                                                    right: `calc(50% - ${(settings.logoSize + 14) / 2}px)`,
+                                                }}
                                             >
                                                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                                                     <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
