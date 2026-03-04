@@ -766,7 +766,7 @@ const Settings: React.FC = () => {
                                 <input
                                     type="range"
                                     min={20}
-                                    max={80}
+                                    max={120}
                                     step={1}
                                     value={settings.logoSize}
                                     onChange={(e) => setSettings(prev => ({ ...prev, logoSize: Number(e.target.value) }))}
@@ -775,14 +775,14 @@ const Settings: React.FC = () => {
                                 />
                                 <div className="flex justify-between text-[9px] text-slate-400 font-bold select-none">
                                     <span>Pequeño · 20px</span>
-                                    <span>Grande · 80px</span>
+                                    <span>Grande · 120px</span>
                                 </div>
                             </div>
 
                             {/* Quick size presets */}
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mr-1">Presets:</span>
-                                {[28, 36, 44, 56, 68].map(size => (
+                                {[36, 44, 60, 80, 100, 120].map(size => (
                                     <button
                                         key={size}
                                         type="button"
