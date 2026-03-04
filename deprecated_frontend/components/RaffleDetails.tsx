@@ -334,7 +334,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
       <FacebookSection facebookUrl={facebookUrl} />
 
       {/* FAQ */}
-      <div className="max-w-4xl mx-auto px-1 md:px-4 py-6 md:py-20">
+      <div className="max-w-4xl mx-auto px-1 md:px-4 pt-2 pb-6 md:pb-16">
         <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
           <div className="text-3xl md:text-4xl">🤔</div>
           <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>
