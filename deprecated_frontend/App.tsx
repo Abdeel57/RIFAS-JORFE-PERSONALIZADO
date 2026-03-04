@@ -163,22 +163,24 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">
       {/* Header Estilo "Liquid Glass" */}
       <div className="fixed top-0 left-0 right-0 z-50 px-4 py-4 md:py-6 flex justify-center pointer-events-none">
-        <nav className="pointer-events-auto relative overflow-hidden bg-white/50 backdrop-blur-[20px] border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] px-4 h-14 md:h-16 flex items-center justify-between gap-4 md:gap-8 max-w-7xl w-full transition-all duration-300">
+        <nav className="pointer-events-auto relative overflow-visible bg-white/50 backdrop-blur-[20px] border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.05)] rounded-[2.5rem] px-4 h-14 md:h-16 flex items-center justify-between gap-4 md:gap-8 max-w-7xl w-full transition-all duration-300">
 
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
 
           <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
             {/*
-              Layout: [fixed-44px-reference-box] [text-column]
-              The reference box reserves 44px (default badge anchor point).
-              Inside: logo img (scales freely) + badge (fixed sibling at -4,-4 of the 44px box).
-              Badge is NOT inside the logo element — it's an independent sibling.
+              Identical structure to admin panel preview:
+              - 80×80px fixed reference box (never changes size)
+              - Logo centered inside, scales freely with brand.logoSize
+              - Badge: independent sibling at top:14 right:14
+                (= top-right corner of a 44px logo centered in an 80px box)
+              Text column is always at the same distance regardless of logoSize.
             */}
             <div
               className="relative flex-shrink-0 flex items-center justify-center"
-              style={{ width: 44, height: 44, overflow: 'visible' }}
+              style={{ width: 80, height: 80, overflow: 'visible' }}
             >
-              {/* ① Logo only — no badge here */}
+              {/* ① Logo only — scales independently, badge is NOT here */}
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
@@ -188,18 +190,23 @@ const App: React.FC = () => {
                 />
               ) : (
                 <div
-                  className="w-full h-full rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300"
-                  style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
+                  className="rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform duration-300"
+                  style={{
+                    width: brand.logoSize,
+                    height: brand.logoSize,
+                    background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))`,
+                  }}
                 >
                   <span className="text-white font-black text-xl italic tracking-tighter">N</span>
                 </div>
               )}
 
-              {/* ② Badge: independent element, NOT related to logo size */}
-              {/* Fixed at top-right of the 44px reference box — never moves */}
+              {/* ② Badge: FIXED at top:14 right:14 of the 80px box.
+                  (80px - 44px default) / 2 = 18px margin → 18 - 4 = 14px
+                  This is the corner of the DEFAULT 44px logo. Never moves. */}
               <div
                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-                style={{ width: 14, height: 14, top: -4, right: -4, zIndex: 10 }}
+                style={{ width: 14, height: 14, top: 14, right: 14, zIndex: 10 }}
               >
                 <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                   <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
