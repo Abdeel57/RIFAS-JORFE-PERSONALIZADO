@@ -358,7 +358,8 @@ const App: React.FC = () => {
                 <img
                   src={brand.logoUrl}
                   alt="Logo"
-                  className="w-9 h-9 object-contain drop-shadow-sm"
+                  style={{ width: brand.logoSize, height: brand.logoSize }}
+                  className="object-contain drop-shadow-sm"
                 />
               ) : (
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md" style={{ backgroundColor: 'var(--brand-primary)' }}>

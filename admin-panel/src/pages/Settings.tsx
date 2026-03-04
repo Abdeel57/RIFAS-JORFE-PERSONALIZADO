@@ -571,8 +571,9 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-50 pt-2"></div>
+                        <div className="border-t border-slate-100"></div>
 
+                        {/* Logo upload area */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                             {/* Preview actual */}
                             <div className="flex-shrink-0">
@@ -649,49 +650,60 @@ const Settings: React.FC = () => {
                                 />
                             </div>
                         </div>
-                    </div>
 
-                    {/* ── Tamaño del logo en la barra de navegación ── */}
-                    {settings.logoUrl && (
-                        <div className="border-t border-slate-50 pt-5 px-6 pb-6 space-y-4">
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tamaño del logo en la barra</p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Mueve el slider hasta que quede perfecto. La palomita ✓ se posiciona sola.</p>
+                        {/* ── Tamaño del logo (slider) — siempre visible si hay logo ── */}
+                        <div className={`rounded-2xl bg-slate-50 border border-slate-100 p-5 space-y-4 ${!settings.logoUrl ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Tamaño del logo en la barra</p>
+                                    <p className="text-[10px] text-slate-400 mt-0.5">Ajusta el slider y observa el cambio en tiempo real.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-black text-violet-700 tabular-nums leading-none">{settings.logoSize}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">px</span>
+                                </div>
                             </div>
 
                             {/* Live navbar simulation */}
                             <div
-                                className="rounded-2xl overflow-hidden border border-white/60 shadow-md"
+                                className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white/80"
                                 style={{
-                                    background: 'rgba(255,255,255,0.55)',
-                                    backdropFilter: 'blur(20px)',
-                                    WebkitBackdropFilter: 'blur(20px)',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
                                 }}
                             >
-                                <div className="px-4 h-14 flex items-center justify-between gap-3">
+                                <div className="px-4 flex items-center justify-between gap-3" style={{ height: Math.max(48, settings.logoSize + 16) }}>
                                     {/* Left: logo + site name */}
-                                    <div className="flex items-center gap-2.5">
+                                    <div className="flex items-center gap-2.5 min-w-0">
                                         <div className="relative flex-shrink-0">
-                                            <img
-                                                src={settings.logoUrl}
-                                                alt="Logo preview"
-                                                style={{ width: settings.logoSize, height: settings.logoSize }}
-                                                className="object-contain drop-shadow-sm transition-all duration-200"
-                                            />
-                                            {/* Blue checkmark badge */}
+                                            {settings.logoUrl ? (
+                                                <img
+                                                    src={settings.logoUrl}
+                                                    alt="Logo preview"
+                                                    style={{ width: settings.logoSize, height: settings.logoSize }}
+                                                    className="object-contain drop-shadow-sm transition-all duration-150"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="rounded-xl flex items-center justify-center shadow-md"
+                                                    style={{ width: settings.logoSize, height: settings.logoSize, background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}
+                                                >
+                                                    <span className="text-white font-black text-2xl italic">N</span>
+                                                </div>
+                                            )}
                                             <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
                                                 <svg className="w-2 h-2 text-white" viewBox="0 0 12 12" fill="currentColor">
                                                     <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                                                 </svg>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-black text-[11px] text-slate-800 tracking-tight leading-none">{settings.siteName || 'RIFAS NAO'}</span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="font-black text-[11px] text-slate-800 tracking-tight leading-none truncate">{settings.siteName || 'RIFAS NAO'}</span>
                                             <span className="font-bold uppercase text-[7px] tracking-widest mt-0.5" style={{ color: settings.primaryColor }}>Sorteos Certificados</span>
                                         </div>
                                     </div>
                                     {/* Right: decorative nav pills */}
-                                    <div className="flex bg-white/40 p-0.5 rounded-xl border border-white/80 gap-0.5">
+                                    <div className="flex-shrink-0 flex bg-slate-100 p-0.5 rounded-xl gap-0.5">
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black bg-white text-slate-700 shadow-sm">Sorteo</span>
                                         <span className="px-2.5 py-1 rounded-lg text-[8px] font-black text-slate-400">Verificar</span>
                                     </div>
@@ -700,16 +712,6 @@ const Settings: React.FC = () => {
 
                             {/* Slider */}
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-slate-500">
-                                        Tamaño actual: <strong className="text-slate-800">{settings.logoSize}px</strong>
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSettings(prev => ({ ...prev, logoSize: 44 }))}
-                                        className="text-[9px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-wider transition-colors"
-                                    >↺ Restablecer (44px)</button>
-                                </div>
                                 <input
                                     type="range"
                                     min={20}
@@ -717,17 +719,40 @@ const Settings: React.FC = () => {
                                     step={1}
                                     value={settings.logoSize}
                                     onChange={(e) => setSettings(prev => ({ ...prev, logoSize: Number(e.target.value) }))}
-                                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                                    className="w-full h-3 rounded-full appearance-none cursor-pointer"
                                     style={{ accentColor: settings.primaryColor }}
                                 />
-                                <div className="flex justify-between text-[9px] text-slate-300 font-bold select-none">
-                                    <span>Mínimo</span>
-                                    <span>←  Desliza  →</span>
-                                    <span>Máximo</span>
+                                <div className="flex justify-between text-[9px] text-slate-400 font-bold select-none">
+                                    <span>Pequeño · 20px</span>
+                                    <span>Grande · 80px</span>
                                 </div>
                             </div>
+
+                            {/* Quick size presets */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mr-1">Presets:</span>
+                                {[28, 36, 44, 56, 68].map(size => (
+                                    <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => setSettings(prev => ({ ...prev, logoSize: size }))}
+                                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 ${settings.logoSize === size
+                                                ? 'text-white shadow-sm scale-105'
+                                                : 'bg-white border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
+                                            }`}
+                                        style={settings.logoSize === size ? { backgroundColor: settings.primaryColor } : {}}
+                                    >
+                                        {size}px{size === 44 ? ' ·def' : ''}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setSettings(prev => ({ ...prev, logoSize: 44 }))}
+                                    className="ml-auto text-[9px] font-black text-slate-400 hover:text-violet-600 transition-colors"
+                                >↺ Restablecer</button>
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* ── Identidad Visual: Colores ── */}
