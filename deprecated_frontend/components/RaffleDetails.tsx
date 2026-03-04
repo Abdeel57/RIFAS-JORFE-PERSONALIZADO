@@ -258,7 +258,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
   const hasVideo = !!raffle.videoUrl?.trim();
 
   return (
-    <div className="space-y-8 md:space-y-16 py-2 animate-in fade-in duration-700">
+    <div className="py-2 animate-in fade-in duration-700 space-y-8 md:space-y-16">
 
       {/* Sección "Conoce cada Detalle" */}
       <div className="max-w-5xl mx-auto px-4 space-y-12 md:space-y-20">
@@ -330,31 +330,36 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
         </div>
       </div>
 
-      {/* ── Facebook Page Plugin (dinámico) ── */}
-      <FacebookSection facebookUrl={facebookUrl} />
+      {/* ── Facebook + FAQ agrupados sin espacio entre ellos ── */}
+      <div className="flex flex-col gap-4 md:gap-6">
 
-      {/* FAQ */}
-      <div className="max-w-4xl mx-auto px-1 md:px-4 pt-2 pb-6 md:pb-16">
-        <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
-          <div className="text-3xl md:text-4xl">🤔</div>
-          <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>
-          <p className="text-slate-500 text-sm md:text-lg font-medium">Resolvemos todas tus dudas con transparencia.</p>
-        </div>
-        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] shadow-xl md:shadow-2xl border border-slate-50 p-6 md:p-14">
-          <div className="divide-y divide-slate-100">
-            {faqs.map((faq, i) => <FAQItem key={i} question={faq.question} answer={faq.answer} />)}
+        {/* Facebook Page Plugin */}
+        <FacebookSection facebookUrl={facebookUrl} />
+
+        {/* FAQ — pegado directamente a Facebook */}
+        <div className="max-w-4xl mx-auto w-full px-1 md:px-4 pb-4 md:pb-10">
+          <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
+            <div className="text-3xl md:text-4xl">🤔</div>
+            <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>
+            <p className="text-slate-500 text-sm md:text-lg font-medium">Resolvemos todas tus dudas con transparencia.</p>
           </div>
-          <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
-            <button
-              onClick={onOpenSupport}
-              className="group flex items-center gap-3 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] transition-all py-3 px-6 rounded-2xl active:bg-slate-50 hover:opacity-80"
-              style={{ color: 'var(--brand-primary)' }}
-            >
-              Hablar con Nao Assist
-              <span className="transform group-hover:translate-x-2 transition-transform">→</span>
-            </button>
+          <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] shadow-xl md:shadow-2xl border border-slate-50 p-6 md:p-14">
+            <div className="divide-y divide-slate-100">
+              {faqs.map((faq, i) => <FAQItem key={i} question={faq.question} answer={faq.answer} />)}
+            </div>
+            <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
+              <button
+                onClick={onOpenSupport}
+                className="group flex items-center gap-3 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] transition-all py-3 px-6 rounded-2xl active:bg-slate-50 hover:opacity-80"
+                style={{ color: 'var(--brand-primary)' }}
+              >
+                Hablar con Nao Assist
+                <span className="transform group-hover:translate-x-2 transition-transform">→</span>
+              </button>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
