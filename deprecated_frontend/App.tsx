@@ -167,19 +167,33 @@ const App: React.FC = () => {
 
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 pointer-events-none"></div>
 
-          <div className="relative flex items-center gap-3 group cursor-pointer z-10" onClick={() => handleViewChange('raffle')}>
-            {/*
-              SOLUCIÓN FINAL:
-              Contenedor de 44px en el flex layout → texto y menú NUNCA se mueven.
-              overflow: visible → el logo crece visualmente sin afectar el layout.
-              Logo centrado con flex → crece desde el centro (izquierda y derecha por igual).
-              Badge en top:-4 right:-4 del box de 44px → NUNCA se mueve.
-            */}
+          {/*
+            ══════════════════════════════════════════════════════════
+            GRUPO IZQUIERDO: Logo (absolute) + Texto (en flujo flex)
+            ══════════════════════════════════════════════════════════
+            El logo tiene position:absolute → FUERA del flujo flex.
+            El texto tiene padding-left fijo (56px) para hacer espacio.
+            Cambiar logoSize no mueve NADA en el layout.
+          */}
+          <div
+            className="relative flex items-center cursor-pointer z-10 group"
+            onClick={() => handleViewChange('raffle')}
+            style={{ paddingLeft: 56 }}
+          >
+            {/* LOGO: position:absolute → no ocupa espacio en el flex layout */}
             <div
-              className="relative flex-shrink-0 flex items-center justify-center"
-              style={{ width: 44, height: 44, overflow: 'visible' }}
+              className="absolute flex items-center justify-center"
+              style={{
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 44,
+                height: 44,
+                overflow: 'visible',
+                zIndex: 10,
+              }}
             >
-              {/* Logo: centrado, escala visualmente sin afectar el layout */}
+              {/* Imagen del logo — escala desde el centro, no afecta el layout */}
               {brand.logoUrl ? (
                 <img
                   src={brand.logoUrl}
@@ -200,7 +214,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Badge: anclado al top-right del box de 44px. Independiente del logo. Nunca se mueve. */}
+              {/* Badge: fijo en top:-4 right:-4 del contenedor de 44px. Nunca se mueve. */}
               <div
                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
                 style={{ width: 14, height: 14, top: -4, right: -4, zIndex: 20 }}
@@ -211,6 +225,7 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            {/* TEXTO: único elemento en el flujo flex, siempre a 56px del inicio */}
             <div className="flex flex-col">
               <span className={`font-black tracking-tighter text-slate-800 leading-none ${headerNameSize(brand.siteName)}`}>
                 {brand.siteName}
