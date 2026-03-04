@@ -665,34 +665,57 @@ const Settings: React.FC = () => {
                             </div>
 
                             {/* Live navbar simulation */}
+                            {/* overflow-visible so the badge is NOT clipped by rounded corners */}
                             <div
-                                className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white/80"
+                                className="rounded-xl border border-slate-200 shadow-sm bg-white/80"
                                 style={{
                                     backdropFilter: 'blur(12px)',
                                     WebkitBackdropFilter: 'blur(12px)',
+                                    overflow: 'visible',
                                 }}
                             >
-                                <div className="px-4 flex items-center justify-between gap-3" style={{ height: Math.max(48, settings.logoSize + 16) }}>
+                                <div
+                                    className="px-4 flex items-center justify-between gap-3 rounded-xl"
+                                    style={{ height: 64, overflow: 'visible' }}
+                                >
                                     {/* Left: logo + site name */}
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className="relative flex-shrink-0">
+                                    <div className="flex items-center gap-2.5 min-w-0" style={{ overflow: 'visible' }}>
+                                        {/*
+                                          KEY FIX: wrapper has EXPLICIT width+height = logoSize.
+                                          The <img> fills it with w-full h-full so it truly scales.
+                                          The badge is positioned relative to this fixed-size box
+                                          using a constant translate so it never jumps.
+                                        */}
+                                        <div
+                                            className="relative flex-shrink-0"
+                                            style={{ width: settings.logoSize, height: settings.logoSize, overflow: 'visible' }}
+                                        >
                                             {settings.logoUrl ? (
                                                 <img
                                                     src={settings.logoUrl}
                                                     alt="Logo preview"
-                                                    style={{ width: settings.logoSize, height: settings.logoSize }}
-                                                    className="object-contain drop-shadow-sm transition-all duration-150"
+                                                    className="w-full h-full object-contain drop-shadow-sm"
+                                                    style={{ transition: 'width 0.15s, height 0.15s' }}
                                                 />
                                             ) : (
                                                 <div
-                                                    className="rounded-xl flex items-center justify-center shadow-md"
-                                                    style={{ width: settings.logoSize, height: settings.logoSize, background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}
+                                                    className="w-full h-full rounded-xl flex items-center justify-center shadow-md"
+                                                    style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}
                                                 >
-                                                    <span className="text-white font-black text-2xl italic">N</span>
+                                                    <span className="text-white font-black italic" style={{ fontSize: Math.max(10, settings.logoSize * 0.4) }}>N</span>
                                                 </div>
                                             )}
-                                            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                                                <svg className="w-2 h-2 text-white" viewBox="0 0 12 12" fill="currentColor">
+                                            {/* Badge: pinned to top-right of the fixed-size container — never moves */}
+                                            <div
+                                                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm"
+                                                style={{
+                                                    width: 14,
+                                                    height: 14,
+                                                    top: -4,
+                                                    right: -4,
+                                                }}
+                                            >
+                                                <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
                                                     <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
                                                 </svg>
                                             </div>
@@ -737,8 +760,8 @@ const Settings: React.FC = () => {
                                         type="button"
                                         onClick={() => setSettings(prev => ({ ...prev, logoSize: size }))}
                                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 ${settings.logoSize === size
-                                                ? 'text-white shadow-sm scale-105'
-                                                : 'bg-white border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
+                                            ? 'text-white shadow-sm scale-105'
+                                            : 'bg-white border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
                                             }`}
                                         style={settings.logoSize === size ? { backgroundColor: settings.primaryColor } : {}}
                                     >
