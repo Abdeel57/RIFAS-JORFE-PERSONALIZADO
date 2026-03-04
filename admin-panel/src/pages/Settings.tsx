@@ -731,9 +731,22 @@ const Settings: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Text column: never shifts because outer wrapper is fixed */}
+                                        {/* Text column: se parte en 2 líneas si el nombre es largo */}
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-black text-[11px] text-slate-800 tracking-tight leading-none truncate">{settings.siteName || 'RIFAS NAO'}</span>
+                                            <span
+                                                className="font-black text-slate-800 tracking-tight leading-tight"
+                                                style={{
+                                                    fontSize: (settings.siteName || 'RIFAS NAO').length <= 8 ? 11 : (settings.siteName || 'RIFAS NAO').length <= 14 ? 9 : 8,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                    wordBreak: 'break-word',
+                                                    maxWidth: 80,
+                                                }}
+                                            >
+                                                {settings.siteName || 'RIFAS NAO'}
+                                            </span>
                                             <span className="font-bold uppercase text-[7px] tracking-widest mt-0.5" style={{ color: settings.primaryColor }}>Sorteos Certificados</span>
                                         </div>
                                     </div>

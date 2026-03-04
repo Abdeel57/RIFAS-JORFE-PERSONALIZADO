@@ -165,7 +165,7 @@ const App: React.FC = () => {
       <div className="fixed top-0 left-0 right-0 z-50 px-3 py-3 md:px-4 md:py-5 flex justify-center pointer-events-none">
         <nav
           className="pointer-events-auto relative w-full max-w-2xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
-          style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 0, paddingLeft: 16, paddingRight: 12 }}
+          style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 0, paddingLeft: 6, paddingRight: 12 }}
         >
           {/* Glassmorphism inner gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-white/10 pointer-events-none rounded-2xl md:rounded-[2rem]" />
@@ -206,15 +206,23 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Nombre del sitio — único elemento en el flujo del grid */}
-            <div className="flex flex-col min-w-0 overflow-hidden">
+            {/* Nombre del sitio — se parte en 2 líneas si es largo */}
+            <div className="flex flex-col min-w-0">
               <span
-                className="font-black tracking-tight text-slate-800 leading-none truncate"
-                style={{ fontSize: brand.siteName.length <= 10 ? 14 : brand.siteName.length <= 16 ? 12 : brand.siteName.length <= 22 ? 10 : 9 }}
+                className="font-black tracking-tight text-slate-800 leading-tight"
+                style={{
+                  fontSize: brand.siteName.length <= 8 ? 14 : brand.siteName.length <= 14 ? 12 : 10,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word',
+                  maxWidth: 110,
+                }}
               >
                 {brand.siteName}
               </span>
-              <span className="font-bold uppercase leading-none mt-0.5 hidden md:block tracking-widest truncate" style={{ fontSize: 7, color: 'var(--brand-primary)' }}>
+              <span className="font-bold uppercase leading-none mt-0.5 hidden md:block tracking-widest" style={{ fontSize: 7, color: 'var(--brand-primary)' }}>
                 Sorteos Certificados
               </span>
             </div>
