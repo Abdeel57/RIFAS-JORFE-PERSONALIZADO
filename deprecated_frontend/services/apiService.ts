@@ -140,6 +140,10 @@ class ApiService {
     });
   }
 
+  async getPurchase(id: string) {
+    return this.request<any>(`/purchases/${id}`);
+  }
+
   async getComprobante(purchaseId: string) {
     return this.request<any>(`/comprobante/${purchaseId}`);
   }

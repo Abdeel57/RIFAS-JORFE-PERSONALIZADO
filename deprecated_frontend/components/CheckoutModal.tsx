@@ -124,6 +124,33 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     });
   };
 
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'manual'>('idle');
+
+  const pollPurchaseStatus = async (id: string) => {
+    let attempts = 0;
+    const maxAttempts = 15; // 15 intentos * 3s = 45 segundos máx
+
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const purchase = await apiService.getPurchase(id);
+        if (purchase.status === 'paid') {
+          clearInterval(interval);
+          setVerificationStatus('success');
+          soundService.playCoins();
+          setStep(4); // Saltamos al paso final pero con UI de éxito
+        } else if (purchase.verificationStatus === 'pending_manual' || attempts >= maxAttempts) {
+          clearInterval(interval);
+          setVerificationStatus('manual');
+          // Si es manual o timeout, lo dejamos en el flujo normal (gracias por comprar, espera validación)
+        }
+      } catch (e) {
+        console.error('Error polling status:', e);
+      }
+    }, 3000);
+  };
+
+
   const total = selectedTickets.length * pricePerTicket;
 
   const bankData = useMemo(() => ({
@@ -214,12 +241,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
       setPurchaseId(newPurchaseId);
 
-      // 2. Subir el comprobante (la orden ya existe; la verificación automática es opcional)
+      // 2. Subir el comprobante 
       setIsUploadingProof(true);
       await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
       setIsUploadingProof(false);
 
-      // Guardar en localStorage para verificación
+      // 3. Iniciar verificación automática "en vivo"
+      setVerificationStatus('verifying');
+      setStep(3); // Cambiamos a la pantalla de "Procesando/Recibido"
+
+      // Guardar en localStorage
       localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify({
         tickets: selectedTickets,
         total,
@@ -228,12 +259,22 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         purchaseId: newPurchaseId,
       }));
 
-      soundService.playCoins();
-      setStep(3);
       onPurchaseSuccess?.();
 
-      // Auto-avanzar a step 4 después de 5s
-      setTimeout(() => setStep(4), 5000);
+      // Polling para ver si la IA lo aprueba rápido
+      pollPurchaseStatus(newPurchaseId);
+
+      // Si después de 8s sigue verificando, asumimos que tardará y pasamos al mensaje manual
+      setTimeout(() => {
+        setVerificationStatus(prev => {
+          if (prev === 'verifying') {
+            setStep(4);
+            return 'manual';
+          }
+          return prev;
+        });
+      }, 8000);
+
     } catch (error: any) {
       const msg = error?.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.';
       if (msg.includes('fetch') || msg.includes('red') || msg.includes('Failed') || msg.includes('404')) {
@@ -634,46 +675,43 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           ════════════════════════════════════════ */}
           {step === 3 && (
             <div className="py-14 px-8 text-center space-y-5 animate-in zoom-in-95 duration-500">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce">
-                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="relative">
+                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                  <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="absolute top-0 right-[35%] w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-50">
+                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
               </div>
+
               <div>
-                <h4 className="text-3xl font-black text-slate-800 tracking-tight leading-none">¡Recibido!</h4>
-                <p className="text-slate-500 font-medium mt-3 leading-relaxed px-4">
-                  Tu comprobante fue enviado. El administrador validará tu pago y confirmará tus boletos al número{' '}
-                  <span className="font-black text-green-500">{formData.phone}</span>.
+                <h4 className="text-2xl font-black text-slate-800 tracking-tight">Validando tu pago...</h4>
+                <p className="text-slate-500 font-medium mt-3 text-sm leading-relaxed px-4">
+                  Estamos verificando tu comprobante con nuestra IA. <br />
+                  <span className="text-xs text-slate-400 font-normal">Esto tardará solo unos segundos.</span>
                 </p>
               </div>
-              <div className="bg-slate-50 rounded-2xl p-4 text-left space-y-2">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tu orden</p>
-                <div className="flex flex-wrap gap-1">
-                  {selectedTickets.slice(0, 8).map(n => (
-                    <span
-                      key={n}
-                      className="px-2 py-1 text-white rounded-lg text-[10px] font-black"
-                      style={{ backgroundColor: 'var(--brand-primary)' }}
-                    >#{n.toString().padStart(3, '0')}</span>
+
+              <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Orden {purchaseId?.slice(-6).toUpperCase()}</p>
+                  <p className="text-sm font-black text-slate-800">${total.toLocaleString()} MXN</p>
+                </div>
+                <div className="flex -space-x-2">
+                  {selectedTickets.slice(0, 3).map(n => (
+                    <div key={n} className="w-8 h-8 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 shadow-sm">
+                      #{n.toString().padStart(3, '0')}
+                    </div>
                   ))}
-                  {selectedTickets.length > 8 && (
-                    <span className="px-2 py-1 bg-slate-200 text-slate-500 rounded-lg text-[10px] font-black">+{selectedTickets.length - 8} más</span>
+                  {selectedTickets.length > 3 && (
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-400">
+                      +{selectedTickets.length - 3}
+                    </div>
                   )}
                 </div>
               </div>
-              <div className="flex gap-1 justify-center">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 rounded-full animate-pulse"
-                    style={{
-                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.3)',
-                      animationDelay: `${i * 0.3}s`,
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-slate-400">Preparando resumen final...</p>
             </div>
           )}
 
@@ -682,65 +720,107 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           ════════════════════════════════════════ */}
           {step === 4 && (
             <div className="py-10 px-6 text-center space-y-6 animate-in fade-in duration-700">
-              <div className="space-y-2">
-                <p className="text-4xl">🎟️</p>
-                <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
-                <p className="text-slate-500 text-sm leading-relaxed px-2">
-                  Revisa tus mensajes pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
-                </p>
-              </div>
-
-              <div
-                className="rounded-2xl p-4 text-left space-y-2 border"
-                style={{
-                  backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
-                  borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
-                }}
-              >
-                <p
-                  className="text-[9px] font-black uppercase tracking-widest"
-                  style={{ color: 'var(--brand-primary)' }}
-                >¿Qué sigue?</p>
-                <div className="space-y-1.5">
-                  {[
-                    { icon: '🔍', text: 'El admin verifica tu comprobante' },
-                    { icon: '✅', text: 'Recibes confirmación por mensaje' },
-                    { icon: '🎰', text: 'Participas en el sorteo' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                      <span>{item.icon}</span>
-                      <span>{item.text}</span>
+              {verificationStatus === 'success' ? (
+                // ── VISTA DE ÉXITO INSTANTÁNEO ──
+                <>
+                  <div className="space-y-4">
+                    <div className="w-20 h-20 bg-green-100 rounded-[2rem] flex items-center justify-center mx-auto animate-bounce shadow-lg shadow-green-100/50">
+                      <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <h4 className="text-3xl font-black text-slate-800 tracking-tight uppercase">¡BOLETOS PAGADOS!</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed px-2">
+                      Tu pago ha sido <span className="text-green-600 font-black">verificado con éxito</span>.
+                      ¡Ya estás participando oficialmente!
+                    </p>
+                  </div>
 
-              {/* Botones de acción final */}
-              <div className="flex gap-2.5 px-2">
-                {/* Volver a comprar — recarga la página directamente en la boletera */}
-                <button
-                  onClick={() => window.location.reload()}
-                  className="flex-1 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:opacity-90"
-                  style={{
-                    backgroundColor: 'var(--brand-primary)',
-                    boxShadow: '0 6px 20px rgba(var(--brand-primary-rgb), 0.25)',
-                  }}
-                >
-                  Volver a comprar
-                </button>
+                  <div className="flex flex-col gap-3 px-2">
+                    {/* Botón de Descarga / Ver Boleto */}
+                    <button
+                      onClick={() => {
+                        window.location.hash = `#comprobante?purchase=${purchaseId}`;
+                        onClose();
+                      }}
+                      className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl hover:brightness-110"
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                      }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Descargar Boleto
+                    </button>
 
-                {/* Seguir en Facebook — enterarse cuando sean ganadores */}
-                <button
-                  onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
-                  className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
-                  style={{ backgroundColor: '#1877F2' }}
-                >
-                  <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  Facebook
-                </button>
-              </div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="w-full bg-slate-100 text-slate-600 font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all hover:bg-slate-200 active:scale-95"
+                    >
+                      Volver a comprar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // ── VISTA MANUAL (FLUJO NORMAL) ──
+                <>
+                  <div className="space-y-2">
+                    <p className="text-4xl">🎟️</p>
+                    <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed px-2">
+                      Revisa tus mensajes pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
+                    </p>
+                  </div>
+
+                  <div
+                    className="rounded-2xl p-4 text-left space-y-2 border"
+                    style={{
+                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
+                      borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
+                    }}
+                  >
+                    <p
+                      className="text-[9px] font-black uppercase tracking-widest"
+                      style={{ color: 'var(--brand-primary)' }}
+                    >¿Qué sigue?</p>
+                    <div className="space-y-1.5">
+                      {[
+                        { icon: '🔍', text: 'El admin verifica tu comprobante' },
+                        { icon: '✅', text: 'Recibes confirmación por mensaje' },
+                        { icon: '🎰', text: 'Participas en el sorteo' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                          <span>{item.icon}</span>
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2.5 px-2">
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="flex-1 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:opacity-90"
+                      style={{
+                        backgroundColor: 'var(--brand-primary)',
+                        boxShadow: '0 6px 20px rgba(var(--brand-primary-rgb), 0.25)',
+                      }}
+                    >
+                      Volver a comprar
+                    </button>
+
+                    <button
+                      onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
+                      className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
+                      style={{ backgroundColor: '#1877F2' }}
+                    >
+                      <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                      Facebook
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

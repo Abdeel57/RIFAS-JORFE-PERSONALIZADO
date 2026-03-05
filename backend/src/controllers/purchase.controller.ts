@@ -224,3 +224,31 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     next(error);
   }
 };
+
+export const getPurchase = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const purchase = await prisma.purchase.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        raffle: true,
+        tickets: {
+          select: { id: true, number: true, status: true },
+          orderBy: { number: 'asc' }
+        },
+      },
+    });
+
+    if (!purchase) {
+      throw new AppError(404, 'Compra no encontrada');
+    }
+
+    res.json({
+      success: true,
+      data: purchase,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
