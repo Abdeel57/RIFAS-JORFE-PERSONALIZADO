@@ -28,8 +28,8 @@ function computeLayout(
   if (digits >= 5) {
     const preferred =
       containerWidth < 380 ? [3, 2] :
-      containerWidth < 560 ? [4, 3] :
-      [6, 5, 4];
+        containerWidth < 560 ? [4, 3] :
+          [6, 5, 4];
 
     const minBtnWidth = 76; // min px for comfortable 5-digit number
     let cols = preferred[preferred.length - 1];
@@ -48,8 +48,8 @@ function computeLayout(
   const minBtnSize = digits <= 3 ? 34 : 42;
   const preferred =
     containerWidth < 380 ? [5, 4, 3, 2] :
-    containerWidth < 560 ? [8, 7, 6, 5, 4] :
-    [10, 9, 8, 7];
+      containerWidth < 560 ? [8, 7, 6, 5, 4] :
+        [10, 9, 8, 7];
 
   let cols = preferred[preferred.length - 1];
   for (const c of preferred) {
@@ -99,14 +99,14 @@ const TicketItem = React.memo(({
         ${status === 'sold'
           ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
           : status === 'reserved'
-          ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed'
-          : isLucky
-          ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce'
-          : isSelected
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10'
-          : isHighlighted
-          ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105'
-          : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
+            ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed'
+            : isLucky
+              ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce'
+              : isSelected
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10'
+                : isHighlighted
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105'
+                  : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
       `}
     >
       {padded}
@@ -314,13 +314,34 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <div className="relative">
           <button
             onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
-            className={`h-full px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group
-              ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
+            disabled={isAnimating}
+            className={`h-full rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative overflow-hidden
+              ${isMachineOpen ? 'bg-blue-600 text-white px-4' : 'text-white'}`}
+            style={!isMachineOpen ? {
+              padding: '2px',
+              boxShadow: '0 0 14px 3px rgba(255,80,0,0.5), 0 0 28px 6px rgba(0,120,255,0.3)',
+            } : {}}
           >
             {!isMachineOpen && (
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-[length:200%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" />
+              <>
+                {/* Gradiente arcoíris animado */}
+                <div className="absolute inset-0 animate-rainbow-btn rounded-2xl" style={{
+                  background: 'linear-gradient(90deg, #ff0000 0%, #ff6600 14%, #ffdd00 28%, #00cc00 42%, #0088ff 57%, #8800ff 71%, #ff0044 85%, #ff0000 100%)',
+                  backgroundSize: '300% auto',
+                }} />
+                {/* Brillo pulsante superior */}
+                <div className="absolute inset-0 animate-rainbow-pulse rounded-2xl" style={{
+                  background: 'linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 55%)',
+                }} />
+              </>
             )}
-            <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
+            <span className="relative z-10 flex items-center gap-2" style={!isMachineOpen ? {
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              textShadow: '0 1px 6px rgba(0,0,0,0.7)',
+              letterSpacing: '0.1em',
+            } : {}}>
               🎰 <span className="hidden sm:inline">Suerte</span>
             </span>
           </button>
@@ -492,12 +513,17 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 
-        @keyframes rainbow-bg {
+        @keyframes rainbow-btn {
           0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+          100% { background-position: 300% 50%; }
         }
-        .animate-rainbow-bg { animation: rainbow-bg 3s linear infinite; }
+        .animate-rainbow-btn { animation: rainbow-btn 1.8s linear infinite; }
+
+        @keyframes rainbow-pulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.03); }
+        }
+        .animate-rainbow-pulse { animation: rainbow-pulse 1.2s ease-in-out infinite; }
 
         @keyframes soft-glow {
           0%   { box-shadow: 0 0 0 0    rgba(22,163,74,0.4); }
