@@ -81,7 +81,7 @@ const Purchases = () => {
   const getFrontendBaseUrl = () => {
     const env = import.meta.env?.VITE_FRONTEND_URL;
     if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
-    return window.location.origin;
+    return 'https://naorifas.netlify.app';
   };
 
   /** Mensaje predefinido para enviar por WhatsApp al cliente (con emojis) */
@@ -94,8 +94,7 @@ const Purchases = () => {
     const comprobanteLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
 
     return `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
-      `🎫 Boletos: ${ticketsShort}\n` +
-      `📄 Descarga tu boleto digital aquí:\n${comprobanteLink}\n\n` +
+      `*Descarga tu boleto digital aquí:*\n${comprobanteLink}\n\n` +
       `¡Gracias por participar! Mucha suerte 🍀`;
   };
 

@@ -26,7 +26,7 @@ const fmtTime = (d: string) => {
 const getFrontendBaseUrl = (): string => {
   const env = (import.meta as any).env?.VITE_FRONTEND_URL;
   if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
-  return window.location.origin;
+  return 'https://naorifas.netlify.app';
 };
 
 /**
@@ -168,8 +168,7 @@ const OrderCard = ({
 
   const waMessage = encodeURIComponent(
     `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
-    `🎫 Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')}\n` +
-    `📄 Descarga tu boleto digital aquí:\n${comprobanteLink}\n\n` +
+    `*Descarga tu boleto digital aquí:*\n${comprobanteLink}\n\n` +
     `¡Gracias por participar! Mucha suerte 🍀`
   );
   const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
