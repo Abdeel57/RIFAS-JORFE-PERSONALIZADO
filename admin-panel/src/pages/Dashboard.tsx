@@ -19,12 +19,23 @@ const fmtTime = (d: string) => {
 };
 
 /**
+ * URL base del frontend público donde vive la página del comprobante.
+ * Usa VITE_FRONTEND_URL (variable de entorno Railway) si está definida,
+ * de lo contrario usa el origin actual.
+ */
+const getFrontendBaseUrl = (): string => {
+  const env = (import.meta as any).env?.VITE_FRONTEND_URL;
+  if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
+  return window.location.origin;
+};
+
+/**
  * Normaliza un número de teléfono al formato internacional de México (+52)
  * para usarlo en links de wa.me. Siempre garantiza que el número empiece con 52.
  * Ejemplos:
- *   '6622560890'   → '526622560890'  ✓
- *   '+526622560890' → '526622560890'  ✓
- *   '526622560890'  → '526622560890'  ✓
+ *   '6622560890'   -> '526622560890'  OK
+ *   '+526622560890' -> '526622560890'  OK
+ *   '526622560890'  -> '526622560890'  OK
  */
 const phoneToWA = (phone: string): string => {
   const digits = (phone || '').replace(/\D/g, '');
@@ -152,13 +163,21 @@ const OrderCard = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
+  const frontendBase = getFrontendBaseUrl();
+  const comprobanteLink = `${frontendBase}/#comprobante?purchase=${purchase.id}`;
+
   const waMessage = encodeURIComponent(
-    `Hola ${purchase.user?.name ?? ''}, confirmamos que tu pago ha sido registrado. Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')} — Rifas NAO 🎟️`
+    `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
+    `🎫 Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')}\n` +
+    `📄 Descarga tu boleto digital aquí:\n${comprobanteLink}\n\n` +
+    `¡Gracias por participar! Mucha suerte 🍀`
   );
   const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
 
   const trackMessage = encodeURIComponent(
-    `Hola ${purchase.user?.name ?? ''}, te informamos que tu pago está siendo verificado. En breve recibirás confirmación. Boletos: ${tickets.map(n => `#${fmt(n)}`).join(', ')} — Rifas NAO 🎟️`
+    `⏳ Hola ${purchase.user?.name ?? ''}, tu comprobante fue recibido y está siendo verificado.\n\n` +
+    `🎫 Boletos reservados: ${tickets.map(n => `#${fmt(n)}`).join(', ')}\n\n` +
+    `En breve recibirás confirmación de tu pago. ¡Gracias por tu paciencia! 🙏`
   );
   const trackLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${trackMessage}`;
 

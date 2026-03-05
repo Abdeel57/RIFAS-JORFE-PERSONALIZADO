@@ -92,8 +92,11 @@ const Purchases = () => {
       : tickets.map((t: any) => `#${String(t.number).padStart(3, '0')}`).join(', ') || '—';
     const baseUrl = getFrontendBaseUrl();
     const comprobanteLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
-    const verifyLink = `${baseUrl}/#verify`;
-    return `✅ ¡Boletos pagados!\n\nTu pago fue confirmado correctamente.\n🎫 Boletos: ${ticketsShort}\n📍 Descárgalos aquí: ${comprobanteLink}\n🔗 Verifica aquí: ${verifyLink}\n\n¡Gracias por participar! 🎉`;
+
+    return `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
+      `🎫 Boletos: ${ticketsShort}\n` +
+      `📄 Descarga tu boleto digital aquí:\n${comprobanteLink}\n\n` +
+      `¡Gracias por participar! Mucha suerte 🍀`;
   };
 
   /**
