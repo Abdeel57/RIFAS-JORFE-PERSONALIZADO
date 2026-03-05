@@ -415,6 +415,7 @@ const App: React.FC = () => {
             onClose={() => setIsCheckoutOpen(false)}
             selectedTickets={selectedTicketsToBuy}
             raffleId={featuredRaffle.id}
+            raffleTitle={featuredRaffle.title}
             pricePerTicket={featuredRaffle.ticketPrice}
             onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
             logoUrl={brand.logoUrl}

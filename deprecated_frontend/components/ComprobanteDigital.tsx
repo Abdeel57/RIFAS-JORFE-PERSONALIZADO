@@ -102,34 +102,15 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
   return (
     <div className="min-h-screen py-10 px-4 flex flex-col items-center selection:bg-blue-100 selection:text-blue-900" style={{ backgroundColor: '#f8fafc' }}>
       {/* Background Decor */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none" style={{ background: `radial-gradient(circle at 20% 20%, ${brand.primaryColor} 0%, transparent 40%), radial-gradient(circle at 80% 80%, ${brand.secondaryColor} 0%, transparent 40%)` }} />
-
-      {/* Floating Actions */}
-      <div className="w-full max-w-lg mb-8 flex gap-3 print:hidden animate-in fade-in slide-in-from-top-4 duration-700">
-        <button
-          onClick={handleCopyLink}
-          className="flex-1 min-h-[56px] bg-white border border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95"
-        >
-          <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-          <span className="text-xs uppercase tracking-widest">Copiar Link</span>
-        </button>
-        <button
-          onClick={handleDownloadPdf}
-          className="flex-[1.5] min-h-[56px] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3 shadow-lg hover:brightness-110 active:scale-95"
-          style={{ background: `linear-gradient(135deg, ${brand.primaryColor}, ${brand.secondaryColor})` }}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-          <span className="text-xs uppercase tracking-widest">Imprimir Boleto</span>
-        </button>
-      </div>
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none" style={{ background: `radial-gradient(circle at 20% 20%, ${brand.primaryColor} 0%, transparent 40%), radial-gradient(circle at 80% 80%, ${brand.primaryColor}dd 0%, transparent 40%)` }} />
 
       {/* Main Ticket */}
       <div
         ref={printRef}
-        className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.12)] overflow-hidden border border-white relative animate-in fade-in slide-in-from-bottom-8 duration-1000"
+        className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.12)] overflow-hidden border border-white relative animate-in fade-in slide-in-from-bottom-8 duration-1000 mb-24"
       >
-        {/* Decorative Top Bar */}
-        <div className="h-3 w-full" style={{ background: `linear-gradient(90deg, ${brand.primaryColor}, ${brand.secondaryColor})` }} />
+        {/* Decorative Top Bar - Usando solo el color principal (con variaciones de brillo para profundidad) */}
+        <div className="h-3 w-full" style={{ background: `linear-gradient(90deg, ${brand.primaryColor}, ${brand.primaryColor}dd)` }} />
 
         <div className="p-8 md:p-12 space-y-10">
           {/* Header: Logo and Site Name */}
@@ -138,7 +119,7 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
               {brand.logoUrl ? (
                 <img src={brand.logoUrl} alt={brand.siteName} className="h-24 md:h-32 w-auto object-contain drop-shadow-md" />
               ) : (
-                <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-white font-black text-4xl shadow-xl" style={{ background: `linear-gradient(135deg, ${brand.primaryColor}, ${brand.secondaryColor})` }}>
+                <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-white font-black text-4xl shadow-xl" style={{ background: brand.primaryColor }}>
                   {brand.siteName.charAt(0)}
                 </div>
               )}
@@ -295,10 +276,31 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
         }
       `}</style>
 
+      {/* Sticky Bottom Actions */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-slate-50 via-slate-50/90 to-transparent print:hidden flex justify-center z-50">
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white p-2 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex gap-2">
+          <button
+            onClick={handleCopyLink}
+            className="flex-1 min-h-[56px] bg-slate-100 rounded-[1.5rem] font-black text-slate-700 hover:bg-slate-200 transition-all flex items-center justify-center gap-2 active:scale-95"
+          >
+            <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            <span className="text-[10px] uppercase tracking-widest">Link</span>
+          </button>
+          <button
+            onClick={handleDownloadPdf}
+            className="flex-[2] min-h-[56px] text-white rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 shadow-xl hover:brightness-110 active:scale-95 group"
+            style={{ backgroundColor: brand.primaryColor }}
+          >
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            <span className="text-[10px] uppercase tracking-widest">Imprimir Boleto</span>
+          </button>
+        </div>
+      </div>
+
       {onClose && (
         <button
           onClick={onClose}
-          className="mt-8 text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] transition-colors print:hidden"
+          className="mt-4 mb-20 text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] transition-colors print:hidden"
         >
           &larr; Volver al Sorteo
         </button>
