@@ -68,16 +68,14 @@ Extrae EXACTAMENTE los valores visibles en el comprobante:
 - beneficiario: nombre de quien RECIBE
 - cuentaDestino: número de cuenta, CLABE o CLABE parcial visible en el comprobante (ej. "****6010", "012180...2410")
 
-TAREA 2 — ANÁLISIS DE AUTENTICIDAD:
-Busca ACTIVAMENTE señales de manipulación digital:
-- Inconsistencias tipográficas (mezcla de fuentes, tamaños o pesos diferentes)
-- Artefactos de edición (bordes borrosos alrededor de números/texto, halos)
-- Colores o sombras incoherentes con el resto de la app
-- Texto que parece "pegado" sobre el fondo (bordes duros, sombras artificiales)
-- Números mal alineados o con espaciado irregular
-- Píxeles con compresión inconsistente (JPEG artifacts selectivos)
-- Generación por IA (texturas irreales, inconsistencias de iluminación)
-- Cualquier elemento que visualmente "no encaja" con un screenshot legítimo
+TAREA 2 — ANÁLISIS FORENSE DE AUTENTICIDAD:
+Eres un perito forense digital. Busca señales de que este comprobante fue modificado por IA o herramientas de edición:
+- MONTOS EDITADOS: Mira fijamente el MONTO. ¿El número se ve ligeramente desalineado, con una resolución diferente o con una caja de ruido distinta al texto de alrededor?
+- ARTEFACTOS DE COMPRESIÓN: ¿Hay "ruido" o manchas de colores alrededor de los números del monto pero no en el resto del texto? (Señal de edición).
+- COINCIDENCIA DE LUZ/SOMBRA: ¿Las sombras de los números editados son consistentes con el resto de la interfaz bancaria?
+- TIPOGRAFÍA: ¿La fuente de los números es EXACTAMENTE la misma que usa ese banco (BBVA, Banorte, Coppel, etc.)? La IA suele fallar en grosores de fuente y kerning.
+- BORDES: Busca bordes demasiado perfectos o "halos" alrededor del texto.
+- IA GENERATIVA: Busca texturas "lisas" irreales o letras que se deforman ligeramente al verlas de cerca.
 
 TAREA 3 — VALIDACIÓN DE DATOS:
 1. ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? (tolerancia ±$5 pesos)
@@ -101,10 +99,15 @@ TAREA 3 — VALIDACIÓN DE DATOS:
 ${last4 ? `3. ¿La cuenta destino visible en el comprobante termina en "${last4}"? 
    Busca campos como CLABE, cuenta, número de cuenta, ****XXXX. Si no es visible → null.` : ''}
 
+POLÍTICA DE CERO TOLERANCIA:
+- Si los datos (monto, nombre) coinciden PERFECTAMENTE pero tienes CUALQUIER duda sobre la autenticidad visual (edición por IA), pon verdict="review" o "reject" y authenticity="suspicious".
+- Es preferible mandar a revisión manual un comprobante real que aprobar uno falso.
+- Si ves que el "Monto" tiene una tipografía ligeramente más gruesa o distinta al "Concepto", es un REJECT inmediato.
+
 CRITERIOS DE VEREDICTO:
-- "approve": autenticidad alta/media, monto coincide, al menos 2 palabras del nombre coinciden, Y cuenta destino coincide (o no visible)
-- "review": comprobante parece auténtico pero algún dato no coincide, solo 1 palabra del nombre coincide, o no es visible
-- "reject": signos CLAROS de edición/falsificación, O la cuenta destino claramente NO coincide con "${last4 || 'la cuenta registrada'}"
+- "approve": autenticidad ALTA/INDUDABLE, todos los datos coinciden perfectamente. Confianza "high".
+- "review": duda mínima sobre autenticidad, o datos no legibles/incompletos. Confianza "medium" o "low".
+- "reject": signos claros de edición, Clave de Rastreo sospechosa, o cuenta destino claramente incorrecta.
 
 RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
 {
@@ -151,7 +154,7 @@ export async function analyzePaymentProof(
 
     try {
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
         const base64Data = imageBase64.includes(',')
             ? imageBase64.split(',')[1]

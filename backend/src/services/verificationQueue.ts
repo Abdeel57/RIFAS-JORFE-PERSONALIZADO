@@ -100,11 +100,12 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             razon: analysis.verdictReason,
         });
 
-        // Si la confianza es baja, no auto-aprobar aunque Gemini diga "approve"
-        if (analysis.verdict === 'approve' && analysis.confidence === 'low') {
-            console.log(`⚠️  Confianza baja → forzando revisión manual por seguridad`);
+        // Solo auto-aprobar si la confianza es ALTA. 
+        // Si es medium o low, forzamos revisión manual por seguridad (Cero Tolerancia).
+        if (analysis.verdict === 'approve' && analysis.confidence !== 'high') {
+            console.log(`⚠️  Confianza ${analysis.confidence} → forzando revisión manual por seguridad`);
             analysis.verdict = 'review';
-            analysis.verdictReason = `Confianza insuficiente (low). ${analysis.verdictReason}`;
+            analysis.verdictReason = `Confianza insuficiente (${analysis.confidence}). Se requiere validación visual por un humano.`;
         }
 
         // Seguridad extra: override del veredicto en casos críticos
