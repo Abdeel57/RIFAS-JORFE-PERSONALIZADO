@@ -436,7 +436,7 @@ const App: React.FC = () => {
               </svg>
             </div>
             {/* Textos */}
-            <div className="leading-tight">
+            <div className="leading-tight text-center">
               <p className="text-[11px] font-black text-blue-700 uppercase tracking-wide leading-none whitespace-nowrap">Éstos sorteos son seguros</p>
               <p className="text-[9px] font-bold text-blue-400 mt-0.5 leading-none whitespace-nowrap">Sorteos en base a la Lotería Nacional</p>
             </div>
