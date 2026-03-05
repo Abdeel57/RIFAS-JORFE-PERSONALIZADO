@@ -263,17 +263,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Polling para ver si la IA lo aprueba rápido
       pollPurchaseStatus(newPurchaseId);
 
-      // Si después de 5s sigue verificando, pasamos al mensaje manual pero seguimos polleando
-      setTimeout(() => {
-        setVerificationStatus(prev => {
-          if (prev === 'verifying') {
-            setStep(4);
-            return 'manual';
-          }
-          return prev;
-        });
-      }, 5000);
-
     } catch (error: any) {
       const msg = error?.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.';
       if (msg.includes('fetch') || msg.includes('red') || msg.includes('Failed') || msg.includes('404')) {
@@ -722,33 +711,47 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {verificationStatus === 'success' ? (
                 // ── VISTA DE ÉXITO INSTANTÁNEO ──
                 <>
-                  <div className="space-y-4">
-                    <div className="w-20 h-20 bg-green-100 rounded-[2rem] flex items-center justify-center mx-auto animate-bounce shadow-lg shadow-green-100/50">
-                      <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
+                  <div className="space-y-6">
+                    <div className="relative w-24 h-24 mx-auto">
+                      {/* Brillo vibrante detrás del check */}
+                      <div className="absolute inset-0 bg-[#00ffa3] opacity-25 blur-2xl animate-pulse rounded-full" />
+                      <div className="relative w-24 h-24 bg-gradient-to-br from-[#00ffa3] to-[#00d1ff] rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_50px_-10px_rgba(0,255,163,0.5)] animate-in zoom-in-50 duration-500">
+                        <svg className="w-12 h-12 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" className="animate-draw-check" />
+                        </svg>
+                      </div>
                     </div>
-                    <h4 className="text-3xl font-black text-slate-800 tracking-tight uppercase">¡BOLETOS PAGADOS!</h4>
-                    <p className="text-slate-500 text-sm leading-relaxed px-2">
-                      Tu pago ha sido <span className="text-green-600 font-black">verificado con éxito</span>.
-                      ¡Ya estás participando oficialmente!
+
+                    <div className="space-y-2">
+                      <h4 className="text-3xl font-black text-slate-800 tracking-tighter uppercase italic leading-none">
+                        ¡BOLETOS PAGADOS!
+                      </h4>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#00ffa3] animate-pulse" />
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Validación Instantánea Exitosa</span>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-500 text-sm leading-relaxed px-6">
+                      ¡Felicidades! Tu pago ha sido procesado y tus números ya están <span className="text-[#00c87d] font-black italic">confirmados</span>.
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-3 px-2">
+                  <div className="flex flex-col gap-3 px-2 pt-4">
                     {/* Botón de Descarga / Ver Boleto */}
                     <button
                       onClick={() => {
                         window.location.hash = `#comprobante?purchase=${purchaseId}`;
                         onClose();
                       }}
-                      className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl hover:brightness-110"
+                      className="w-full flex items-center justify-center gap-3 text-white font-black py-4.5 rounded-[1.5rem] text-sm uppercase tracking-[0.15em] transition-all active:scale-95 shadow-2xl hover:brightness-110 group relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        background: 'linear-gradient(135deg, #00ffa3, #00d17a)',
                       }}
                     >
+                      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      Descargar Boleto
+                      <span>Descargar Boleto</span>
                     </button>
 
                     <button
@@ -837,6 +840,17 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.08) !important;
           outline: none;
         }
+
+        @keyframes draw-check {
+          0% { stroke-dasharray: 0 100; stroke-dashoffset: 0; opacity: 0; }
+          100% { stroke-dasharray: 100 100; stroke-dashoffset: 0; opacity: 1; }
+        }
+
+        .animate-draw-check {
+          animation: draw-check 0.8s ease-out forwards;
+        }
+
+        .py-4\\.5 { padding-top: 1.125rem; padding-bottom: 1.125rem; }
       `}</style>
     </div>
   );
