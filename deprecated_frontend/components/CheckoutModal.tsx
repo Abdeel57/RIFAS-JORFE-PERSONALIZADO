@@ -128,7 +128,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const pollPurchaseStatus = async (id: string) => {
     let attempts = 0;
-    const maxAttempts = 15; // 15 intentos * 3s = 45 segundos máx
+    const maxAttempts = 20; // 20 intentos * 1.5s = 30 segundos máx de fondo
 
     const interval = setInterval(async () => {
       attempts++;
@@ -138,16 +138,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           clearInterval(interval);
           setVerificationStatus('success');
           soundService.playCoins();
-          setStep(4); // Saltamos al paso final pero con UI de éxito
-        } else if (purchase.verificationStatus === 'pending_manual' || attempts >= maxAttempts) {
+          setStep(4);
+        } else if (purchase.verificationStatus === 'rejected' || attempts >= maxAttempts) {
           clearInterval(interval);
           setVerificationStatus('manual');
-          // Si es manual o timeout, lo dejamos en el flujo normal (gracias por comprar, espera validación)
         }
       } catch (e) {
         console.error('Error polling status:', e);
       }
-    }, 3000);
+    }, 1500);
   };
 
 
@@ -264,7 +263,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Polling para ver si la IA lo aprueba rápido
       pollPurchaseStatus(newPurchaseId);
 
-      // Si después de 8s sigue verificando, asumimos que tardará y pasamos al mensaje manual
+      // Si después de 5s sigue verificando, pasamos al mensaje manual pero seguimos polleando
       setTimeout(() => {
         setVerificationStatus(prev => {
           if (prev === 'verifying') {
@@ -273,7 +272,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           }
           return prev;
         });
-      }, 8000);
+      }, 5000);
 
     } catch (error: any) {
       const msg = error?.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.';
@@ -689,7 +688,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div>
                 <h4 className="text-2xl font-black text-slate-800 tracking-tight">Validando tu pago...</h4>
                 <p className="text-slate-500 font-medium mt-3 text-sm leading-relaxed px-4">
-                  Estamos verificando tu comprobante con nuestra IA. <br />
+                  Estamos verificando tu comprobante. <br />
                   <span className="text-xs text-slate-400 font-normal">Esto tardará solo unos segundos.</span>
                 </p>
               </div>

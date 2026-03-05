@@ -2,7 +2,7 @@ import prisma from '../config/database';
 import { analyzePaymentProof, PaymentAnalysisResult } from './geminiVisionPaymentService';
 import { sendPushToAdmins } from './pushNotificationService';
 
-const VERIFICATION_DELAY_MS = 3 * 1000; // 3 segundos (verificación casi instantánea)
+const VERIFICATION_DELAY_MS = 500; // 0.5 segundos (respuesta inmediata)
 
 // ─── Helpers de fecha México ───────────────────────────────────────────────────
 
@@ -179,7 +179,7 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
                 verificationStatus: 'pending_manual',
                 verificationNote: `Error en verificación automática: ${error.message}. Revisar manualmente.`,
             },
-        }).catch(() => {});
+        }).catch(() => { });
     }
 }
 
@@ -250,7 +250,7 @@ async function autoConfirmPurchase(purchaseId: string, analysis: PaymentAnalysis
         body: `Orden ${purchaseId.slice(-8)} — $${analysis.monto ?? '?'} de ${analysis.ordenante ?? 'cliente'}. Boletos confirmados.`,
         url: '/admin',
         tag: 'verificacion',
-    }).catch(() => {});
+    }).catch(() => { });
 }
 
 async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysisResult): Promise<void> {
@@ -283,7 +283,7 @@ async function markSuspiciousManual(purchaseId: string, analysis: PaymentAnalysi
         body: `Orden ${purchaseId.slice(-8)} — posible falsificación. Revisar en el panel admin.`,
         url: '/admin',
         tag: 'alerta',
-    }).catch(() => {});
+    }).catch(() => { });
 }
 
 async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisResult): Promise<void> {
@@ -312,7 +312,7 @@ async function markPendingManual(purchaseId: string, analysis: PaymentAnalysisRe
         body: `Orden ${purchaseId.slice(-8)} — ${analysis.verdictReason}`,
         url: '/admin',
         tag: 'revision',
-    }).catch(() => {});
+    }).catch(() => { });
 }
 
 function buildApproveNote(analysis: PaymentAnalysisResult): string {
