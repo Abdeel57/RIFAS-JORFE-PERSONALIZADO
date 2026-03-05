@@ -3,15 +3,16 @@ import React from 'react';
 
 interface TermsAndConditionsProps {
   onBack: () => void;
+  siteName?: string;
 }
 
-const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
+const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack, siteName = 'RIFAS NAO' }) => {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden mb-20">
       {/* Hero Términos */}
       <div className="bg-slate-900 px-8 py-16 text-center space-y-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-50"></div>
-        <button 
+        <button
           onClick={onBack}
           className="absolute top-8 left-8 text-white/60 hover:text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all"
         >
@@ -30,7 +31,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
             Sobre el Sorteo
           </h2>
           <p className="text-slate-500 leading-relaxed">
-            Los sorteos realizados por <strong>Rifas Nao</strong> se basan estrictamente en los resultados de la Lotería Nacional para la Asistencia Pública de México. El número ganador se determinará tomando como referencia los últimos dígitos del premio mayor del sorteo especificado en cada dinámica.
+            Los sorteos realizados por <strong>{siteName}</strong> se basan estrictamente en los resultados de la Lotería Nacional para la Asistencia Pública de México. El número ganador se determinará tomando como referencia los últimos dígitos del premio mayor del sorteo especificado en cada dinámica.
           </p>
         </section>
 
@@ -41,7 +42,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
             Participación y Registro
           </h2>
           <p className="text-slate-500 leading-relaxed">
-            Para participar, el usuario debe seleccionar uno o más boletos disponibles y completar el proceso de pago. Es responsabilidad del usuario proporcionar información de contacto verídica (nombre, teléfono y correo electrónico). Rifas Nao no se hace responsable por errores en la captura de datos que impidan la localización del ganador.
+            Para participar, el usuario debe seleccionar uno o más boletos disponibles y completar el proceso de pago. Es responsabilidad del usuario proporcionar información de contacto verídica (nombre y teléfono). <strong>{siteName}</strong> no se hace responsable por errores en la captura de datos que impidan la localización del ganador.
           </p>
         </section>
 
@@ -55,7 +56,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
             {[
               "Los boletos solo se considerarán activos una vez confirmado el pago.",
               "En pagos vía OXXO, el comprobante debe enviarse vía WhatsApp en un lapso no mayor a 24 horas.",
-              "Rifas Nao se reserva el derecho de liberar boletos no liquidados en el tiempo estipulado.",
+              `${siteName} se reserva el derecho de liberar boletos no liquidados en el tiempo estipulado.`,
               "No existen devoluciones una vez emitido el boleto digital."
             ].map((item, idx) => (
               <li key={idx} className="flex gap-3 text-slate-500 text-sm">
@@ -73,7 +74,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
             Entrega de Premios
           </h2>
           <p className="text-slate-500 leading-relaxed">
-            La entrega de los vehículos o premios se realiza de manera presencial. Rifas Nao cubre los gastos de traslado del premio dentro del territorio mexicano (aplican restricciones por zonas de difícil acceso). El ganador deberá presentar identificación oficial vigente para reclamar su premio.
+            La entrega de los vehículos o premios se realiza de manera presencial. <strong>{siteName}</strong> cubre los gastos de traslado del premio dentro del territorio mexicano (aplican restricciones por zonas de difícil acceso). El ganador deberá presentar identificación oficial vigente para reclamar su premio.
           </p>
         </section>
 
@@ -82,7 +83,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack }) => {
           <p className="text-slate-400 text-xs italic">
             Al realizar la compra de un boleto, el usuario manifiesta haber leído y aceptado en su totalidad estos términos y condiciones.
           </p>
-          <button 
+          <button
             onClick={onBack}
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-10 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-100 transition-all active:scale-95"
           >

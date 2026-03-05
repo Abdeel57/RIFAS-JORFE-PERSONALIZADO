@@ -403,7 +403,7 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <TermsAndConditions onBack={() => handleViewChange('raffle')} />
+            <TermsAndConditions onBack={() => handleViewChange('raffle')} siteName={brand.siteName} />
           </div>
         )}
       </main>
