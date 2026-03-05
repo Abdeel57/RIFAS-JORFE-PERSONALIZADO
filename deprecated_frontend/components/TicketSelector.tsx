@@ -314,34 +314,15 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <div className="relative">
           <button
             onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
-            disabled={isAnimating}
-            className={`h-full rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative overflow-hidden
-              ${isMachineOpen ? 'bg-blue-600 text-white px-4' : 'text-white'}`}
-            style={!isMachineOpen ? {
-              padding: '2px',
-              boxShadow: '0 0 14px 3px rgba(255,80,0,0.5), 0 0 28px 6px rgba(0,120,255,0.3)',
-            } : {}}
+            className={`h-full px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group
+              ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
           >
             {!isMachineOpen && (
-              <>
-                {/* Gradiente arcoíris animado */}
-                <div className="absolute inset-0 animate-rainbow-btn rounded-2xl" style={{
-                  background: 'linear-gradient(90deg, #ff0000 0%, #ff6600 14%, #ffdd00 28%, #00cc00 42%, #0088ff 57%, #8800ff 71%, #ff0044 85%, #ff0000 100%)',
-                  backgroundSize: '300% auto',
-                }} />
-                {/* Brillo pulsante superior */}
-                <div className="absolute inset-0 animate-rainbow-pulse rounded-2xl" style={{
-                  background: 'linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 55%)',
-                }} />
-              </>
+              <div className="absolute inset-0 bg-[length:300%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" style={{
+                backgroundImage: 'linear-gradient(90deg, #ff0000, #ff6600, #ffdd00, #00cc00, #0088ff, #6600ff, #ff0099, #ff0000)',
+              }} />
             )}
-            <span className="relative z-10 flex items-center gap-2" style={!isMachineOpen ? {
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              textShadow: '0 1px 6px rgba(0,0,0,0.7)',
-              letterSpacing: '0.1em',
-            } : {}}>
+            <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
               🎰 <span className="hidden sm:inline">Suerte</span>
             </span>
           </button>
@@ -513,17 +494,12 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 
-        @keyframes rainbow-btn {
+        @keyframes rainbow-bg {
           0%   { background-position: 0% 50%; }
+          50%  { background-position: 150% 50%; }
           100% { background-position: 300% 50%; }
         }
-        .animate-rainbow-btn { animation: rainbow-btn 1.8s linear infinite; }
-
-        @keyframes rainbow-pulse {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50%       { opacity: 1;   transform: scale(1.03); }
-        }
-        .animate-rainbow-pulse { animation: rainbow-pulse 1.2s ease-in-out infinite; }
+        .animate-rainbow-bg { animation: rainbow-bg 1.5s linear infinite; }
 
         @keyframes soft-glow {
           0%   { box-shadow: 0 0 0 0    rgba(22,163,74,0.4); }
