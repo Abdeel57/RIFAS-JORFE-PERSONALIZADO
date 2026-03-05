@@ -499,7 +499,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
           50%  { background-position: 150% 50%; }
           100% { background-position: 300% 50%; }
         }
-        .animate-rainbow-bg { animation: rainbow-bg 1.5s linear infinite; }
+        .animate-rainbow-bg { animation: rainbow-bg 4s ease-in-out infinite; }
 
         @keyframes soft-glow {
           0%   { box-shadow: 0 0 0 0    rgba(22,163,74,0.4); }
