@@ -42,7 +42,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   siteName,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '', state: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', state: '' });
   const [isAutocompleted, setIsAutocompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
@@ -67,13 +67,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setErrorMessage(null);
 
       const loadData = async () => {
-        // Cargar usuario del localStorage
+        // Cargar usuario del localStorage (normalizando campos, sin email)
         const savedData = localStorage.getItem(STORAGE_KEY_USER);
         if (savedData) {
           try {
             const parsed = JSON.parse(savedData);
-            setFormData(parsed);
-            setIsAutocompleted(true);
+            // Solo cargamos los campos que existen en el formulario actual
+            const normalized = {
+              name: parsed.name || '',
+              phone: parsed.phone || '',
+              state: parsed.state || '',
+            };
+            if (normalized.name || normalized.phone) {
+              setFormData(normalized);
+              setIsAutocompleted(true);
+            }
           } catch (e) { }
         }
 
@@ -98,16 +106,19 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     const savedData = savedDataStr ? JSON.parse(savedDataStr) : null;
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
+      // Autocompletar si coincide exactamente con datos guardados
       if (savedData) {
         if (field === 'name' && value.toLowerCase() === savedData.name?.toLowerCase() && value.length >= 4) {
           setIsAutocompleted(true);
-          return { ...savedData, name: value };
+          return { name: value, phone: savedData.phone || '', state: savedData.state || '' };
         }
         if (field === 'phone' && value === savedData.phone && value.length === 10) {
           setIsAutocompleted(true);
-          return { ...savedData, phone: value };
+          return { name: savedData.name || '', phone: value, state: savedData.state || '' };
         }
       }
+      // Si el usuario modifica cualquier campo, marcamos como no autocompletado
+      // pero NUNCA bloqueamos la edición
       if (isAutocompleted) setIsAutocompleted(false);
       return newData;
     });
@@ -133,8 +144,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    if (!formData.name || !formData.phone || !formData.email || !formData.state) {
-      setErrorMessage('Por favor completa todos los campos: nombre, WhatsApp, estado y correo.');
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.state.trim()) {
+      setErrorMessage('Por favor completa todos los campos: nombre, WhatsApp y estado.');
       return;
     }
     if (formData.phone.replace(/\D/g, '').length !== 10) {
@@ -355,13 +366,26 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           {step === 1 && (
             <form onSubmit={handleNext} className="p-6 space-y-5">
               <div className="text-center mb-4">
-                {isAutocompleted && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest mb-3">
-                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                    Datos Recuperados
+                {isAutocompleted ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
+                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      Datos Recuperados
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ name: '', phone: '', state: '' });
+                        setIsAutocompleted(false);
+                      }}
+                      className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest underline underline-offset-2 transition-colors"
+                    >
+                      Usar datos distintos
+                    </button>
                   </div>
+                ) : (
+                  <p className="text-slate-500 text-sm">Escribe tu nombre o teléfono para autocompletar.</p>
                 )}
-                <p className="text-slate-500 text-sm">Escribe tu nombre o teléfono para autocompletar.</p>
               </div>
 
               <div className="space-y-3">
@@ -403,17 +427,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email *</label>
-                  <input
-                    required
-                    type="email"
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all text-sm font-bold text-slate-700 brand-input"
-                    placeholder="correo@ejemplo.com"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                  />
-                </div>
+
               </div>
 
               {/* Resumen rápido de boletos */}
@@ -802,7 +816,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   style={{ backgroundColor: '#1877F2' }}
                 >
                   <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                   </svg>
                   Facebook
                 </button>

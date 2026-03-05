@@ -111,7 +111,7 @@ class ApiService {
   async createPurchase(purchaseData: {
     raffleId: string;
     ticketNumbers: number[];
-    user: { name: string; phone: string; email: string; state: string };
+    user: { name: string; phone: string; email?: string; state: string };
   }) {
     return this.request<any>('/purchases', {
       method: 'POST',
