@@ -384,22 +384,6 @@ const App: React.FC = () => {
                 )}
               </div>
             )}
-            {/* ── Badge Sorteos Seguros ── */}
-            <div className="flex items-center justify-center px-4 pb-1">
-              <div className="flex items-center gap-3 bg-white border border-blue-100 rounded-full px-5 py-3 shadow-md shadow-blue-50 hover:shadow-blue-100 transition-shadow cursor-default">
-                {/* Ícono de verificado */}
-                <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                {/* Textos */}
-                <div className="text-left leading-tight">
-                  <p className="text-[12px] font-black text-blue-700 uppercase tracking-wide leading-none">Éstos sorteos son seguros</p>
-                  <p className="text-[10px] font-bold text-blue-500 mt-0.5 leading-none">Sorteos en base a la Lotería Nacional</p>
-                </div>
-              </div>
-            </div>
 
             <div className="flex flex-col items-center justify-center pt-3 pb-4 border-t border-slate-100">
               <button
@@ -440,6 +424,25 @@ const App: React.FC = () => {
       }
 
       <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
+
+      {/* ── Badge Flotante Sorteos Seguros ── */}
+      {activeView === 'raffle' && !isCheckoutOpen && !isSupportChatOpen && (
+        <div className="fixed bottom-4 left-0 right-0 z-[55] flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="pointer-events-auto flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-blue-100 rounded-full pl-2 pr-6 py-1.5 shadow-lg shadow-blue-100/50">
+            {/* Ícono verificado */}
+            <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            {/* Textos */}
+            <div className="leading-tight">
+              <p className="text-[11px] font-black text-blue-700 uppercase tracking-wide leading-none whitespace-nowrap">Éstos sorteos son seguros</p>
+              <p className="text-[9px] font-bold text-blue-400 mt-0.5 leading-none whitespace-nowrap">Sorteos en base a la Lotería Nacional</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10">
         <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
