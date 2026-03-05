@@ -86,9 +86,10 @@ const Purchases = () => {
 
   /** Mensaje predefinido para enviar por WhatsApp al cliente (con emojis) */
   const buildWhatsAppMessage = (purchase: any) => {
-    const ticketsShort = purchase.tickets.length > 5
-      ? purchase.tickets.slice(0, 5).map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ') + ` +${purchase.tickets.length - 5} más`
-      : purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ');
+    const tickets = purchase?.tickets ?? [];
+    const ticketsShort = tickets.length > 5
+      ? tickets.slice(0, 5).map((t: any) => `#${String(t.number).padStart(3, '0')}`).join(', ') + ` +${tickets.length - 5} más`
+      : tickets.map((t: any) => `#${String(t.number).padStart(3, '0')}`).join(', ') || '—';
     const baseUrl = getFrontendBaseUrl();
     const comprobanteLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
     const verifyLink = `${baseUrl}/#verify`;

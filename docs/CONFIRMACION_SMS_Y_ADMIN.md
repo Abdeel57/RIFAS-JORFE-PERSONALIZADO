@@ -2,6 +2,18 @@
 
 ---
 
+## Mismo dominio
+
+Cuando frontend, admin y API están en el mismo dominio (ej. `example.com`):
+
+- **Frontend**: `example.com/` — usa `config.json` con `"apiUrl": "/api"`
+- **Admin**: `example.com/admin/` — usa `VITE_API_URL` o fallback `/api` en producción
+- **API**: `example.com/api/*`
+
+Los enlaces del comprobante y verificador usan `window.location.origin` automáticamente.
+
+---
+
 ## Implementado (versión manual con WhatsApp)
 
 ### Flujo actual

@@ -1,0 +1,4 @@
+{
+  "apiUrl": "/api",
+  "_comment": "Para mismo dominio: usa \"/api\". Para API externa: usa la URL completa, ej. \"https://tu-backend.up.railway.app/api\""
+}

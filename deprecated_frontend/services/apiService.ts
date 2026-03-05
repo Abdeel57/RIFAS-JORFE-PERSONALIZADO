@@ -37,7 +37,7 @@ function getBaseUrl(): Promise<string> {
         const url = json?.apiUrl;
         if (url && typeof url === 'string') {
           const base = normalizeBaseUrl(url);
-          if (base.startsWith('http') && base.includes('.')) return base;
+          if (base.startsWith('http://') || base.startsWith('https://')) return base;
         }
       }
     } catch {

@@ -329,13 +329,13 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
       </div>
 
       {/* ── Facebook + FAQ agrupados sin espacio entre ellos ── */}
-      <div className="flex flex-col gap-4 md:gap-6">
+      <div className="flex flex-col gap-2 md:gap-3">
 
         {/* Facebook Page Plugin */}
         <FacebookSection facebookUrl={facebookUrl} />
 
         {/* FAQ — pegado directamente a Facebook */}
-        <div className="max-w-4xl mx-auto w-full px-1 md:px-4 pb-4 md:pb-10">
+        <div className="max-w-4xl mx-auto w-full px-1 md:px-4 pb-0">
           <div className="flex flex-col items-center text-center space-y-4 md:space-y-5 mb-8 md:mb-16">
             <div className="text-3xl md:text-4xl">🤔</div>
             <h2 className="text-2xl md:text-5xl font-black text-slate-800 tracking-tighter">Preguntas Frecuentes</h2>

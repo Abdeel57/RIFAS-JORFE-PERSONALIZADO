@@ -385,7 +385,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-col items-center justify-center pt-8 pb-4 border-t border-slate-100">
+            <div className="flex flex-col items-center justify-center pt-3 pb-4 border-t border-slate-100">
               <button
                 onClick={() => handleViewChange('terms')}
                 className="group flex items-center gap-3 text-slate-400 hover:text-blue-600 transition-all duration-300 py-2"
