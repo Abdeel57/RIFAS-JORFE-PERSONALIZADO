@@ -347,16 +347,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
             <div className="divide-y divide-slate-100">
               {faqs.map((faq, i) => <FAQItem key={i} question={faq.question} answer={faq.answer} />)}
             </div>
-            <div className="mt-8 md:mt-12 pt-6 md:pt-10 border-t border-slate-50 flex flex-col items-center">
-              <button
-                onClick={onOpenSupport}
-                className="group flex items-center gap-3 font-black text-[10px] md:text-sm uppercase tracking-[0.3em] transition-all py-3 px-6 rounded-2xl active:bg-slate-50 hover:opacity-80"
-                style={{ color: 'var(--brand-primary)' }}
-              >
-                Hablar con Nao Assist
-                <span className="transform group-hover:translate-x-2 transition-transform">→</span>
-              </button>
-            </div>
+
           </div>
         </div>
 
