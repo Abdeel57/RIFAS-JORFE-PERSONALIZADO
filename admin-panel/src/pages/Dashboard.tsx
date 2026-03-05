@@ -18,7 +18,25 @@ const fmtTime = (d: string) => {
   return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 };
 
-const phoneToWA = (phone: string) => phone.replace(/\D/g, '');
+/**
+ * Normaliza un número de teléfono al formato internacional de México (+52)
+ * para usarlo en links de wa.me. Siempre garantiza que el número empiece con 52.
+ * Ejemplos:
+ *   '6622560890'   → '526622560890'  ✓
+ *   '+526622560890' → '526622560890'  ✓
+ *   '526622560890'  → '526622560890'  ✓
+ */
+const phoneToWA = (phone: string): string => {
+  const digits = (phone || '').replace(/\D/g, '');
+  // Si ya tiene código de país mexicano (52 + 10 dígitos = 12 dígitos)
+  if (digits.length === 12 && digits.startsWith('52')) return digits;
+  // Si tiene exactamente 10 dígitos (número local México)
+  if (digits.length === 10) return '52' + digits;
+  // Si tiene más de 10 dígitos pero no empieza con 52, tomar los últimos 10 y agregar 52
+  if (digits.length > 10) return '52' + digits.slice(-10);
+  // Número incompleto: agregar 52 de todas formas
+  return '52' + digits;
+};
 
 // ─── Proof Viewer Modal ───────────────────────────────────────────────────────
 
@@ -319,50 +337,50 @@ const OrderCard = ({
                   />
                   <div className="absolute right-0 bottom-full mb-1 w-52 min-w-[200px] z-[100] rounded-2xl overflow-hidden bg-white border-2 border-slate-200 shadow-2xl">
                     <button
-                    onClick={() => { onEdit(purchase); setMenuOpen(false); }}
-                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
-                  >
-                    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Editar
-                  </button>
-                  <div className="border-t border-slate-50" />
-                  <button
-                    onClick={() => { setShowProof(true); setMenuOpen(false); }}
-                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
-                  >
-                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Ver comprobante
-                  </button>
-                  <div className="border-t border-slate-50" />
-                  <a
-                    href={trackLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
-                  >
-                    <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
-                    </svg>
-                    Enviar seguimiento
-                  </a>
-                  <div className="border-t border-slate-50" />
-                  <a
-                    href={waLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 active:bg-green-100 transition-colors touch-manipulation"
-                  >
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
-                    </svg>
-                    Chat WhatsApp
-                  </a>
+                      onClick={() => { onEdit(purchase); setMenuOpen(false); }}
+                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
+                    >
+                      <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Editar
+                    </button>
+                    <div className="border-t border-slate-50" />
+                    <button
+                      onClick={() => { setShowProof(true); setMenuOpen(false); }}
+                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
+                    >
+                      <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Ver comprobante
+                    </button>
+                    <div className="border-t border-slate-50" />
+                    <a
+                      href={trackLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
+                    >
+                      <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
+                      </svg>
+                      Enviar seguimiento
+                    </a>
+                    <div className="border-t border-slate-50" />
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 active:bg-green-100 transition-colors touch-manipulation"
+                    >
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
+                      </svg>
+                      Chat WhatsApp
+                    </a>
                   </div>
                 </>
               )}
