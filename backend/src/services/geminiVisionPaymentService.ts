@@ -38,17 +38,23 @@ export interface AnalysisOptions {
 
 function buildPrompt(opts: AnalysisOptions): string {
     const last4 = opts.accountLastDigits || (opts.clabe ? opts.clabe.replace(/\s/g, '').slice(-4) : null);
+    const currentDate = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     return `Eres un experto en verificación de comprobantes de pago bancarios mexicanos (SPEI).
 Analiza esta imagen con máxima precisión y devuelve ÚNICAMENTE el JSON solicitado.
-
+ 
 ═══════════════════════════════════════════════════
 DATOS DE LA ORDEN A VERIFICAR:
 - Monto esperado: $${opts.expectedAmount} pesos MXN
 - Nombre del cliente registrado: "${opts.customerName}"
 - Beneficiario esperado (cuenta destino): "${opts.beneficiaryName}"
 ${last4 ? `- Últimos 4 dígitos de la CLABE destino: "${last4}"` : ''}
+- Fecha actual del sistema (Hoy): ${currentDate}
 ═══════════════════════════════════════════════════
+
+IMPORTANTE SOBRE LA FECHA:
+Si el comprobante tiene la fecha de hoy (${currentDate}) o de ayer, es TOTALMENTE VÁLIDO.
+NO lo marques como "suspicious" o "future date" si coincide con la fecha actual proporcionada arriba.
 
 TAREA 1 — EXTRACCIÓN DE DATOS:
 Extrae EXACTAMENTE los valores visibles en el comprobante:
@@ -153,7 +159,7 @@ export async function analyzePaymentProof(
 
         const mimeType = imageBase64.startsWith('data:image/png') ? 'image/png'
             : imageBase64.startsWith('data:image/webp') ? 'image/webp'
-            : 'image/jpeg';
+                : 'image/jpeg';
 
         const result = await model.generateContent([
             buildPrompt(options),
