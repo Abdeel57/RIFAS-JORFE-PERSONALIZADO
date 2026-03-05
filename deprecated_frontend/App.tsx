@@ -7,6 +7,7 @@ import CheckoutModal from './components/CheckoutModal.tsx';
 import VerifyTickets from './components/VerifyTickets.tsx';
 import TermsAndConditions from './components/TermsAndConditions.tsx';
 import SupportChat from './components/SupportChat.tsx';
+import ComprobanteDigital from './components/ComprobanteDigital.tsx';
 import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
 import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
@@ -60,7 +61,15 @@ function applyBrandCssVars(brand: BrandSettings) {
   root.style.setProperty('--brand-primary-rgb', `${r}, ${g}, ${b}`);
 }
 
+function getComprobantePurchaseId(): string | null {
+  const hash = typeof window !== 'undefined' ? window.location.hash : '';
+  if (!hash.startsWith('#comprobante')) return null;
+  const qs = hash.split('?')[1] || '';
+  return new URLSearchParams(qs).get('purchase');
+}
+
 const App: React.FC = () => {
+  const [comprobantePurchaseId, setComprobantePurchaseId] = useState<string | null>(() => getComprobantePurchaseId());
   const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms'>('raffle');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [refreshTicketsAt, setRefreshTicketsAt] = useState<number>(0);
@@ -70,6 +79,16 @@ const App: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
   const [brand, setBrand] = useState<BrandSettings>(DEFAULT_BRAND);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setComprobantePurchaseId(getComprobantePurchaseId());
+      if (window.location.hash === '#verify') setActiveView('verify');
+    };
+    if (window.location.hash === '#verify') setActiveView('verify');
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Load brand settings (logo + colors) from the backend
   useEffect(() => {
@@ -158,6 +177,20 @@ const App: React.FC = () => {
       setIsAppLoading(false);
     }, 400);
   };
+
+  const handleCloseComprobante = () => {
+    setComprobantePurchaseId(null);
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  };
+
+  if (comprobantePurchaseId) {
+    return (
+      <ComprobanteDigital
+        purchaseId={comprobantePurchaseId}
+        onClose={handleCloseComprobante}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">

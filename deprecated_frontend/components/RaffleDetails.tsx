@@ -137,17 +137,15 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
         {/* Divider */}
         <div className="mx-5 md:mx-8 h-px bg-slate-100" />
 
-        {/* Facebook Page Plugin iframe — fixed 500px width so FB always
-            renders the large-header mode (cover photo + profile + followers) */}
-        <div className="relative px-3 md:px-5 py-3 md:py-4 overflow-x-auto">
+        {/* Facebook Page Plugin iframe */}
+        <div className="relative px-3 md:px-5 py-2 overflow-x-auto">
 
           {/* Skeleton while iframe loads */}
           {!iframeReady && (
-            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 230 }}>
-              <div className="h-28 bg-slate-200" />
-              <div className="flex items-end gap-3 -mt-7 px-3">
+            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 155 }}>
+              <div className="flex items-center gap-3 px-3 pt-4">
                 <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
-                <div className="space-y-1 pb-1">
+                <div className="space-y-1">
                   <div className="h-3 w-36 bg-slate-200 rounded-full" />
                   <div className="h-2.5 w-24 bg-slate-200 rounded-full" />
                 </div>
@@ -158,11 +156,11 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
           <iframe
             src={pluginSrc}
             width="500"
-            height="230"
+            height="155"
             className="rounded-xl border-0 block mx-auto"
             style={{
-              width: '500px',         /* fixed: forces FB large-header with cover photo */
-              height: '230px',
+              width: '500px',
+              height: '155px',
               maxWidth: '100%',
               opacity: iframeReady ? 1 : 0,
               transition: 'opacity 0.4s ease',

@@ -77,21 +77,37 @@ const Purchases = () => {
     return <span className="badge-red">Cancelado</span>;
   };
 
-  /** Mensaje predefinido para enviar por WhatsApp al cliente */
+  /** URL base del frontend público (comprobante y verificador). Usa VITE_FRONTEND_URL si existe, sino origin. */
+  const getFrontendBaseUrl = () => {
+    const env = import.meta.env?.VITE_FRONTEND_URL;
+    if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
+    return window.location.origin;
+  };
+
+  /** Mensaje predefinido para enviar por WhatsApp al cliente (con emojis) */
   const buildWhatsAppMessage = (purchase: any) => {
-    const tickets = purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ');
     const ticketsShort = purchase.tickets.length > 5
       ? purchase.tickets.slice(0, 5).map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ') + ` +${purchase.tickets.length - 5} más`
-      : tickets;
-    const baseUrl = window.location.origin;
-    const verifyLink = `${baseUrl}/#verify?purchase=${purchase.id}`;
-    return `¡Boletos pagados! Tu pago fue confirmado. Boletos: ${ticketsShort}. Rifa: ${purchase.raffle.title}. Verifica aquí: ${verifyLink}`;
+      : purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ');
+    const baseUrl = getFrontendBaseUrl();
+    const comprobanteLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
+    const verifyLink = `${baseUrl}/#verify`;
+    return `✅ ¡Boletos pagados!\n\nTu pago fue confirmado correctamente.\n🎫 Boletos: ${ticketsShort}\n📍 Descárgalos aquí: ${comprobanteLink}\n🔗 Verifica aquí: ${verifyLink}\n\n¡Gracias por participar! 🎉`;
+  };
+
+  /** Formatea el teléfono para wa.me: +52 + 10 dígitos (México) */
+  const formatPhoneForWhatsApp = (phone: string): string => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('52')) return digits;
+    if (digits.length === 10) return '52' + digits;
+    if (digits.length > 10) return '52' + digits.slice(-10);
+    return '52' + digits.padStart(10, '0');
   };
 
   const handleSendWhatsApp = (purchase: any) => {
-    const phone = purchase.user.phone.replace(/\D/g, '');
+    const phone = formatPhoneForWhatsApp(purchase.user.phone);
     const msg = buildWhatsAppMessage(purchase);
-    const url = `https://wa.me/52${phone}?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
     toast.success('WhatsApp abierto con el mensaje listo');
   };
@@ -239,6 +255,9 @@ const Purchases = () => {
               {selectedPurchase.status === 'paid' && (
                 <div className="admin-card p-4 space-y-3">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Confirmar al cliente</p>
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm text-slate-700 whitespace-pre-wrap font-medium">
+                    {buildWhatsAppMessage(selectedPurchase)}
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleSendWhatsApp(selectedPurchase)}

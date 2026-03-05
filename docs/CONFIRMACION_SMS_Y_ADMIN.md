@@ -18,11 +18,32 @@
 ### Mensaje predefinido
 
 ```
-¡Boletos pagados! Tu pago fue confirmado. Boletos: #046, #047. Rifa: BOVEDA VIP. Verifica aquí: [link]
+✅ ¡Boletos pagados!
+
+Tu pago fue confirmado correctamente.
+🎫 Boletos: #046, #047
+📍 Descárgalos aquí: [link comprobante digital]
+🔗 Verifica aquí: [link verificador]
+
+¡Gracias por participar! 🎉
 ```
 
 - Si hay más de 5 boletos: se muestran los primeros 5 y "+N más".
-- Incluye enlace de verificación (origen del admin + `/#verify?purchase=ID`).
+- **Link comprobante**: `{FRONTEND_URL}/#comprobante?purchase={ID}` — página con comprobante digital descargable en PDF y QR.
+- **Link verificador**: `{FRONTEND_URL}/#verify` — página donde el cliente consulta sus boletos por teléfono y ve estado "Pagado".
+- Si admin y frontend están en dominios distintos, configura `VITE_FRONTEND_URL` en el admin (ej. `https://naorifas.netlify.app`).
+
+### Comprobante digital
+
+Al abrir el link "Descárgalos aquí", el cliente ve una página con:
+
+- Logo y nombre del sitio
+- Datos del cliente (nombre, teléfono, email)
+- Rifa y fecha de sorteo
+- Lista de boletos
+- Total pagado
+- Botones: **Copiar enlace** y **Descargar PDF**
+- Código QR que lleva al verificador (`/#verify`)
 
 ### Dónde está
 

@@ -140,6 +140,10 @@ class ApiService {
     });
   }
 
+  async getComprobante(purchaseId: string) {
+    return this.request<any>(`/comprobante/${purchaseId}`);
+  }
+
   async getSettings() {
     return this.request<any>('/settings');
   }
