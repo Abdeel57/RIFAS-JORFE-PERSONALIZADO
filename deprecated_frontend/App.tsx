@@ -384,6 +384,22 @@ const App: React.FC = () => {
                 )}
               </div>
             )}
+            {/* ── Badge Sorteos Seguros ── */}
+            <div className="flex items-center justify-center px-4 pb-1">
+              <div className="flex items-center gap-3 bg-white border border-blue-100 rounded-full px-5 py-3 shadow-md shadow-blue-50 hover:shadow-blue-100 transition-shadow cursor-default">
+                {/* Ícono de verificado */}
+                <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                {/* Textos */}
+                <div className="text-left leading-tight">
+                  <p className="text-[12px] font-black text-blue-700 uppercase tracking-wide leading-none">Éstos sorteos son seguros</p>
+                  <p className="text-[10px] font-bold text-blue-500 mt-0.5 leading-none">Sorteos en base a la Lotería Nacional</p>
+                </div>
+              </div>
+            </div>
 
             <div className="flex flex-col items-center justify-center pt-3 pb-4 border-t border-slate-100">
               <button
@@ -464,7 +480,7 @@ const App: React.FC = () => {
 
           <div className="pt-6 border-t border-slate-50 w-full">
             <p className="text-slate-300 text-[8px] font-black uppercase tracking-[0.3em]">
-              © 2024 RIFAS NAO MÉXICO
+              © 2024 {brand.siteName.toUpperCase()}
             </p>
           </div>
         </div>
