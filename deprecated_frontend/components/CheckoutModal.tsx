@@ -125,6 +125,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'manual'>('idle');
+  const [verificationReason, setVerificationReason] = useState<string | null>(null);
 
   const pollPurchaseStatus = async (id: string) => {
     let attempts = 0;
@@ -139,14 +140,57 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           setVerificationStatus('success');
           soundService.playCoins();
           setStep(4);
-        } else if (purchase.verificationStatus === 'rejected' || attempts >= maxAttempts) {
+        } else if (purchase.verificationStatus === 'rejected' || purchase.verificationStatus === 'pending_manual') {
           clearInterval(interval);
           setVerificationStatus('manual');
+          setVerificationReason(purchase.verificationNote || null);
+          setStep(4);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setVerificationStatus('manual');
+          setStep(4);
         }
       } catch (e) {
         console.error('Error polling status:', e);
       }
     }, 1500);
+  };
+
+  const getHumanizedReason = (rawReason: string | null) => {
+    if (!rawReason) return "El administrador validará tu pago pronto.";
+
+    // Si contiene "Razón:", intentamos extraer el veredicto de la IA
+    if (rawReason.includes('Razón:')) {
+      const parts = rawReason.split('Razón:');
+      const practicalReason = parts[1].split('\n')[0].trim();
+
+      const lowReason = practicalReason.toLowerCase();
+      if (lowReason.includes('nombre') || lowReason.includes('name') || lowReason.includes('coincide')) {
+        return "Parece que el nombre en tu comprobante no coincide o no lo escribiste en el concepto de pago.";
+      }
+      if (lowReason.includes('monto') || lowReason.includes('amount')) {
+        return "El monto detectado en tu comprobante no coincide exactamente con el total de tu orden.";
+      }
+      if (lowReason.includes('cuenta') || lowReason.includes('account')) {
+        return "La cuenta de destino en el comprobante no coincide con nuestra cuenta oficial.";
+      }
+      if (lowReason.includes('futuro') || lowReason.includes('fecha')) {
+        return "Hay una inconsistencia con la fecha del comprobante.";
+      }
+      return practicalReason;
+    }
+
+    return "No pudimos validar tu pago automáticamente por falta de información clara.";
+  };
+
+  const handleSupportWhatsApp = () => {
+    const phone = (dynamicSettings?.whatsapp || '').replace(/\D/g, '');
+    const cleanPhone = phone.startsWith('52') ? phone : `52${phone}`;
+    const name = formData.name;
+    const readableReason = getHumanizedReason(verificationReason);
+    const message = `Hola, soy ${name}. Mi pago de la orden ${purchaseId?.slice(-6).toUpperCase()} está pendiente. Motivo detectado: ${readableReason}. Me gustaría que lo validen manualmente. Gracias.`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
   };
 
 
@@ -765,61 +809,84 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               ) : (
                 // ── VISTA MANUAL (FLUJO NORMAL) ──
                 <>
-                  <div className="space-y-2">
-                    <p className="text-4xl">🎟️</p>
-                    <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
-                    <p className="text-slate-500 text-sm leading-relaxed px-2">
-                      Revisa tus mensajes pronto. Te confirmaremos tus boletos en cuanto validemos el pago.
-                    </p>
-                  </div>
+                  <div className="space-y-4">
+                    {verificationReason ? (
+                      <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto text-amber-500 animate-in fade-in zoom-in duration-500">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <p className="text-4xl animate-bounce">🎟️</p>
+                    )}
 
-                  <div
-                    className="rounded-2xl p-4 text-left space-y-2 border"
-                    style={{
-                      backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
-                      borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
-                    }}
-                  >
-                    <p
-                      className="text-[9px] font-black uppercase tracking-widest"
-                      style={{ color: 'var(--brand-primary)' }}
-                    >¿Qué sigue?</p>
-                    <div className="space-y-1.5">
-                      {[
-                        { icon: '🔍', text: 'El admin verifica tu comprobante' },
-                        { icon: '✅', text: 'Recibes confirmación por mensaje' },
-                        { icon: '🎰', text: 'Participas en el sorteo' },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                          <span>{item.icon}</span>
-                          <span>{item.text}</span>
-                        </div>
-                      ))}
+                    <div className="space-y-1">
+                      <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
+                      <p className="text-slate-500 text-sm leading-relaxed px-2">
+                        {verificationReason
+                          ? getHumanizedReason(verificationReason)
+                          : "Hemos recibido tu comprobante. Nuestro equipo lo validará manualmente pronto."}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2.5 px-2">
-                    <button
-                      onClick={() => window.location.reload()}
-                      className="flex-1 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:opacity-90"
+                  {!verificationReason && (
+                    <div
+                      className="rounded-2xl p-4 text-left space-y-2 border"
                       style={{
-                        backgroundColor: 'var(--brand-primary)',
-                        boxShadow: '0 6px 20px rgba(var(--brand-primary-rgb), 0.25)',
+                        backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
+                        borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
                       }}
                     >
-                      Volver a comprar
-                    </button>
+                      <p
+                        className="text-[9px] font-black uppercase tracking-widest"
+                        style={{ color: 'var(--brand-primary)' }}
+                      >¿Qué sigue?</p>
+                      <div className="space-y-1.5">
+                        {[
+                          { icon: '🔍', text: 'El admin verifica tu comprobante' },
+                          { icon: '✅', text: 'Recibes confirmación por mensaje' },
+                          { icon: '🎰', text: 'Participas en el sorteo' },
+                        ].map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                            <span>{item.icon}</span>
+                            <span>{item.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                    <button
-                      onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
-                      style={{ backgroundColor: '#1877F2' }}
-                    >
-                      <svg className="w-3.5 h-3.5 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      Facebook
-                    </button>
+                  <div className="flex flex-col gap-2.5 px-2">
+                    {/* Botón de aclaración si hubo "error" en validación automática */}
+                    {(verificationReason || verificationStatus === 'manual') && (
+                      <button
+                        onClick={handleSupportWhatsApp}
+                        className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-green-200 hover:brightness-105 active:scale-[0.98] transition-all"
+                      >
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.405c0 6.556-5.332 11.89-11.888 11.89-2.014 0-3.991-.511-5.741-1.486l-6.243 1.708zm6.536-1.922c1.554.919 3.09 1.393 4.694 1.393 5.462 0 9.904-4.442 9.904-9.904 0-5.461-4.442-9.903-9.904-9.903-5.461 0-9.903 4.442-9.903 9.903 0 1.636.425 3.189 1.242 4.6l-1.036 3.784 3.903-1.069zm13.136-10.455c-.131-.218-.48-.349-.959-.59s-2.835-1.398-3.272-1.557-.741-.24-.48-.349c.261-.109 1.048-1.31 1.288-1.557.24-.261.24-.48.109-.72s-.48-.349-.959-.59c-.48-.24-1.288-.633-2.422-.633-1.134 0-2.09.436-2.614 1.048s-.524 1.31-.262 1.557.48.349.959.59c.131.066.24.131.24.131-.48 2.01-.959 4.02-1.439 6.03-.131.545-.349.959-.654 1.243s-.741.436-1.134.436c-.131 0-.24-.044-.24-.044.262-.109.524-.218.786-.327.262-.109.524-.218.786-.327.24-.261 1.288-1.557 1.555-1.81.24-.261.24-.48.109-.72s-.959-.59-2.01-1.222c-.131-.066-.24-.131-.24-.131.24-.261 1.048-1.31 1.288-1.557.24-.261.24-.48.109-.72s-.48-.349-.959-.59c-.48-.24-2.835-1.398-3.272-1.557-.437-.159-.741-.24-.959.109s-.959.785-.959 1.222c0 .436.349.959.349.959.131.218.48.349.959.59.48.24 3.09 1.557 3.09 1.557s.131.066.24.131c.131.066.24.131-.24.349s-.959.785-1.288 1.134c-.328.349-.654.436-.959.109s-1.134-1.048-1.048-1.557z" />
+                        </svg>
+                        Enviar aclaración
+                      </button>
+                    )}
+
+                    <div className="flex gap-2.5">
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="flex-1 text-slate-500 font-bold py-3.5 rounded-2xl text-[10px] uppercase tracking-widest border border-slate-200 transition-all active:scale-95 hover:bg-slate-50"
+                      >
+                        Volver a comprar
+                      </button>
+
+                      <button
+                        onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
+                        className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[10px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
+                        style={{ backgroundColor: '#1877F2' }}
+                      >
+                        Facebook
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
