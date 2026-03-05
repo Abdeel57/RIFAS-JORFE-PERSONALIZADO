@@ -10,7 +10,6 @@ const createPurchaseSchema = z.object({
   user: z.object({
     name: z.string().min(1),
     phone: z.string().length(10),
-    email: z.string().email(),
     state: z.string().min(1),
   }),
 });
@@ -66,36 +65,26 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
       throw new AppError(400, `Tickets ${unavailableTickets.map(t => t.number).join(', ')} are not available`);
     }
 
-    // Crear o obtener usuario
+    // Crear o obtener usuario (identificado por teléfono)
     let user = await prisma.user.findUnique({
       where: { phone: userData.phone },
     });
 
     if (!user) {
-      const existingEmailUser = await prisma.user.findUnique({
-        where: { email: userData.email },
+      // Crear nuevo usuario sin email
+      user = await prisma.user.create({
+        data: {
+          name: userData.name,
+          phone: userData.phone,
+          state: userData.state,
+        },
       });
-
-      if (existingEmailUser) {
-        user = await prisma.user.update({
-          where: { id: existingEmailUser.id },
-          data: {
-            name: userData.name,
-            phone: userData.phone,
-            state: userData.state,
-          },
-        });
-      } else {
-        user = await prisma.user.create({
-          data: userData,
-        });
-      }
     } else {
+      // Actualizar nombre y estado del usuario existente
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
           name: userData.name,
-          email: userData.email,
           state: userData.state,
         },
       });

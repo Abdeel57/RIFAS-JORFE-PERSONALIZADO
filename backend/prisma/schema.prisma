@@ -54,7 +54,7 @@ model User {
   id        String   @id @default(cuid())
   name      String
   phone     String
-  email     String
+  email     String?
   state     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -62,7 +62,6 @@ model User {
   purchases Purchase[]
 
   @@unique([phone])
-  @@unique([email])
   @@index([phone])
 }
 
