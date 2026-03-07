@@ -553,10 +553,28 @@ const App: React.FC = () => {
             <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{CONTACT_INFO.email}</p>
           </div>
 
-          <div className="pt-6 border-t border-slate-50 w-full">
+          <div className="pt-6 border-t border-slate-50 w-full flex flex-col items-center gap-4">
             <p className="text-slate-300 text-[8px] font-black uppercase tracking-[0.3em]">
               © 2024 {brand.siteName.toUpperCase()}
             </p>
+
+            <div className="flex flex-col items-center gap-3 py-4 px-6 bg-slate-50/50 rounded-3xl border border-slate-100 w-full max-w-[280px]">
+              <div className="flex items-center gap-2.5">
+                <img src="/bismark.png" alt="Bismark Logo" className="h-5 w-auto grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500" />
+                <div className="flex flex-col items-start leading-none">
+                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest text-left">Contratación</p>
+                  <p className="text-[10px] font-black text-slate-700 tracking-tight">Sistema <span className="text-[#2563EB]">Bismark</span></p>
+                </div>
+              </div>
+              <a
+                href="https://wa.me/522312053120"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-center py-2 bg-white border border-blue-100 text-[#2563EB] text-[9px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95"
+              >
+                Adquiere tu sistema aquí
+              </a>
+            </div>
           </div>
         </div>
       </footer>
