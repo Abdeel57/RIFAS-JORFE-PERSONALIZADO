@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const BismarkLogo = () => (
-  <div className="w-20 h-20 bg-[#2563EB] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-300/50">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 4h7.5C14.4 4 16 5.6 16 7.5S14.4 11 12.5 11H5V4z" fill="white" />
-      <path d="M5 11h8C15.2 11 17 12.8 17 15s-1.8 4-4 4H5V11z" fill="rgba(255,255,255,0.65)" />
-      <line x1="5" y1="4" x2="5" y2="19" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M13 4.5L19.5 4.5L19.5 11" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="19.5" y1="4.5" x2="13.5" y2="10.5" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
+  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200 border border-slate-100 overflow-hidden">
+    <img
+      src="/bismark.png"
+      alt="Bismark Logo"
+      className="w-full h-full object-contain scale-150 transform"
+    />
   </div>
 );
 

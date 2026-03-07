@@ -50,17 +50,13 @@ const Layout = () => {
         <div className="flex items-center justify-between h-14 min-h-[44px] px-4 gap-2">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            {/* Logo Bismark — B geométrica bold con flecha */}
-            <div className="w-9 h-9 bg-[#2563EB] rounded-xl flex items-center justify-center shadow-md shadow-blue-300/60 flex-shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* B — trazo bold moderno */}
-                <path d="M6 4.5H12.5C14.2 4.5 15.5 5.8 15.5 7.5C15.5 9.2 14.2 10.5 12.5 10.5H6V4.5Z" fill="white" />
-                <path d="M6 10.5H13C14.9 10.5 16.5 12.1 16.5 14C16.5 15.9 14.9 17.5 13 17.5H6V10.5Z" fill="rgba(255,255,255,0.65)" />
-                <line x1="6" y1="4.5" x2="6" y2="17.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                {/* Flecha diagonal dinámica — acento Bismark */}
-                <path d="M13.5 5L19 5L19 10.5" stroke="rgba(255,255,255,0.85)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <line x1="19" y1="5" x2="14" y2="10" stroke="rgba(255,255,255,0.85)" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
+            {/* Logo Bismark Oficial */}
+            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md shadow-blue-200/60 flex-shrink-0 border border-slate-100 overflow-hidden">
+              <img
+                src="/bismark.png"
+                alt="Bismark Logo"
+                className="w-full h-full object-contain scale-150 transform"
+              />
             </div>
             <div className="leading-none">
               <p className="font-black text-[10px] text-slate-400 tracking-widest uppercase leading-none">Sistema</p>
