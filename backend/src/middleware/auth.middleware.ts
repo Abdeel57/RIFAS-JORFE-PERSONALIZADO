@@ -17,7 +17,7 @@ export const authenticateAdmin = (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new AppError(401, 'No token provided');
     }
@@ -38,6 +38,13 @@ export const authenticateAdmin = (
     }
     return next(new AppError(401, 'Invalid or expired token'));
   }
+};
+
+export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.admin?.role !== 'admin') {
+    return next(new AppError(403, 'No tienes permisos suficientes para realizar esta acción. Solo administradores.'));
+  }
+  next();
 };
 
 

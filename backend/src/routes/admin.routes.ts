@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateAdmin } from '../middleware/auth.middleware';
+import { authenticateAdmin, isAdmin } from '../middleware/auth.middleware';
 import { login } from '../controllers/admin/auth.controller';
 import { getDashboardStats } from '../controllers/admin/dashboard.controller';
 import {
@@ -50,7 +50,7 @@ router.post('/upload-image', uploadImageMiddleware, uploadImage);
 router.get('/raffles', getAllRaffles);
 router.post('/raffles', createRaffle);
 router.put('/raffles/:id', updateRaffle);
-router.delete('/raffles/:id', deleteRaffle);
+router.delete('/raffles/:id', isAdmin, deleteRaffle);
 
 // Tickets
 router.get('/tickets', getTickets);
@@ -65,11 +65,11 @@ router.put('/purchases/:id/status', updatePurchaseStatus);
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
 
-// Admin Users (Management)
-router.get('/admin-users', getAdmins);
-router.post('/admin-users', createAdmin);
-router.put('/admin-users/:id', updateAdmin);
-router.delete('/admin-users/:id', deleteAdmin);
+// Admin Users (Management) - SOLO ADMINS
+router.get('/admin-users', isAdmin, getAdmins);
+router.post('/admin-users', isAdmin, createAdmin);
+router.put('/admin-users/:id', isAdmin, updateAdmin);
+router.delete('/admin-users/:id', isAdmin, deleteAdmin);
 
 // Push Notifications
 router.get('/push/vapid-key', (_req, res) => {

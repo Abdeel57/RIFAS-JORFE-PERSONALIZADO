@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getSettings, updateSettings } from '../controllers/settings.controller';
-import { authenticateAdmin } from '../middleware/auth.middleware';
+import { authenticateAdmin, isAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -116,6 +116,6 @@ router.get('/og-preview', async (req: Request, res: Response) => {
 router.get('/', getSettings);
 
 // Admin only route to update settings
-router.put('/', authenticateAdmin, updateSettings);
+router.put('/', authenticateAdmin, isAdmin, updateSettings);
 
 export default router;

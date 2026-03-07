@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useAuth } from '../hooks/useAuth';
 import {
     ChevronRight, Palette, CreditCard, Phone, Settings as SettingsIcon,
     Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, Lock, User
@@ -281,6 +282,8 @@ const Settings: React.FC = () => {
     const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
 
     // ── Estados para la administración de usuarios ──
+    const { admin } = useAuth();
+    const [raffles, setRaffles] = useState<any[]>([]);
     const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -798,38 +801,42 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Sección: Personalizar */}
-            <MenuSection title="Personalizar">
-                <MenuRow
-                    icon={<Image size={17} className="text-violet-600" />}
-                    iconBg="bg-violet-100"
-                    label="Logo y Nombre"
-                    subtitle="Imagen y nombre de tu página"
-                    value={settings.siteName || '—'}
-                    onClick={() => setActivePanel('logo')}
-                />
-                <MenuRow
-                    icon={<Palette size={17} className="text-pink-600" />}
-                    iconBg="bg-pink-100"
-                    label="Colores de Marca"
-                    subtitle="Color primario y secundario"
-                    value={settings.primaryColor}
-                    onClick={() => setActivePanel('colores')}
-                    last
-                />
-            </MenuSection>
+            {admin?.role === 'admin' && (
+                <MenuSection title="Personalizar">
+                    <MenuRow
+                        icon={<Image size={17} className="text-violet-600" />}
+                        iconBg="bg-violet-100"
+                        label="Logo y Nombre"
+                        subtitle="Imagen y nombre de tu página"
+                        value={settings.siteName || '—'}
+                        onClick={() => setActivePanel('logo')}
+                    />
+                    <MenuRow
+                        icon={<Palette size={17} className="text-pink-600" />}
+                        iconBg="bg-pink-100"
+                        label="Colores de Marca"
+                        subtitle="Color primario y secundario"
+                        value={settings.primaryColor}
+                        onClick={() => setActivePanel('colores')}
+                        last
+                    />
+                </MenuSection>
+            )}
 
             {/* Sección: Pagos */}
-            <MenuSection title="Métodos de Pago">
-                <MenuRow
-                    icon={<CreditCard size={17} className="text-blue-600" />}
-                    iconBg="bg-blue-100"
-                    label="Datos Bancarios SPEI"
-                    subtitle={settings.bankName || 'Sin configurar'}
-                    value={settings.clabe ? `****${settings.clabe.slice(-4)}` : '—'}
-                    onClick={() => setActivePanel('banco')}
-                    last
-                />
-            </MenuSection>
+            {admin?.role === 'admin' && (
+                <MenuSection title="Métodos de Pago">
+                    <MenuRow
+                        icon={<CreditCard size={17} className="text-blue-600" />}
+                        iconBg="bg-blue-100"
+                        label="Datos Bancarios SPEI"
+                        subtitle={settings.bankName || 'Sin configurar'}
+                        value={settings.clabe ? `****${settings.clabe.slice(-4)}` : '—'}
+                        onClick={() => setActivePanel('banco')}
+                        last
+                    />
+                </MenuSection>
+            )}
 
             {/* Sección: Contacto */}
             <MenuSection title="Contacto y Redes">
@@ -853,36 +860,40 @@ const Settings: React.FC = () => {
             </MenuSection>
 
             {/* Sección: Sistema */}
-            <MenuSection title="Seguridad y Acceso">
-                <MenuRow
-                    icon={<Users size={17} className="text-amber-600" />}
-                    iconBg="bg-amber-100"
-                    label="Usuarios del Sistema"
-                    subtitle="Administra accesos y permisos"
-                    onClick={() => setActivePanel('usuarios')}
-                />
-                <MenuRow
-                    icon={<Bot size={17} className="text-violet-600" />}
-                    iconBg="bg-violet-100"
-                    label="Verificación Automática IA"
-                    subtitle="Gemini Vision analiza comprobantes"
-                    value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'}
-                    onClick={() => setActivePanel('sistema')}
-                    last
-                />
-            </MenuSection>
+            {admin?.role === 'admin' && (
+                <MenuSection title="Seguridad y Acceso">
+                    <MenuRow
+                        icon={<Users size={17} className="text-amber-600" />}
+                        iconBg="bg-amber-100"
+                        label="Usuarios del Sistema"
+                        subtitle="Administra accesos y permisos"
+                        onClick={() => setActivePanel('usuarios')}
+                    />
+                    <MenuRow
+                        icon={<Bot size={17} className="text-violet-600" />}
+                        iconBg="bg-violet-100"
+                        label="Verificación Automática IA"
+                        subtitle="Gemini Vision analiza comprobantes"
+                        value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'}
+                        onClick={() => setActivePanel('sistema')}
+                        last
+                    />
+                </MenuSection>
+            )}
 
-            {/* Guardar flotante */}
-            <div className="pt-2 pb-4">
-                <button onClick={handleSave} disabled={isSaving}
-                    className="w-full py-4 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-3 touch-manipulation">
-                    {isSaving ? (
-                        <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />Guardando...</>
-                    ) : (
-                        <><Save size={16} />Guardar Todo</>
-                    )}
-                </button>
-            </div>
+            {/* Guardar flotante - Solo Admin */}
+            {admin?.role === 'admin' && (
+                <div className="pt-2 pb-4">
+                    <button onClick={handleSave} disabled={isSaving}
+                        className="w-full py-4 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-3 touch-manipulation">
+                        {isSaving ? (
+                            <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />Guardando...</>
+                        ) : (
+                            <><Save size={16} />Guardar Todo</>
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
+import { useAuth } from '../hooks/useAuth';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload
@@ -132,6 +133,7 @@ const ImageField: React.FC<{
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const Raffles = () => {
+  const { admin } = useAuth();
   const { showConfirm } = useConfirm();
   const [raffles, setRaffles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -383,10 +385,12 @@ const Raffles = () => {
                       className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#2563EB] rounded-xl text-sm font-bold transition-colors touch-manipulation">
                       <Pencil size={14} /> Editar
                     </button>
-                    <button onClick={() => handleDelete(raffle.id, raffle.title)}
-                      className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl text-sm font-bold transition-colors touch-manipulation">
-                      <Trash2 size={14} />
-                    </button>
+                    {admin?.role === 'admin' && (
+                      <button onClick={() => handleDelete(raffle.id, raffle.title)}
+                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl text-sm font-bold transition-colors touch-manipulation">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
