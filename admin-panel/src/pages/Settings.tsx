@@ -289,7 +289,7 @@ const Settings: React.FC = () => {
     const fetchAdmins = async () => {
         setIsUsersLoading(true);
         try {
-            const res = await api.get('/admin-users');
+            const res = await api.get('/admin/admin-users');
             if (res.data?.success) setAdminUsers(res.data.data);
         } catch { toast.error('Error al cargar administradores'); }
         finally { setIsUsersLoading(false); }
@@ -588,7 +588,7 @@ const Settings: React.FC = () => {
         }
         setIsSaving(true);
         try {
-            const res = await api.post('/admin-users', newUser);
+            const res = await api.post('/admin/admin-users', newUser);
             if (res.data?.success) {
                 toast.success('Usuario creado correctamente');
                 setNewUser({ name: '', email: '', password: '' });
@@ -605,7 +605,7 @@ const Settings: React.FC = () => {
             message: `¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`,
             onConfirm: async () => {
                 try {
-                    await api.delete(`/admin-users/${id}`);
+                    await api.delete(`/admin/admin-users/${id}`);
                     toast.success('Usuario eliminado');
                     fetchAdmins();
                 } catch (err: any) {
