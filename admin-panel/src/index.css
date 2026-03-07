@@ -19,7 +19,8 @@
   }
 
   body {
-    background-color: #F0F4FF;
+    background-color: #EEF4FF;
+    /* azul muy claro, tono Bismark */
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
@@ -28,7 +29,7 @@
 
 @layer components {
 
-  /* Cards - min-w-0 evita overflow en móvil */
+  /* Cards */
   .admin-card {
     @apply bg-white rounded-2xl border border-slate-100 shadow-sm min-w-0 overflow-hidden;
   }
@@ -38,21 +39,21 @@
     @apply bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-1;
   }
 
-  /* List item cards (replaces table rows) - min-w-0 evita overflow en móvil */
+  /* List item cards */
   .list-card {
     @apply bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-2 min-w-0 overflow-hidden;
   }
 
-  /* Form inputs - min 16px evita zoom automático en iOS */
+  /* Form inputs — min 16px evita zoom en iOS */
   .admin-input {
-    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent font-medium placeholder:text-slate-400 transition-all;
+    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent font-medium placeholder:text-slate-400 transition-all;
     font-size: 16px;
     min-height: 44px;
   }
 
-  /* Primary button - min 44px touch target móvil */
+  /* Primary button — Bismark blue */
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl px-5 py-3 min-h-[44px] transition-all shadow-md shadow-indigo-200 text-sm touch-manipulation;
+    @apply bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl px-5 py-3 min-h-[44px] transition-all shadow-md shadow-blue-200 text-sm touch-manipulation;
   }
 
   /* Secondary button */
@@ -95,13 +96,13 @@
     @apply text-sm text-slate-400 font-medium mt-0.5;
   }
 
-  /* Bottom tab bar link - min 44px touch target */
+  /* Bottom tab bar link */
   .tab-item {
-    @apply flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-3 transition-all touch-manipulation;
+    @apply flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-3 transition-all touch-manipulation relative;
   }
 
   .tab-item.active {
-    @apply text-indigo-600;
+    @apply text-[#2563EB];
   }
 
   .tab-item:not(.active) {
@@ -147,7 +148,7 @@
   .glass {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.88);
   }
 
   /* Ocultar nav inferior cuando un modal está abierto */

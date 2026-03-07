@@ -44,18 +44,22 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4FF] overflow-x-hidden">
+    <div className="min-h-screen bg-[#EEF4FF] overflow-x-hidden">
       {/* Top Header */}
       <header className="glass sticky top-0 z-40 border-b border-slate-200/60 pt-safe">
         <div className="flex items-center justify-between h-14 min-h-[44px] px-4 gap-2">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200">
-              <span className="text-white font-black text-sm italic">N</span>
+            {/* Logo Bismark: B con flecha diagonal en azul corporativo */}
+            <div className="w-8 h-8 bg-[#2563EB] rounded-xl flex items-center justify-center shadow-md shadow-blue-300 flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <text x="2" y="15" fontFamily="Arial Black, sans-serif" fontWeight="900" fontSize="14" fill="white" fontStyle="italic">B</text>
+                <path d="M10 14 L16 8 L16 13 M16 8 L11 8" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
             <div className="leading-none">
-              <p className="font-black text-sm text-slate-800 tracking-tight">RIFAS NAO</p>
-              <p className="text-[9px] text-indigo-500 font-bold uppercase tracking-widest">Admin</p>
+              <p className="font-black text-xs text-slate-400 tracking-widest uppercase">Sistema</p>
+              <p className="font-black text-sm text-slate-800 tracking-tight leading-tight">Bismark</p>
             </div>
           </div>
 
@@ -69,13 +73,13 @@ const Layout = () => {
                 title={subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones push'}
                 className={`relative flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all ${pushLoading ? 'opacity-50 cursor-not-allowed' :
                   subscribed
-                    ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
-                    : 'bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
+                    ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                    : 'bg-slate-100 text-slate-400 hover:bg-blue-50 hover:text-blue-500'
                   }`}
               >
                 {subscribed ? <Bell size={16} /> : <BellOff size={16} />}
                 {subscribed && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-white" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white" />
                 )}
               </button>
             )}
@@ -116,16 +120,16 @@ const Layout = () => {
                 className={`tab-item min-w-[64px] ${active ? 'active' : ''}`}
               >
                 <span className={`transition-transform ${active ? 'scale-110' : ''}`}>
-                  <Icon size={20} className={active ? 'fill-indigo-600/10' : ''} />
+                  <Icon size={20} className={active ? 'fill-blue-600/10' : ''} />
                 </span>
                 <span
-                  className={`text-[9px] font-bold tracking-tight text-center ${active ? 'text-indigo-600' : 'text-slate-400'
+                  className={`text-[9px] font-bold tracking-tight text-center ${active ? 'text-[#2563EB]' : 'text-slate-400'
                     }`}
                 >
                   {item.label}
                 </span>
                 {active && (
-                  <span className="absolute bottom-0 w-6 h-0.5 bg-indigo-600 rounded-full" />
+                  <span className="absolute bottom-0 w-6 h-0.5 bg-[#2563EB] rounded-full" />
                 )}
               </Link>
             );
