@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+const BismarkLogo = () => (
+  <div className="w-20 h-20 bg-[#2563EB] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-300/50">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 4h7.5C14.4 4 16 5.6 16 7.5S14.4 11 12.5 11H5V4z" fill="white" />
+      <path d="M5 11h8C15.2 11 17 12.8 17 15s-1.8 4-4 4H5V11z" fill="rgba(255,255,255,0.65)" />
+      <line x1="5" y1="4" x2="5" y2="19" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M13 4.5L19.5 4.5L19.5 11" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="19.5" y1="4.5" x2="13.5" y2="10.5" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  </div>
+);
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,23 +38,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-50 to-violet-100 p-4 pt-safe overflow-x-hidden">
-      {/* Background decorations */}
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-[#EEF4FF] via-blue-50 to-[#DBEAFE] p-4 pt-safe overflow-x-hidden">
+      {/* Decoraciones de fondo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-80 h-80 bg-indigo-200/40 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-violet-200/40 rounded-full blur-3xl" />
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-300/30 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-sm">
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-indigo-100 border border-white/80 p-8">
+        <div className="bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-100 border border-white/80 p-8">
           {/* Logo & branding */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
-              <span className="text-white font-black text-3xl italic">N</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">RIFAS NAO</h1>
-            <p className="text-xs text-indigo-500 font-bold uppercase tracking-widest mt-1">
+            <BismarkLogo />
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sistema</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight leading-tight">Bismark</h1>
+            <p className="text-xs text-[#2563EB] font-bold uppercase tracking-widest mt-1">
               Panel de Administración
             </p>
           </div>
@@ -70,7 +81,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="admin-input"
-                placeholder="admin@rifasnao.com"
+                placeholder="admin@bismark.com"
               />
             </div>
 
@@ -111,7 +122,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full min-h-[44px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:from-indigo-800 active:to-violet-800 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2 text-sm tracking-wide touch-manipulation"
+              className="w-full min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2 text-sm tracking-wide touch-manipulation"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -127,8 +138,8 @@ const Login = () => {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-4">
-          Rifas NAO · Panel Administrativo
+        <p className="text-center text-xs text-slate-400 mt-4 font-medium">
+          Sistema Bismark · Panel Administrativo
         </p>
       </div>
     </div>
@@ -136,4 +147,3 @@ const Login = () => {
 };
 
 export default Login;
-

@@ -156,7 +156,7 @@ const Purchases = () => {
       {/* Card list */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-48 gap-3">
-          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
           <p className="text-sm text-slate-400 font-medium">Cargando compras...</p>
         </div>
       ) : (
@@ -191,7 +191,7 @@ const Purchases = () => {
                     <p className="text-[10px] text-slate-400">{new Date(purchase.createdAt).toLocaleDateString('es-MX')}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleViewDetails(purchase.id)} className="min-h-[44px] px-3 py-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-xs font-bold transition-colors touch-manipulation">
+                    <button onClick={() => handleViewDetails(purchase.id)} className="min-h-[44px] px-3 py-2 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#2563EB] rounded-xl text-xs font-bold transition-colors touch-manipulation">
                       Ver
                     </button>
                     {purchase.status === 'pending' && (
@@ -241,7 +241,7 @@ const Purchases = () => {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Boletos</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedPurchase.tickets.map((ticket: any) => (
-                    <span key={ticket.id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-sm font-black text-indigo-700">
+                    <span key={ticket.id} className="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-sm font-black text-blue-700">
                       #{ticket.number.toString().padStart(3, '0')}
                     </span>
                   ))}

@@ -152,7 +152,7 @@ const PanelHeader: React.FC<{ title: string; icon: React.ReactNode; onBack: () =
             <ArrowLeft size={18} className="text-slate-600" />
         </button>
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-[#2563EB] flex-shrink-0">
                 {icon}
             </div>
             <h2 className="font-black text-slate-800 text-base tracking-tight truncate">{title}</h2>
@@ -160,7 +160,7 @@ const PanelHeader: React.FC<{ title: string; icon: React.ReactNode; onBack: () =
         <button
             onClick={onSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2.5 min-h-[40px] bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm shadow-indigo-200 disabled:opacity-60 touch-manipulation flex-shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 min-h-[40px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-200 disabled:opacity-60 touch-manipulation flex-shrink-0"
         >
             {isSaving ? (
                 <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
@@ -347,7 +347,7 @@ const Settings: React.FC = () => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent" />
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
                 <p className="text-sm text-slate-400 font-medium">Cargando configuración…</p>
             </div>
         );
@@ -573,7 +573,7 @@ const Settings: React.FC = () => {
                     <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
                         <input type="checkbox" checked={settings.autoVerificationEnabled}
                             onChange={e => set('autoVerificationEnabled', e.target.checked)} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2563EB]"></div>
                     </label>
                 </div>
 
@@ -639,8 +639,8 @@ const Settings: React.FC = () => {
                     onClick={() => setActivePanel('contacto')}
                 />
                 <MenuRow
-                    icon={<Globe size={17} className="text-indigo-600" />}
-                    iconBg="bg-indigo-100"
+                    icon={<Globe size={17} className="text-[#2563EB]" />}
+                    iconBg="bg-blue-100"
                     label="Redes Sociales"
                     subtitle="Instagram y Facebook"
                     value={settings.instagram ? `@${settings.instagram.replace(/^@/, '')}` : '—'}
@@ -665,7 +665,7 @@ const Settings: React.FC = () => {
             {/* Guardar flotante */}
             <div className="pt-2 pb-4">
                 <button onClick={handleSave} disabled={isSaving}
-                    className="w-full py-4 min-h-[52px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-indigo-200 disabled:opacity-50 flex items-center justify-center gap-3 touch-manipulation">
+                    className="w-full py-4 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-3 touch-manipulation">
                     {isSaving ? (
                         <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />Guardando...</>
                     ) : (

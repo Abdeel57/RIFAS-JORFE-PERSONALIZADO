@@ -66,7 +66,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
               <button
                 onClick={handleConfirm}
                 disabled={busy}
-                className="flex-1 sm:flex-none min-h-[44px] px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-sm font-bold transition-colors touch-manipulation disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-none min-h-[44px] px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-sm font-bold transition-colors touch-manipulation disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {busy ? (
                   <>

@@ -100,7 +100,7 @@ const Tickets = () => {
       {/* Cards */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-48 gap-3">
-          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
           <p className="text-sm text-slate-400 font-medium">Cargando boletos...</p>
         </div>
       ) : (
@@ -115,8 +115,8 @@ const Tickets = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
                     {/* Ticket number badge */}
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <p className="text-sm font-black text-indigo-700">#{ticket.number.toString().padStart(3, '0')}</p>
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-50 to-violet-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <p className="text-sm font-black text-blue-700">#{ticket.number.toString().padStart(3, '0')}</p>
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-800 truncate">{ticket.raffle.title}</p>

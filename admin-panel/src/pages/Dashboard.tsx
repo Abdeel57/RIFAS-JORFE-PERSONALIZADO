@@ -208,7 +208,7 @@ const OrderCard = ({
             </div>
 
             <p className="text-[11px] text-slate-400 mt-0.5">{purchase.user?.phone ?? ''}</p>
-            <p className="text-[11px] font-semibold text-indigo-600 truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
+            <p className="text-[11px] font-semibold text-[#2563EB] truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
 
             {/* Chips de boletos */}
             <div className="flex flex-wrap gap-1 mt-1.5">
@@ -224,7 +224,7 @@ const OrderCard = ({
                 <button
                   onClick={() => setExpanded(true)}
                   type="button"
-                  className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-lg text-[11px] font-black text-indigo-500 hover:bg-indigo-100 transition-colors"
+                  className="px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-lg text-[11px] font-black text-blue-500 hover:bg-blue-100 transition-colors"
                 >
                   +{tickets.length - 5} más
                 </button>
@@ -484,7 +484,7 @@ const EditModal = ({
           <button
             onClick={handleSave}
             disabled={saving || status === purchase.status}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm transition-colors"
+            className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
@@ -636,7 +636,7 @@ const Dashboard = () => {
       {/* Content */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-48 gap-3">
-          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
           <p className="text-sm text-slate-400 font-medium">Cargando órdenes...</p>
         </div>
       ) : purchases.length === 0 ? (

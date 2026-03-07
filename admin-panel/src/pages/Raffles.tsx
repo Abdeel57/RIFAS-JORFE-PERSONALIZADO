@@ -50,10 +50,10 @@ const StepBar: React.FC<{ current: WizardStep }> = ({ current }) => {
           <div key={step.id} className="flex items-center flex-1">
             <div className={`flex items-center gap-1.5 flex-1 ${i < steps.length - 1 ? '' : 'justify-end'}`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-xs font-black
-                ${done ? 'bg-emerald-500 text-white' : active ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-slate-200 text-slate-400'}`}>
+                ${done ? 'bg-emerald-500 text-white' : active ? 'bg-[#2563EB] text-white shadow-sm shadow-blue-200' : 'bg-slate-200 text-slate-400'}`}>
                 {done ? <CheckCircle2 size={14} /> : step.icon}
               </div>
-              <span className={`text-[10px] font-bold hidden sm:block ${active ? 'text-indigo-600' : done ? 'text-emerald-600' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold hidden sm:block ${active ? 'text-[#2563EB]' : done ? 'text-emerald-600' : 'text-slate-400'}`}>
                 {step.label}
               </span>
             </div>
@@ -97,7 +97,7 @@ const ImageField: React.FC<{
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-              className="flex-1 flex items-center justify-center gap-2 min-h-[40px] bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-xs font-bold transition-all active:scale-95 touch-manipulation disabled:opacity-50">
+              className="flex-1 flex items-center justify-center gap-2 min-h-[40px] bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#2563EB] rounded-xl text-xs font-bold transition-all active:scale-95 touch-manipulation disabled:opacity-50">
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {uploading ? 'Subiendo...' : 'Cambiar imagen'}
             </button>
@@ -112,7 +112,7 @@ const ImageField: React.FC<{
         <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
           className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300 active:scale-[0.98] transition-all touch-manipulation disabled:opacity-50">
           {uploading ? (
-            <Loader2 size={24} className="animate-spin text-indigo-400" />
+            <Loader2 size={24} className="animate-spin text-blue-400" />
           ) : (
             <Upload size={22} className="text-slate-300" />
           )}
@@ -272,7 +272,7 @@ const Raffles = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
         <p className="text-sm text-slate-400 font-medium">Cargando rifas...</p>
       </div>
     );
@@ -291,7 +291,7 @@ const Raffles = () => {
           </p>
         </div>
         <button onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-black rounded-2xl text-sm transition-all active:scale-95 shadow-md shadow-indigo-200 touch-manipulation">
+          className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm transition-all active:scale-95 shadow-md shadow-blue-200 touch-manipulation">
           <Plus size={18} strokeWidth={2.5} />
           <span className="hidden sm:inline">Nueva Rifa</span>
           <span className="sm:hidden">Nueva</span>
@@ -301,8 +301,8 @@ const Raffles = () => {
       {/* Empty state */}
       {raffles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center">
-            <Ticket size={36} className="text-indigo-300" />
+          <div className="w-20 h-20 rounded-3xl bg-blue-50 flex items-center justify-center">
+            <Ticket size={36} className="text-blue-300" />
           </div>
           <div className="text-center">
             <p className="font-black text-slate-700 text-lg">Sin rifas aún</p>
@@ -372,7 +372,7 @@ const Raffles = () => {
                       <span>Sorteo: {new Date(raffle.drawDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' : progress >= 70 ? 'bg-indigo-500' : 'bg-gradient-to-r from-indigo-400 to-violet-500'
+                      <div className={`h-full rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' : progress >= 70 ? 'bg-blue-500' : 'bg-gradient-to-r from-blue-400 to-violet-500'
                         }`} style={{ width: `${Math.min(progress, 100)}%` }} />
                     </div>
                   </div>
@@ -380,7 +380,7 @@ const Raffles = () => {
                   {/* Actions */}
                   <div className="flex gap-2 pt-1">
                     <button onClick={() => handleOpenModal(raffle)}
-                      className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-sm font-bold transition-colors touch-manipulation">
+                      className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#2563EB] rounded-xl text-sm font-bold transition-colors touch-manipulation">
                       <Pencil size={14} /> Editar
                     </button>
                     <button onClick={() => handleDelete(raffle.id, raffle.title)}
@@ -408,8 +408,8 @@ const Raffles = () => {
                   <ArrowLeft size={18} />
                 </button>
               ) : (
-                <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center">
-                  <Ticket size={18} className="text-indigo-600" />
+                <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Ticket size={18} className="text-[#2563EB]" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -555,15 +555,15 @@ const Raffles = () => {
 
                   {/* Revenue preview */}
                   {formData.ticketPrice && formData.totalTickets && (
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                    <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-center justify-between">
                       <div>
-                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">Recaudación potencial</p>
-                        <p className="text-xl font-black text-indigo-700 mt-0.5">
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-wider">Recaudación potencial</p>
+                        <p className="text-xl font-black text-blue-700 mt-0.5">
                           ${(parseFloat(formData.ticketPrice || '0') * parseInt(formData.totalTickets || '0')).toLocaleString('es-MX')}
                         </p>
                       </div>
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                        <DollarSign size={20} className="text-indigo-500" />
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <DollarSign size={20} className="text-blue-500" />
                       </div>
                     </div>
                   )}
@@ -621,12 +621,12 @@ const Raffles = () => {
             <div className="px-5 py-4 border-t border-slate-100 bg-white shrink-0 space-y-2">
               {wizardStep !== 'config' ? (
                 <button type="button" onClick={nextStep} disabled={!canGoNext()}
-                  className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase tracking-wide transition-all active:scale-[0.98] touch-manipulation">
+                  className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase tracking-wide transition-all active:scale-[0.98] touch-manipulation">
                   Siguiente <ChevronRight size={18} />
                 </button>
               ) : (
                 <button type="button" onClick={handleSubmit} disabled={!canSubmit() || isSaving}
-                  className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase tracking-wide transition-all active:scale-[0.98] touch-manipulation">
+                  className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase tracking-wide transition-all active:scale-[0.98] touch-manipulation">
                   {isSaving ? (
                     <><Loader2 size={18} className="animate-spin" /> Guardando...</>
                   ) : (

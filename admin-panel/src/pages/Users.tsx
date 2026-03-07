@@ -43,7 +43,7 @@ const Users = () => {
   };
 
   const avatarColors = [
-    'from-indigo-400 to-violet-500',
+    'from-blue-400 to-violet-500',
     'from-emerald-400 to-teal-500',
     'from-amber-400 to-orange-500',
     'from-pink-400 to-rose-500',
@@ -77,7 +77,7 @@ const Users = () => {
       {/* User cards */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-48 gap-3">
-          <div className="w-10 h-10 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
           <p className="text-sm text-slate-400 font-medium">Cargando usuarios...</p>
         </div>
       ) : (
@@ -104,7 +104,7 @@ const Users = () => {
                   </div>
                   {/* Stats */}
                   <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-black text-indigo-600">{user._count?.purchases || 0}</p>
+                    <p className="text-lg font-black text-[#2563EB]">{user._count?.purchases || 0}</p>
                     <p className="text-[10px] text-slate-400">compras</p>
                   </div>
                 </div>
@@ -122,7 +122,7 @@ const Users = () => {
                   </div>
                   <button
                     onClick={() => handleViewDetails(user.id)}
-                    className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-colors"
+                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#2563EB] rounded-xl text-xs font-bold transition-colors"
                   >
                     Ver detalles
                   </button>
@@ -140,7 +140,7 @@ const Users = () => {
             {/* Modal header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-violet-500 rounded-xl flex items-center justify-center">
                   <span className="text-white font-black text-sm">{getInitials(selectedUser.name)}</span>
                 </div>
                 <div>
