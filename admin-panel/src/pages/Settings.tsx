@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import {
     ChevronRight, Palette, CreditCard, Phone, Settings as SettingsIcon,
-    Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X
+    Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, Lock, User
 } from 'lucide-react';
 
 // ─── Color utilities ──────────────────────────────────────────────────────────
@@ -115,7 +115,15 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'sistema' | null;
+type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'sistema' | 'usuarios' | null;
+
+interface AdminUser {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    createdAt: string;
+}
 
 interface SettingsData {
     siteName: string;
@@ -554,6 +562,177 @@ const Settings: React.FC = () => {
         </div>
     );
 
+    // ── Panel: Usuarios ───────────────────────────────────────────────────────
+    const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+    const [isUsersLoading, setIsUsersLoading] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
+
+    const fetchAdmins = async () => {
+        setIsUsersLoading(true);
+        try {
+            const res = await api.get('/admin-users');
+            if (res.data?.success) setAdminUsers(res.data.data);
+        } catch { toast.error('Error al cargar administradores'); }
+        finally { setIsUsersLoading(false); }
+    };
+
+    useEffect(() => {
+        if (activePanel === 'usuarios') fetchAdmins();
+    }, [activePanel]);
+
+    const handleCreateAdmin = async () => {
+        if (!newUser.name || !newUser.email || !newUser.password) {
+            toast.error('Todos los campos son obligatorios');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const res = await api.post('/admin-users', newUser);
+            if (res.data?.success) {
+                toast.success('Usuario creado correctamente');
+                setNewUser({ name: '', email: '', password: '' });
+                setShowAddForm(false);
+                fetchAdmins();
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Error al crear usuario');
+        } finally { setIsSaving(false); }
+    };
+
+    const handleDeleteAdmin = (id: string, name: string) => {
+        showConfirm({
+            message: `¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`,
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/admin-users/${id}`);
+                    toast.success('Usuario eliminado');
+                    fetchAdmins();
+                } catch (err: any) {
+                    toast.error(err.response?.data?.error || 'Error al eliminar');
+                }
+            }
+        });
+    };
+
+    if (activePanel === 'usuarios') return (
+        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
+            <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => { setActivePanel(null); setShowAddForm(false); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0">
+                    <ArrowLeft size={18} className="text-slate-600" />
+                </button>
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
+                        <Users size={16} />
+                    </div>
+                    <h2 className="font-black text-slate-800 text-base tracking-tight truncate">Usuarios del Sistema</h2>
+                </div>
+                {!showAddForm && (
+                    <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-200">
+                        <Plus size={14} />
+                        Nuevo
+                    </button>
+                )}
+            </div>
+
+            {showAddForm && (
+                <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-xl shadow-blue-500/5 p-5 space-y-4 animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                            <Plus size={16} className="text-[#2563EB]" />
+                            Crear Nuevo Administrador
+                        </h3>
+                        <button onClick={() => setShowAddForm(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <FieldLabel>Nombre Completo</FieldLabel>
+                            <div className="relative">
+                                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="text" className="admin-input pl-10" value={newUser.name}
+                                    onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} placeholder="Ej. Juan Pérez" />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <FieldLabel>Correo Electrónico</FieldLabel>
+                            <div className="relative">
+                                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="email" className="admin-input pl-10" value={newUser.email}
+                                    onChange={e => setNewUser(p => ({ ...p, email: e.target.value.toLowerCase() }))} placeholder="correo@ejemplo.com" />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                            <FieldLabel hint="Mínimo 6 caracteres">Contraseña</FieldLabel>
+                            <div className="relative">
+                                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="password" minLength={6} className="admin-input pl-10" value={newUser.password}
+                                    onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <button onClick={() => setShowAddForm(false)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all">
+                            Cancelar
+                        </button>
+                        <button onClick={handleCreateAdmin} disabled={isSaving} className="flex-[2] py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+                            {isSaving ? <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" /> : <Save size={14} />}
+                            Crear Usuario
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {isUsersLoading ? (
+                    <div className="py-12 flex flex-col items-center gap-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Cargando...</p>
+                    </div>
+                ) : adminUsers.length === 0 ? (
+                    <div className="py-12 text-center">
+                        <Users size={32} className="mx-auto text-slate-200 mb-2" />
+                        <p className="text-sm text-slate-400 font-medium">No hay otros administradores registrados.</p>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-slate-100">
+                        {adminUsers.map((user) => (
+                            <div key={user.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] font-black text-xs">
+                                        {user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-slate-800 text-sm truncate">{user.name}</p>
+                                        <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-[#2563EB] text-[9px] font-black uppercase tracking-wider">
+                                        {user.role}
+                                    </span>
+                                    <button onClick={() => handleDeleteAdmin(user.id, user.name)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3">
+                <Sliders size={18} className="text-[#2563EB] flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-[#2563EB] font-medium leading-relaxed">
+                    <strong>Sugerencia pro:</strong> Usa correos corporativos para una mejor organización. Todos los administradores creados aquí tendrán acceso completo a todas las funciones del sistema.
+                </p>
+            </div>
+        </div>
+    );
+
     // ── Panel: Sistema ────────────────────────────────────────────────────────
     if (activePanel === 'sistema') return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
@@ -650,7 +829,14 @@ const Settings: React.FC = () => {
             </MenuSection>
 
             {/* Sección: Sistema */}
-            <MenuSection title="Sistema">
+            <MenuSection title="Seguridad y Acceso">
+                <MenuRow
+                    icon={<Users size={17} className="text-amber-600" />}
+                    iconBg="bg-amber-100"
+                    label="Usuarios del Sistema"
+                    subtitle="Administra accesos y permisos"
+                    onClick={() => setActivePanel('usuarios')}
+                />
                 <MenuRow
                     icon={<Bot size={17} className="text-violet-600" />}
                     iconBg="bg-violet-100"

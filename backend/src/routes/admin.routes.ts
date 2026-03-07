@@ -3,24 +3,30 @@ import { authenticateAdmin } from '../middleware/auth.middleware';
 import { login } from '../controllers/admin/auth.controller';
 import { getDashboardStats } from '../controllers/admin/dashboard.controller';
 import {
-  getAllRaffles,
-  createRaffle,
-  updateRaffle,
-  deleteRaffle,
+    getAllRaffles,
+    createRaffle,
+    updateRaffle,
+    deleteRaffle,
 } from '../controllers/admin/raffle.controller';
 import {
-  getTickets,
-  updateTicket,
+    getTickets,
+    updateTicket,
 } from '../controllers/admin/ticket.controller';
 import {
-  getPurchases,
-  getPurchaseById,
-  updatePurchaseStatus,
+    getPurchases,
+    getPurchaseById,
+    updatePurchaseStatus,
 } from '../controllers/admin/purchase.controller';
 import {
-  getUsers,
-  getUserById,
+    getUsers,
+    getUserById,
 } from '../controllers/admin/user.controller';
+import {
+    getAdmins,
+    createAdmin,
+    updateAdmin,
+    deleteAdmin,
+} from '../controllers/admin/admin.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -55,9 +61,15 @@ router.get('/purchases', getPurchases);
 router.get('/purchases/:id', getPurchaseById);
 router.put('/purchases/:id/status', updatePurchaseStatus);
 
-// Users
+// Users (Raffle Participants)
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
+
+// Admin Users (Management)
+router.get('/admin-users', getAdmins);
+router.post('/admin-users', createAdmin);
+router.put('/admin-users/:id', updateAdmin);
+router.delete('/admin-users/:id', deleteAdmin);
 
 // Push Notifications
 router.get('/push/vapid-key', (_req, res) => {
