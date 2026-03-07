@@ -88,16 +88,27 @@ const ImageField: React.FC<{
         {hint && <p className="text-[10px] text-slate-400 mt-0.5">{hint}</p>}
       </div>
 
-      {/* Preview */}
       {value ? (
-        <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video">
-          <img src={value} alt="preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
-          <button type="button" onClick={() => onChange('')}
-            className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all touch-manipulation">
-            <X size={12} />
-          </button>
+        /* Preview con imagen cargada */
+        <div className="space-y-2">
+          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video">
+            <img src={value} alt="preview" className="w-full h-full object-cover"
+              onError={e => (e.currentTarget.style.display = 'none')} />
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+              className="flex-1 flex items-center justify-center gap-2 min-h-[40px] bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-600 rounded-xl text-xs font-bold transition-all active:scale-95 touch-manipulation disabled:opacity-50">
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              {uploading ? 'Subiendo...' : 'Cambiar imagen'}
+            </button>
+            <button type="button" onClick={() => onChange('')}
+              className="min-h-[40px] px-3 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl transition-all active:scale-95 touch-manipulation">
+              <X size={16} />
+            </button>
+          </div>
         </div>
       ) : (
+        /* Área de subida vacía */
         <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
           className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300 active:scale-[0.98] transition-all touch-manipulation disabled:opacity-50">
           {uploading ? (
@@ -110,17 +121,13 @@ const ImageField: React.FC<{
         </button>
       )}
 
-      {/* URL input */}
-      <input type="url" value={value} onChange={e => onChange(e.target.value)}
-        placeholder="O pega una URL de imagen..."
-        className="admin-input text-xs" style={{ fontSize: 14 }} />
-
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ''; }}
         disabled={uploading} />
     </div>
   );
 };
+
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
