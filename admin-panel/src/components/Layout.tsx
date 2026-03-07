@@ -53,7 +53,7 @@ const Layout = () => {
             {/* Logo Bismark Oficial */}
             <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md shadow-blue-200/60 flex-shrink-0 border border-slate-100 overflow-hidden">
               <img
-                src="/bismark.png"
+                src="/admin/bismark.png"
                 alt="Bismark Logo"
                 className="w-full h-full object-contain scale-150 transform"
               />

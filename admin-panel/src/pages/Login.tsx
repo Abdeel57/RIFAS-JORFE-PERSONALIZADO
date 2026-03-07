@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 const BismarkLogo = () => (
   <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200 border border-slate-100 overflow-hidden">
     <img
-      src="/bismark.png"
+      src="/admin/bismark.png"
       alt="Bismark Logo"
       className="w-full h-full object-contain scale-150 transform"
     />
