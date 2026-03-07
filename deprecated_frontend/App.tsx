@@ -78,9 +78,13 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
+  const [activeRaffles, setActiveRaffles] = useState<Raffle[]>([]);
+  const [isRaffleDropdownOpen, setIsRaffleDropdownOpen] = useState(false);
   const [brand, setBrand] = useState<BrandSettings>(DEFAULT_BRAND);
   // rawSettings: se pasa al CheckoutModal para evitar que haga su propio fetch (doble petición)
   const [rawSettings, setRawSettings] = useState<any>(null);
+
+  const raffleDropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -90,6 +94,17 @@ const App: React.FC = () => {
     if (window.location.hash === '#verify') setActiveView('verify');
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  // Cierra el dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (raffleDropdownRef.current && !raffleDropdownRef.current.contains(event.target as Node)) {
+        setIsRaffleDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Load brand settings (logo + colors) from the backend
@@ -116,26 +131,29 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const loadRaffle = async () => {
+    const loadRaffles = async () => {
       try {
         const raffles = await apiService.getRaffles('active');
         if (raffles && raffles.length > 0) {
-          // Usar la primera rifa activa disponible
+          setActiveRaffles(raffles as Raffle[]);
+          // Por defecto usamos la primera rifa activa disponible
           setFeaturedRaffle(raffles[0] as Raffle);
         } else {
           // Fallback a la constante si no hay rifas en la API
           setFeaturedRaffle(FEATURED_RAFFLE);
+          setActiveRaffles([FEATURED_RAFFLE as Raffle]);
         }
       } catch (error) {
-        console.error('Error loading raffle:', error);
+        console.error('Error loading raffles:', error);
         // Fallback a la constante en caso de error
         setFeaturedRaffle(FEATURED_RAFFLE);
+        setActiveRaffles([FEATURED_RAFFLE as Raffle]);
       } finally {
         // Sin delay artificial — mostrar contenido en cuanto lleguen los datos
         setIsAppLoading(false);
       }
     };
-    loadRaffle();
+    loadRaffles();
   }, []);
 
   // Lock body scroll when any modal is open (iOS-safe: stores scroll position)
@@ -271,13 +289,66 @@ const App: React.FC = () => {
 
           {/* ── COLUMNA CENTRAL (auto): Botones de navegación ──────── */}
           <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 z-10 shadow-inner">
-            <button
-              onClick={() => handleViewChange('raffle')}
-              className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'raffle' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
-              style={activeView === 'raffle' ? { color: 'var(--brand-primary)' } : {}}
-            >
-              Sorteo
-            </button>
+            <div className="relative" ref={raffleDropdownRef}>
+              <button
+                onClick={() => {
+                  if (activeRaffles.length > 1) {
+                    setIsRaffleDropdownOpen(!isRaffleDropdownOpen);
+                  } else {
+                    handleViewChange('raffle');
+                  }
+                }}
+                className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest flex items-center gap-1.5 ${activeView === 'raffle' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                style={activeView === 'raffle' ? { color: 'var(--brand-primary)' } : {}}
+              >
+                Sorteo
+                {activeRaffles.length > 1 && (
+                  <svg
+                    className={`w-2.5 h-2.5 transition-transform duration-300 ${isRaffleDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="4"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Menú Desplegable de Rifas */}
+              {isRaffleDropdownOpen && activeRaffles.length > 1 && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 md:w-56 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 mb-1 border-b border-slate-50">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sorteos Activos</p>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto custom-scrollbar-light">
+                    {activeRaffles.map((raffle) => (
+                      <button
+                        key={raffle.id}
+                        onClick={() => {
+                          setFeaturedRaffle(raffle);
+                          handleViewChange('raffle');
+                          setIsRaffleDropdownOpen(false);
+                          window.scrollTo({ top: 0, behavior: 'instant' as any });
+                        }}
+                        className={`w-full text-left px-4 py-2.5 transition-all flex flex-col gap-0.5 hover:bg-slate-50 ${featuredRaffle?.id === raffle.id ? 'bg-blue-50/50' : ''}`}
+                      >
+                        <span className={`text-[10px] font-black tracking-tight ${featuredRaffle?.id === raffle.id ? 'text-blue-600' : 'text-slate-700'}`}>
+                          {raffle.title}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">${raffle.ticketPrice} por boleto</span>
+                          {featuredRaffle?.id === raffle.id && (
+                            <span className="w-1 h-1 rounded-full bg-blue-600"></span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => handleViewChange('verify')}
               className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
