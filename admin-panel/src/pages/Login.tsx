@@ -7,7 +7,7 @@ const BismarkLogo = () => (
     <img
       src="/admin/bismark.png"
       alt="Bismark Logo"
-      className="w-full h-full object-contain scale-150 transform"
+      className="w-full h-full object-contain transform"
     />
   </div>
 );
