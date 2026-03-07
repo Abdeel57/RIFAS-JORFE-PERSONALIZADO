@@ -135,6 +135,16 @@ const Raffles = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>('info');
 
+  // Ocultar la barra de navegación inferior cuando el modal está abierto
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => { document.body.classList.remove('modal-open'); };
+  }, [isModalOpen]);
+
   useEffect(() => { loadRaffles(); }, []);
 
   const loadRaffles = async () => {

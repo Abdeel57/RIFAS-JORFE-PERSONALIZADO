@@ -27,6 +27,7 @@
 }
 
 @layer components {
+
   /* Cards - min-w-0 evita overflow en móvil */
   .admin-card {
     @apply bg-white rounded-2xl border border-slate-100 shadow-sm min-w-0 overflow-hidden;
@@ -44,29 +45,24 @@
 
   /* Form inputs - min 16px evita zoom automático en iOS */
   .admin-input {
-    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800
-    focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
-    font-medium placeholder:text-slate-400 transition-all;
+    @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent font-medium placeholder:text-slate-400 transition-all;
     font-size: 16px;
     min-height: 44px;
   }
 
   /* Primary button - min 44px touch target móvil */
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold
-    rounded-xl px-5 py-3 min-h-[44px] transition-all shadow-md shadow-indigo-200 text-sm touch-manipulation;
+    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl px-5 py-3 min-h-[44px] transition-all shadow-md shadow-indigo-200 text-sm touch-manipulation;
   }
 
   /* Secondary button */
   .btn-secondary {
-    @apply bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold
-    rounded-xl px-5 py-3 min-h-[44px] transition-all text-sm touch-manipulation;
+    @apply bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold rounded-xl px-5 py-3 min-h-[44px] transition-all text-sm touch-manipulation;
   }
 
   /* Ghost button */
   .btn-ghost {
-    @apply bg-transparent border border-slate-200 hover:bg-slate-50 active:scale-95
-    text-slate-600 font-bold rounded-xl px-4 py-2 transition-all text-sm;
+    @apply bg-transparent border border-slate-200 hover:bg-slate-50 active:scale-95 text-slate-600 font-bold rounded-xl px-4 py-2 transition-all text-sm;
   }
 
   /* Status badges */
@@ -131,6 +127,7 @@
       opacity: 0;
       transform: translateY(1rem);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -152,5 +149,14 @@
     -webkit-backdrop-filter: blur(12px);
     background-color: rgba(255, 255, 255, 0.85);
   }
-}
 
+  /* Ocultar nav inferior cuando un modal está abierto */
+  body.modal-open .bottom-tab-nav {
+    display: none;
+  }
+
+  /* Bloquear scroll del body cuando el modal está abierto */
+  body.modal-open {
+    overflow: hidden;
+  }
+}

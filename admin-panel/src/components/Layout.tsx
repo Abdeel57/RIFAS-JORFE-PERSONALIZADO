@@ -68,9 +68,9 @@ const Layout = () => {
                 disabled={pushLoading}
                 title={subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones push'}
                 className={`relative flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all ${pushLoading ? 'opacity-50 cursor-not-allowed' :
-                    subscribed
-                      ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
-                      : 'bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
+                  subscribed
+                    ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                    : 'bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
                   }`}
               >
                 {subscribed ? <Bell size={16} /> : <BellOff size={16} />}
@@ -104,7 +104,7 @@ const Layout = () => {
       </main>
 
       {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/60 pb-safe overflow-x-auto scrollbar-none">
+      <nav className="bottom-tab-nav fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/60 pb-safe overflow-x-auto scrollbar-none">
         <div className="flex items-center justify-around max-w-full px-2 min-w-0">
           {navItems.map((item) => {
             const active = isActive(item.path);
