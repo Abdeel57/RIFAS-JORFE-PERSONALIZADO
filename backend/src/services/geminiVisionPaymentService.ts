@@ -154,7 +154,7 @@ export async function analyzePaymentProof(
 
     try {
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const base64Data = imageBase64.includes(',')
             ? imageBase64.split(',')[1]
