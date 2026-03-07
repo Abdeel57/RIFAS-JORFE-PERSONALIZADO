@@ -237,7 +237,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
       answer: 'Nos pondremos en contacto contigo de inmediato al teléfono registrado. La entrega del vehículo se coordina personalmente y se transmite en vivo por Facebook.',
     },
     {
-      question: '¿Es seguro participar con Rifas Nao?',
+      question: `¿Es seguro participar con ${siteName}?`,
       answer: 'Sí, somos una comunidad verificada con cientos de entregas reales documentadas en nuestras redes sociales. Tu pago y tus boletos están siempre protegidos.',
     },
   ];
