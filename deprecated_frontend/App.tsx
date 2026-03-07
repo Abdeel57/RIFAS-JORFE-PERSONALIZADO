@@ -79,6 +79,8 @@ const App: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
   const [brand, setBrand] = useState<BrandSettings>(DEFAULT_BRAND);
+  // rawSettings: se pasa al CheckoutModal para evitar que haga su propio fetch (doble petición)
+  const [rawSettings, setRawSettings] = useState<any>(null);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -106,6 +108,8 @@ const App: React.FC = () => {
           };
           setBrand(b);
           applyBrandCssVars(b);
+          // Guardamos rawSettings para pasarlos al CheckoutModal (evita doble fetch)
+          setRawSettings(data);
         }
       })
       .catch(() => {/* fallback to defaults silently */ });
@@ -127,9 +131,8 @@ const App: React.FC = () => {
         // Fallback a la constante en caso de error
         setFeaturedRaffle(FEATURED_RAFFLE);
       } finally {
-        setTimeout(() => {
-          setIsAppLoading(false);
-        }, 1200);
+        // Sin delay artificial — mostrar contenido en cuanto lleguen los datos
+        setIsAppLoading(false);
       }
     };
     loadRaffle();
@@ -168,14 +171,8 @@ const App: React.FC = () => {
 
   const handleViewChange = (view: 'raffle' | 'verify' | 'terms') => {
     if (view === activeView) return;
-
-    setIsAppLoading(true);
     window.scrollTo({ top: 0, behavior: 'instant' as any });
-
-    setTimeout(() => {
-      setActiveView(view);
-      setIsAppLoading(false);
-    }, 400);
+    setActiveView(view);
   };
 
   const handleCloseComprobante = () => {
@@ -351,6 +348,8 @@ const App: React.FC = () => {
                         alt={featuredRaffle.title}
                         className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-[1.015] transition-transform duration-1000"
                         loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
                       {/* Price pill — small, inside image at bottom-center */}
@@ -420,6 +419,7 @@ const App: React.FC = () => {
             onPurchaseSuccess={() => setRefreshTicketsAt(Date.now())}
             logoUrl={brand.logoUrl}
             siteName={brand.siteName}
+            initialSettings={rawSettings}
           />
         )
       }

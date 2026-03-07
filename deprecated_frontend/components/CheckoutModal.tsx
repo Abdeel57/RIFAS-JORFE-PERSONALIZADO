@@ -14,6 +14,8 @@ interface CheckoutModalProps {
   logoUrl?: string;
   siteName?: string;
   raffleTitle: string;
+  /** Settings cargados por el App (evita el doble fetch al abrir el modal) */
+  initialSettings?: any;
 }
 
 // Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
@@ -42,6 +44,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   logoUrl,
   siteName,
   raffleTitle,
+  initialSettings,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formData, setFormData] = useState({ name: '', phone: '', state: '' });
@@ -74,7 +77,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
         if (savedData) {
           try {
             const parsed = JSON.parse(savedData);
-            // Solo cargamos los campos que existen en el formulario actual
             const normalized = {
               name: parsed.name || '',
               phone: parsed.phone || '',
@@ -87,7 +89,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           } catch (e) { }
         }
 
-        // Cargar configuraciones del sistema (bancos, etc)
+        // Si el App ya pasó los settings, usarlos directamente (evita fetch redundante)
+        if (initialSettings) {
+          setDynamicSettings(initialSettings);
+          return;
+        }
+
+        // Fallback: cargar configuraciones del sistema (bancos, etc)
         try {
           const settings = await apiService.getSettings();
           if (settings) {
@@ -100,7 +108,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       loadData();
     }
-  }, [isOpen]);
+  }, [isOpen, initialSettings]);
 
   const handleInputChange = (field: string, value: string) => {
     setErrorMessage(null);

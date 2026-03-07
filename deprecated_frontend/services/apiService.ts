@@ -1,10 +1,31 @@
 /**
  * Base URL del API:
- * 1. Se intenta cargar desde /config.json (mismo origen) para no depender del build.
+ * 1. Se intenta cargar desde /config.json (mismo origen, cacheado 5 min) para no depender del build.
  * 2. Si falla, se usa VITE_API_URL del build (Netlify) o este fallback absoluto.
  */
 const DEFAULT_API = 'https://paginas-production.up.railway.app/api';
 
+// ── In-memory cache con TTL ─────────────────────────────────────────────────
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const memCache = new Map<string, CacheEntry<any>>();
+const inFlightRequests = new Map<string, Promise<any>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = memCache.get(key);
+  if (entry && Date.now() < entry.expiresAt) return entry.data as T;
+  memCache.delete(key);
+  return null;
+}
+
+function setCache<T>(key: string, data: T, ttlMs: number) {
+  memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+// ── URL resolution ──────────────────────────────────────────────────────────
 function normalizeBaseUrl(raw: string): string {
   const s = (raw || '').trim();
   if (!s) return DEFAULT_API;
@@ -31,7 +52,8 @@ function getBaseUrl(): Promise<string> {
   configPromise = (async () => {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const res = await fetch(`${origin}/config.json`, { cache: 'no-store' });
+      // max-age=300 = 5 minutos de caché del navegador (antes era no-store)
+      const res = await fetch(`${origin}/config.json`, { cache: 'default' });
       if (res.ok) {
         const json = await res.json();
         const url = json?.apiUrl;
@@ -96,7 +118,27 @@ class ApiService {
 
   async getRaffles(status?: 'active' | 'completed') {
     const query = status ? `?status=${status}` : '';
-    return this.request<any[]>(`/raffles${query}`);
+    const cacheKey = `raffles_${status ?? 'all'}`;
+    const cached = getCached<any[]>(cacheKey);
+    if (cached) return cached;
+
+    // Deduplicación: si ya hay un request en vuelo para esta key, reutilizarlo
+    if (inFlightRequests.has(cacheKey)) return inFlightRequests.get(cacheKey)!;
+
+    const promise = this.request<any[]>(`/raffles${query}`)
+      .then(data => {
+        // Caché de 3 minutos para la lista de rifas activas
+        setCache(cacheKey, data, 3 * 60 * 1000);
+        inFlightRequests.delete(cacheKey);
+        return data;
+      })
+      .catch(err => {
+        inFlightRequests.delete(cacheKey);
+        throw err;
+      });
+
+    inFlightRequests.set(cacheKey, promise);
+    return promise;
   }
 
   async getRaffleById(id: string) {
@@ -149,7 +191,32 @@ class ApiService {
   }
 
   async getSettings() {
-    return this.request<any>('/settings');
+    const cacheKey = 'settings';
+    const cached = getCached<any>(cacheKey);
+    if (cached) return cached;
+
+    // Deduplicación: si ya hay un request en vuelo para settings, reutilizarlo
+    if (inFlightRequests.has(cacheKey)) return inFlightRequests.get(cacheKey)!;
+
+    const promise = this.request<any>('/settings')
+      .then(data => {
+        // Caché de 5 minutos para settings (cambian raramente)
+        setCache(cacheKey, data, 5 * 60 * 1000);
+        inFlightRequests.delete(cacheKey);
+        return data;
+      })
+      .catch(err => {
+        inFlightRequests.delete(cacheKey);
+        throw err;
+      });
+
+    inFlightRequests.set(cacheKey, promise);
+    return promise;
+  }
+
+  /** Invalida el caché de settings manualmente (tras guardar cambios en el admin) */
+  clearSettingsCache() {
+    memCache.delete('settings');
   }
 
   async getOgPreview(url: string) {

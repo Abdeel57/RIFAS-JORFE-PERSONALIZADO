@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Raffle } from '../types';
-import { DetailsSkeleton } from './SkeletonLoader.tsx';
 
 // ─── SafeImage ────────────────────────────────────────────────────────────────
 
@@ -194,15 +193,10 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
   siteName = 'RIFAS NAO',
   logoUrl = '',
 }) => {
-  const [isSectionLoading, setIsSectionLoading] = useState(true);
+  // Sin delay artificial — el componente renderiza inmediatamente
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const videoRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsSectionLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const sendVideoCommand = (command: string, args: any[] = []) => {
     if (videoRef.current?.contentWindow) {
@@ -248,7 +242,6 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
     },
   ];
 
-  if (isSectionLoading) return <DetailsSkeleton />;
 
   const gallery = Array.isArray(raffle.galleryImages) ? raffle.galleryImages : [];
   const image2 = gallery[0];
