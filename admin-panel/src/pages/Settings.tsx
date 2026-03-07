@@ -280,6 +280,25 @@ const Settings: React.FC = () => {
     const [primaryHexInput, setPrimaryHexInput] = useState('#3b82f6');
     const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
 
+    // ── Estados para la administración de usuarios ──
+    const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+    const [isUsersLoading, setIsUsersLoading] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
+
+    const fetchAdmins = async () => {
+        setIsUsersLoading(true);
+        try {
+            const res = await api.get('/admin-users');
+            if (res.data?.success) setAdminUsers(res.data.data);
+        } catch { toast.error('Error al cargar administradores'); }
+        finally { setIsUsersLoading(false); }
+    };
+
+    useEffect(() => {
+        if (activePanel === 'usuarios') fetchAdmins();
+    }, [activePanel]);
+
     useEffect(() => {
         const fetchSettings = async () => {
             try {
@@ -561,25 +580,6 @@ const Settings: React.FC = () => {
             </div>
         </div>
     );
-
-    // ── Panel: Usuarios ───────────────────────────────────────────────────────
-    const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
-    const [isUsersLoading, setIsUsersLoading] = useState(false);
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
-
-    const fetchAdmins = async () => {
-        setIsUsersLoading(true);
-        try {
-            const res = await api.get('/admin-users');
-            if (res.data?.success) setAdminUsers(res.data.data);
-        } catch { toast.error('Error al cargar administradores'); }
-        finally { setIsUsersLoading(false); }
-    };
-
-    useEffect(() => {
-        if (activePanel === 'usuarios') fetchAdmins();
-    }, [activePanel]);
 
     const handleCreateAdmin = async () => {
         if (!newUser.name || !newUser.email || !newUser.password) {
