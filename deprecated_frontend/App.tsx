@@ -560,11 +560,15 @@ const App: React.FC = () => {
 
             <div className="flex flex-col items-center gap-3 py-5 px-6 bg-gradient-to-br from-blue-50/80 to-white rounded-[2.5rem] border border-blue-100/50 w-full max-w-[300px] shadow-xl shadow-blue-600/5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white rounded-2xl shadow-sm border border-slate-100">
-                  <img src="/bismark.png" alt="Bismark Logo" className="h-6 w-auto grayscale-0" />
+                <div className="w-10 h-10 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/bismark.png"
+                    alt="Bismark Logo"
+                    className="w-full h-full object-contain scale-[1.65] transform transition-transform duration-500 hover:scale-[1.8]"
+                  />
                 </div>
                 <div className="flex flex-col items-start leading-none">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Desarrollado por</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Sitio desarrollado por</p>
                   <p className="text-[12px] font-black text-slate-800 tracking-tight">Sistema <span className="text-[#2563EB]">Bismark</span></p>
                 </div>
               </div>
@@ -577,7 +581,7 @@ const App: React.FC = () => {
                 rel="noopener noreferrer"
                 className="w-full text-center py-3 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.02] transition-all active:scale-95"
               >
-                Inicia tu negocio aquí
+                Empieza a rifar aquí
               </a>
             </div>
           </div>
