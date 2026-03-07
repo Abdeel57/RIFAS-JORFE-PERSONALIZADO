@@ -4,8 +4,6 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   Home,
   Ticket,
-  ShoppingCart,
-  Users,
   Settings as SettingsIcon,
   Bell,
   BellOff,
@@ -34,23 +32,8 @@ const Layout = () => {
       icon: Ticket
     },
     {
-      path: '/tickets',
-      label: 'Boletos',
-      icon: Ticket
-    },
-    {
-      path: '/purchases',
-      label: 'Compras',
-      icon: ShoppingCart
-    },
-    {
-      path: '/users',
-      label: 'Usuarios',
-      icon: Users
-    },
-    {
       path: '/settings',
-      label: 'Ajustes',
+      label: 'Configuración',
       icon: SettingsIcon
     },
   ];
@@ -84,12 +67,11 @@ const Layout = () => {
                 onClick={subscribed ? unsubscribe : subscribe}
                 disabled={pushLoading}
                 title={subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones push'}
-                className={`relative flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all ${
-                  pushLoading ? 'opacity-50 cursor-not-allowed' :
-                  subscribed
-                    ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
-                    : 'bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
-                }`}
+                className={`relative flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all ${pushLoading ? 'opacity-50 cursor-not-allowed' :
+                    subscribed
+                      ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                      : 'bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
+                  }`}
               >
                 {subscribed ? <Bell size={16} /> : <BellOff size={16} />}
                 {subscribed && (
