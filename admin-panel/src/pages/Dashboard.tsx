@@ -69,7 +69,7 @@ const ProofViewerModal = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm max-h-[90dvh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm max-h-[88dvh] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-800">Comprobante de Pago</h3>
@@ -96,7 +96,7 @@ const ProofViewerModal = ({
         </div>
 
         {!isPaid && !isCancelled && (
-          <div className="p-4 pb-safe flex gap-2">
+          <div className="p-4 flex gap-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
             <button
               onClick={() => onRelease(purchase.id)}
               className="flex-1 min-h-[44px] py-3 bg-slate-100 hover:bg-red-50 active:bg-red-100 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide touch-manipulation"
@@ -162,6 +162,16 @@ const OrderCard = ({
     if (menuOpen) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
+
+  // Ocultar nav inferior cuando el menÚ o el comprobante están abiertos
+  useEffect(() => {
+    if (menuOpen || showProof) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => { document.body.classList.remove('modal-open'); };
+  }, [menuOpen, showProof]);
 
   const frontendBase = getFrontendBaseUrl();
   const comprobanteLink = `${frontendBase}/#comprobante?purchase=${purchase.id}`;
@@ -436,6 +446,12 @@ const EditModal = ({
   const [status, setStatus] = useState<'pending' | 'paid' | 'cancelled'>(purchase.status);
   const [saving, setSaving] = useState(false);
 
+  // Ocultar nav inferior mientras el modal está abierto
+  useEffect(() => {
+    document.body.classList.add('modal-open');
+    return () => { document.body.classList.remove('modal-open'); };
+  }, []);
+
   const handleSave = () => {
     showConfirm({
       message: '¿Guardar cambios?',
@@ -452,8 +468,8 @@ const EditModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[85dvh] overflow-y-auto overflow-x-hidden">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[88dvh] overflow-y-auto overflow-x-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-base font-black text-slate-800">Editar Orden</h3>
           <button onClick={onClose} className="w-10 h-10 min-w-[44px] min-h-[44px] shrink-0 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 text-sm touch-manipulation">✕</button>
