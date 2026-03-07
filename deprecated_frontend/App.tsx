@@ -516,7 +516,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10">
+      <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10 pb-28 md:pb-32">
         <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 justify-center cursor-pointer" onClick={() => handleViewChange('raffle')}>
@@ -558,21 +558,26 @@ const App: React.FC = () => {
               © 2024 {brand.siteName.toUpperCase()}
             </p>
 
-            <div className="flex flex-col items-center gap-3 py-4 px-6 bg-slate-50/50 rounded-3xl border border-slate-100 w-full max-w-[280px]">
-              <div className="flex items-center gap-2.5">
-                <img src="/bismark.png" alt="Bismark Logo" className="h-5 w-auto grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500" />
+            <div className="flex flex-col items-center gap-3 py-5 px-6 bg-gradient-to-br from-blue-50/80 to-white rounded-[2.5rem] border border-blue-100/50 w-full max-w-[300px] shadow-xl shadow-blue-600/5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-2xl shadow-sm border border-slate-100">
+                  <img src="/bismark.png" alt="Bismark Logo" className="h-6 w-auto grayscale-0" />
+                </div>
                 <div className="flex flex-col items-start leading-none">
-                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest text-left">Contratación</p>
-                  <p className="text-[10px] font-black text-slate-700 tracking-tight">Sistema <span className="text-[#2563EB]">Bismark</span></p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Desarrollado por</p>
+                  <p className="text-[12px] font-black text-slate-800 tracking-tight">Sistema <span className="text-[#2563EB]">Bismark</span></p>
                 </div>
               </div>
+              <p className="text-[9px] text-slate-400 font-bold leading-relaxed px-2">
+                ¿Quieres una plataforma como ésta?
+              </p>
               <a
                 href="https://wa.me/522312053120"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full text-center py-2 bg-white border border-blue-100 text-[#2563EB] text-[9px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95"
+                className="w-full text-center py-3 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.02] transition-all active:scale-95"
               >
-                Adquiere tu sistema aquí
+                Inicia tu negocio aquí
               </a>
             </div>
           </div>
