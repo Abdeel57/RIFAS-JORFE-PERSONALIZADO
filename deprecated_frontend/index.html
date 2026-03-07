@@ -3,27 +3,24 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Rifas Nao</title>
 
     <!--
-      ┌─────────────────────────────────────────────────────────────────────┐
-      │  OPTIMIZACIONES DE RED                                              │
-      │  preconnect abre el TCP+TLS handshake en paralelo con el parsing   │
-      │  del HTML, ahorrando ~150-400ms por origen en la primera visita.   │
-      └─────────────────────────────────────────────────────────────────────┘
+      OPTIMIZACIONES DE RED: preconnect abre TCP+TLS en paralelo con el
+      parsing del HTML, ahorrando 150-400ms por origen en la primera visita.
     -->
-    <!-- Google Fonts (DNS + TLS pre-calentados) -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <!-- Backend API de Railway (DNS + TLS pre-calentados) -->
     <link rel="preconnect" href="https://paginas-production.up.railway.app">
 
+    <!-- Tailwind CDN — ESENCIAL: toda la UI depende de las clases de Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <!--
-      font-display=swap → el texto se muestra con la fuente del sistema
-      mientras Inter carga (evita FOIT = Flash of Invisible Text).
-      Solo cargamos los pesos que realmente usamos.
+      Solo los pesos que realmente usa el diseño (se elimino wght@300 que era innecesario).
+      font-display=swap → texto visible de inmediato mientras Inter carga.
     -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 
@@ -36,10 +33,11 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             max-width: 100vw;
             touch-action: pan-y;
+            /* only vertical swipes */
             overscroll-behavior-x: none;
         }
 
@@ -47,15 +45,6 @@
         #root {
             overflow-x: hidden;
             max-width: 100vw;
-        }
-
-        /* Skeleton de carga instantáneo mientras React hidrata (evita pantalla blanca) */
-        #root:empty::before {
-            content: '';
-            display: block;
-            position: fixed;
-            inset: 0;
-            background: #f8fafc;
         }
     </style>
 </head>
