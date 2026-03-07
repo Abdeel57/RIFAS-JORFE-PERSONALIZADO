@@ -71,15 +71,15 @@ const Login = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest">
-                Correo electrónico
+                Nombre de Usuario
               </label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="admin-input"
-                placeholder="admin@bismark.com"
+                placeholder="Ej. admin_bismark"
               />
             </div>
 

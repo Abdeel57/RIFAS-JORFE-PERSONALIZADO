@@ -284,7 +284,7 @@ const Settings: React.FC = () => {
     const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
 
     const fetchAdmins = async () => {
         setIsUsersLoading(true);
@@ -582,16 +582,21 @@ const Settings: React.FC = () => {
     );
 
     const handleCreateAdmin = async () => {
-        if (!newUser.name || !newUser.email || !newUser.password) {
+        if (!newUser.name || !newUser.email || !newUser.password || !newUser.confirmPassword) {
             toast.error('Todos los campos son obligatorios');
+            return;
+        }
+        if (newUser.password !== newUser.confirmPassword) {
+            toast.error('Las contraseñas no coinciden');
             return;
         }
         setIsSaving(true);
         try {
-            const res = await api.post('/admin/admin-users', newUser);
+            const { confirmPassword, ...data } = newUser;
+            const res = await api.post('/admin/admin-users', data);
             if (res.data?.success) {
                 toast.success('Usuario creado correctamente');
-                setNewUser({ name: '', email: '', password: '' });
+                setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
                 setShowAddForm(false);
                 fetchAdmins();
             }
@@ -657,19 +662,38 @@ const Settings: React.FC = () => {
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <FieldLabel>Correo Electrónico</FieldLabel>
+                            <FieldLabel>Nombre de Usuario</FieldLabel>
                             <div className="relative">
                                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="email" className="admin-input pl-10" value={newUser.email}
-                                    onChange={e => setNewUser(p => ({ ...p, email: e.target.value.toLowerCase() }))} placeholder="correo@ejemplo.com" />
+                                <input type="text" className="admin-input pl-10" value={newUser.email}
+                                    onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} placeholder="usuario_ventas" />
                             </div>
                         </div>
-                        <div className="md:col-span-2 space-y-1.5">
+                        <div className="space-y-1.5">
+                            <FieldLabel>Rol del Usuario</FieldLabel>
+                            <select
+                                className="admin-input cursor-pointer"
+                                value={newUser.role}
+                                onChange={e => setNewUser(p => ({ ...p, role: e.target.value }))}
+                            >
+                                <option value="vendedor">Vendedor (Soporte)</option>
+                                <option value="admin">Administrador (Control Total)</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
                             <FieldLabel hint="Mínimo 6 caracteres">Contraseña</FieldLabel>
                             <div className="relative">
                                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input type="password" minLength={6} className="admin-input pl-10" value={newUser.password}
                                     onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                            <FieldLabel>Confirmar Contraseña</FieldLabel>
+                            <div className="relative">
+                                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="password" minLength={6} className="admin-input pl-10" value={newUser.confirmPassword}
+                                    onChange={e => setNewUser(p => ({ ...p, confirmPassword: e.target.value }))} placeholder="••••••••" />
                             </div>
                         </div>
                     </div>

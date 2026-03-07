@@ -6,16 +6,16 @@ import { z } from 'zod';
 
 const createAdminSchema = z.object({
     name: z.string().min(2),
-    email: z.string().email(),
+    email: z.string().min(3),
     password: z.string().min(6),
-    role: z.string().default('admin'),
+    role: z.enum(['admin', 'vendedor']).default('admin'),
 });
 
 const updateAdminSchema = z.object({
     name: z.string().min(2).optional(),
-    email: z.string().email().optional(),
+    email: z.string().min(3).optional(),
     password: z.string().min(6).optional(),
-    role: z.string().optional(),
+    role: z.enum(['admin', 'vendedor']).optional(),
 });
 
 export const getAdmins = async (_req: Request, res: Response, next: NextFunction) => {

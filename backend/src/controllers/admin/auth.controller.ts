@@ -6,7 +6,7 @@ import { AppError } from '../../utils/errors';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(3),
   password: z.string().min(6),
 });
 
@@ -30,7 +30,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
-    
+
     console.log('🔑 [LOGIN] Comparación de contraseña', { isValidPassword });
 
     if (!isValidPassword) {
@@ -61,10 +61,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       },
     });
   } catch (error) {
-    console.error('❌ [LOGIN] Error en login', { 
-      errorType: error?.constructor?.name, 
+    console.error('❌ [LOGIN] Error en login', {
+      errorType: error?.constructor?.name,
       errorMessage: error instanceof Error ? error.message : 'unknown',
-      isZodError: error instanceof z.ZodError 
+      isZodError: error instanceof z.ZodError
     });
 
     if (error instanceof z.ZodError) {
