@@ -5,7 +5,7 @@ import { AppError } from '../utils/errors';
 export const getRaffles = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query;
-    
+
     const where: any = {};
     if (status === 'active') {
       where.status = 'active';
@@ -13,7 +13,7 @@ export const getRaffles = async (req: Request, res: Response, next: NextFunction
 
     const raffles = await prisma.raffle.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
       include: {
         _count: {
           select: {
