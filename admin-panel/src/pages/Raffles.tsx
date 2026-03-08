@@ -383,7 +383,7 @@ const Raffles = () => {
                       <span>Sorteo: {new Date(raffle.drawDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' : progress >= 70 ? 'bg-blue-500' : 'bg-gradient-to-r from-blue-400 to-violet-500'
+                      <div className={`h-full rounded-full transition-all duration-500 ${progress >= 80 ? 'bg-emerald-500' : 'bg-amber-400'
                         }`} style={{ width: `${Math.min(progress, 100)}%` }} />
                     </div>
                   </div>
