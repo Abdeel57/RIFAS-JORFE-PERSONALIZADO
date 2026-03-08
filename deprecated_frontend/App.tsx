@@ -565,7 +565,7 @@ const App: React.FC = () => {
                   <img
                     src="/bismark.png"
                     alt="Bismark Logo"
-                    className="w-full h-full object-contain scale-150 transform transition-transform duration-500 hover:scale-[1.6]"
+                    className="w-full h-full object-contain scale-[1.35] transform transition-transform duration-500 hover:scale-[1.4]"
                   />
                 </div>
                 <div className="flex flex-col items-start leading-none">
