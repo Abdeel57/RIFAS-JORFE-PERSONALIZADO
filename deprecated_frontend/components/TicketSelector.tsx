@@ -24,28 +24,15 @@ function computeLayout(
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
 
-  // ── 5-digit numbers: wide rectangular buttons ──────────────────────────────
-  if (digits >= 5) {
-    const preferred =
-      containerWidth < 380 ? [3, 2] :
-        containerWidth < 560 ? [4, 3] :
-          [6, 5, 4];
+  // Siempre usamos el diseño cuadrado (aspectRatio: 1) que le gusta al usuario.
+  // Eliminamos la lógica que cambiaba a botones rectangulares para 5 dígitos,
+  // manteniendo la consistencia visual al cambiar entre rifas.
+  const aspectRatio = 1;
 
-    const minBtnWidth = 76; // min px for comfortable 5-digit number
-    let cols = preferred[preferred.length - 1];
-    for (const c of preferred) {
-      const btnW = (containerWidth - (c - 1) * GAP) / c;
-      if (btnW >= minBtnWidth) { cols = c; break; }
-    }
+  // Ajustamos el tamaño mínimo recomendado según los dígitos para legibilidad,
+  // pero manteniendo el mismo rango de columnas preferido.
+  const minBtnSize = digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
 
-    const btnW = (containerWidth - (cols - 1) * GAP) / cols;
-    const fontSize = btnW >= 96 ? '13px' : btnW >= 82 ? '12px' : '11px';
-
-    return { cols, fontSize, aspectRatio: 2.5 };
-  }
-
-  // ── ≤4-digit numbers: original square layout ───────────────────────────────
-  const minBtnSize = digits <= 3 ? 34 : 42;
   const preferred =
     containerWidth < 380 ? [5, 4, 3, 2] :
       containerWidth < 560 ? [8, 7, 6, 5, 4] :
@@ -58,9 +45,16 @@ function computeLayout(
   }
 
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
-  const fontSize = btnW >= 68 ? '11px' : btnW >= 50 ? '10px' : '9px';
 
-  return { cols, fontSize, aspectRatio: 1 };
+  // Fuente adaptativa: un poco más pequeña si hay 5 dígitos para que quepa en el cuadrado
+  let fontSize = '9px';
+  if (digits >= 5) {
+    fontSize = btnW >= 80 ? '11px' : btnW >= 54 ? '10px' : '9px';
+  } else {
+    fontSize = btnW >= 68 ? '11px' : btnW >= 48 ? '10px' : '9px';
+  }
+
+  return { cols, fontSize, aspectRatio };
 }
 
 // ─── TicketItem (memoized — never re-renders unless its own props change) ─────

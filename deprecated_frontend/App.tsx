@@ -437,6 +437,7 @@ const App: React.FC = () => {
 
                     <div className="relative pt-4">
                       <TicketSelector
+                        key={featuredRaffle.id}
                         raffleId={featuredRaffle.id}
                         totalTickets={featuredRaffle.totalTickets}
                         pricePerTicket={featuredRaffle.ticketPrice}
