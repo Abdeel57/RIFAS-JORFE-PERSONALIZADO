@@ -5,7 +5,8 @@ import { adminService } from '../services/admin.service';
 import { useAuth } from '../hooks/useAuth';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
-  Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload
+  Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
+  MoreVertical, Trophy, Sliders
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -143,6 +144,14 @@ const Raffles = () => {
   const [uploadingImage, setUploadingImage] = useState<'prize' | 'gallery0' | 'gallery1' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>('info');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClick = () => setOpenDropdown(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
 
   // Ocultar la barra de navegación inferior cuando el modal está abierto
   useEffect(() => {
@@ -380,17 +389,47 @@ const Raffles = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 relative">
                     <button onClick={() => handleOpenModal(raffle)}
                       className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-[#2563EB] rounded-xl text-sm font-bold transition-colors touch-manipulation">
                       <Pencil size={14} /> Editar
                     </button>
-                    {admin?.role === 'admin' && (
-                      <button onClick={() => handleDelete(raffle.id, raffle.title)}
-                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 rounded-xl text-sm font-bold transition-colors touch-manipulation">
-                        <Trash2 size={14} />
+
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdown(openDropdown === raffle.id ? null : raffle.id);
+                        }}
+                        className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors touch-manipulation"
+                      >
+                        <MoreVertical size={16} /> Opciones
                       </button>
-                    )}
+
+                      {openDropdown === raffle.id && (
+                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                          <button className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
+                            <Ticket size={16} className="text-blue-500" /> Ver boletos
+                          </button>
+                          <button className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
+                            <Trophy size={16} className="text-amber-500" /> Seleccionar ganador
+                          </button>
+                          <button className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
+                            <Sliders size={16} className="text-emerald-500" /> Estado
+                          </button>
+                          {admin?.role === 'admin' && (
+                            <div className="border-t border-slate-50 mt-1 pt-1">
+                              <button
+                                onClick={() => handleDelete(raffle.id, raffle.title)}
+                                className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                              >
+                                <Trash2 size={16} /> Eliminar rifa
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
