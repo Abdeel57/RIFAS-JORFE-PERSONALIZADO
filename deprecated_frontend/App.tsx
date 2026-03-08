@@ -570,7 +570,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex flex-col items-start leading-none">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left">Sitio desarrollado por</p>
-                  <p className="text-[12px] font-black text-slate-800 tracking-tight">Sistema <span className="text-[#2563EB]">Bismark</span></p>
+                  <p className="text-[12px] font-black text-slate-800 tracking-tight"><span className="text-[#2563EB]">Bismark</span></p>
                 </div>
               </div>
               <p className="text-[9px] text-slate-400 font-bold leading-relaxed px-2">
