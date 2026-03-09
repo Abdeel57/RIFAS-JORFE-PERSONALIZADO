@@ -91,7 +91,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
     `&width=500` +
     `&height=500` +
     `&small_header=false` +
-    `&adapt_container_width=true` +
+    `&adapt_container_width=false` +
     `&hide_cover=false` +
     `&show_facepile=true` +
     `&appid=`;
