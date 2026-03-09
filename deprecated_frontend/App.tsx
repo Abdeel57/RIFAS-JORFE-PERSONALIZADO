@@ -23,7 +23,7 @@ interface BrandSettings {
 }
 
 const DEFAULT_BRAND: BrandSettings = {
-  siteName: 'RIFAS NAO',
+  siteName: 'Bismark',
   logoUrl: '',
   primaryColor: '#3b82f6',
   secondaryColor: '#6366f1',
