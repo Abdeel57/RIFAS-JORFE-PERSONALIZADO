@@ -79,13 +79,18 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
 
   if (!facebookUrl) return null;
 
+  // Clean URL to ensure it is a valid Facebook Page URL
+  const cleanUrl = facebookUrl.includes('facebook.com')
+    ? (facebookUrl.startsWith('http') ? facebookUrl : `https://${facebookUrl}`)
+    : `https://www.facebook.com/${facebookUrl}`;
+
   // Facebook Page Plugin embed URL.
   const pluginSrc =
     `https://www.facebook.com/plugins/page.php` +
-    `?href=${encodeURIComponent(facebookUrl)}` +
+    `?href=${encodeURIComponent(cleanUrl)}` +
     `&tabs=` +
     `&width=500` +
-    `&height=230` +
+    `&height=130` +
     `&small_header=false` +
     `&adapt_container_width=true` +
     `&hide_cover=false` +
