@@ -78,17 +78,11 @@ interface FacebookSectionProps {
 
 const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl, siteName }) => {
   const [iframeReady, setIframeReady] = useState(false);
-  const [showFallback, setShowFallback] = useState(false);
-
-  // Si después de 3 segundos no ha cargado, mostramos el respaldo visual
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!iframeReady) setShowFallback(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [iframeReady]);
 
   if (!facebookUrl) return null;
+
+  // Garantizamos que Bismark sea el nombre por defecto si no ha cargado
+  const activeSiteName = siteName || 'Bismark';
 
   // Clean URL to ensure it is a valid Facebook Page URL
   const cleanUrl = facebookUrl.includes('facebook.com')
@@ -126,8 +120,11 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl,
               </svg>
             </div>
             <div>
-              <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Página de Facebook</p>
-              <p className="text-[10px] text-slate-400 font-medium">Síguenos para estar informado</p>
+              <p className="text-xs font-black text-slate-700 uppercase tracking-widest leading-none mb-1">Facebook Oficial</p>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter italic">En Línea</p>
+              </div>
             </div>
           </div>
 
@@ -146,53 +143,50 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl,
         </div>
 
         {/* Divider */}
-        <div className="mx-5 md:mx-8 h-px bg-slate-100" />
+        <div className="mx-5 md:mx-8 h-px bg-slate-100/50" />
 
-        {/* Facebook Page Plugin iframe */}
-        <div className="relative px-3 md:px-5 py-2 overflow-x-auto min-h-[130px]">
+        {/* Facebook Page Plugin iframe container */}
+        <div className="relative px-3 md:px-5 py-2 overflow-hidden min-h-[135px]">
 
-          {/* Fallback Profesional (Se muestra si el plugin de FB falla) */}
-          {(!iframeReady || showFallback) && (
-            <div className="absolute inset-x-3 md:inset-x-5 top-2 flex items-center gap-4 bg-slate-50/50 rounded-2xl px-5 h-[130px] border border-slate-100/50">
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-4 border-white shadow-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
-                {logoUrl ? (
-                  <img src={logoUrl} alt={siteName} className="w-full h-full object-contain" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-black text-2xl italic">
-                    {siteName?.charAt(0) || 'N'}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <h4 className="text-base md:text-xl font-black text-slate-800 truncate tracking-tight uppercase">
-                    {siteName}
-                  </h4>
-                  <div className="w-3.5 h-3.5 bg-[#1877F2] rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg width="8" height="8" viewBox="0 0 12 12" fill="white"><path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" /></svg>
-                  </div>
+          {/* 
+            CAPA 1: RESPALDO PROFESIONAL (Siempre está ahí)
+            Se ve inmediatamente y sirve como cargador o como versión final si FB es bloqueado por Safari/iPhone
+          */}
+          <div className="absolute inset-x-3 md:inset-x-5 top-2 flex items-center gap-4 bg-white/40 rounded-2xl px-5 h-[130px] border border-blue-50/50">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-4 border-white shadow-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+              {logoUrl ? (
+                <img src={logoUrl} alt={activeSiteName} className="w-full h-full object-contain" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#1877F2] to-blue-700 flex items-center justify-center text-white font-black text-2xl italic">
+                  {activeSiteName.charAt(0)}
                 </div>
-                <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest">Página Oficial Verificada</p>
-                <div className="mt-3 flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-700 leading-none">Activa</span>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Comunidad</span>
-                  </div>
-                  <div className="w-px h-6 bg-slate-200" />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-slate-700 leading-none">Seguro</span>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Transparencia</span>
-                  </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <h4 className="text-base md:text-xl font-black text-slate-800 truncate tracking-tight uppercase">
+                  {activeSiteName}
+                </h4>
+                <div className="w-4 h-4 bg-[#1877F2] rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="white"><path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" /></svg>
+                </div>
+              </div>
+              <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest">Página de Facebook Verificada</p>
+
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black text-slate-700">Comunidad</span>
+                  <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                  <span className="text-[10px] font-black text-slate-700">Seguro</span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Skeleton while iframe loads */}
-          {!iframeReady && !showFallback && (
-            <div className="absolute inset-x-3 md:inset-x-5 top-2 rounded-2xl bg-slate-100 animate-pulse flex items-center gap-4 p-5 h-[130px]" />
-          )}
-
+          {/* 
+            CAPA 2: IFRAME OFICIAL (Aparece sobre la capa 1 gradualmente)
+            Si el navegador lo permite y carga, ocultará suavemente la capa base.
+          */}
           <iframe
             src={pluginSrc}
             width="500"
@@ -202,8 +196,8 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl,
               width: '100%',
               height: '130px',
               maxWidth: '500px',
-              opacity: iframeReady && !showFallback ? 1 : 0,
-              transition: 'opacity 0.4s ease',
+              opacity: iframeReady ? 1 : 0,
+              transition: 'opacity 0.6s ease-in-out',
             }}
             scrolling="no"
             frameBorder="0"
