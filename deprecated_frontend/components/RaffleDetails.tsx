@@ -80,11 +80,11 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl,
   const [iframeReady, setIframeReady] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
 
-  // Si después de 5 segundos no ha cargado, mostramos el respaldo visual
+  // Si después de 3 segundos no ha cargado, mostramos el respaldo visual
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (!iframeReady) setShowFallback(true);
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [iframeReady]);
 

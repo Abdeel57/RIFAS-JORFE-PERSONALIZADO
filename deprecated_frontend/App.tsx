@@ -130,31 +130,44 @@ const App: React.FC = () => {
       .catch(() => {/* fallback to defaults silently */ });
   }, []);
 
+  // Carga ultra-rápida: Solo la rifa principal al inicio
   useEffect(() => {
-    const loadRaffles = async () => {
+    const loadMainContent = async () => {
       try {
+        // Primero cargamos todas para saber cuál es la principal y mostrar la UI base
         const raffles = await apiService.getRaffles('active');
         if (raffles && raffles.length > 0) {
+          const main = raffles[0] as Raffle;
+          setFeaturedRaffle(main);
           setActiveRaffles(raffles as Raffle[]);
-          // Por defecto usamos la primera rifa activa disponible
-          setFeaturedRaffle(raffles[0] as Raffle);
+
+          // LA CLAVE: Liberamos la carga visual de inmediato
+          setIsAppLoading(false);
+
+          // Postergamos la carga de datos pesados (como otras rifas o estados de boletos)
+          // para que el resto de la página cargue fluido
         } else {
-          // Fallback a la constante si no hay rifas en la API
           setFeaturedRaffle(FEATURED_RAFFLE);
           setActiveRaffles([FEATURED_RAFFLE as Raffle]);
+          setIsAppLoading(false);
         }
       } catch (error) {
-        console.error('Error loading raffles:', error);
-        // Fallback a la constante en caso de error
         setFeaturedRaffle(FEATURED_RAFFLE);
         setActiveRaffles([FEATURED_RAFFLE as Raffle]);
-      } finally {
-        // Sin delay artificial — mostrar contenido en cuanto lleguen los datos
         setIsAppLoading(false);
       }
     };
-    loadRaffles();
+    loadMainContent();
   }, []);
+
+  // Postergamos la aparición de la boletera para que el scroll inicial sea fluido
+  const [showTickets, setShowTickets] = useState(false);
+  useEffect(() => {
+    if (!isAppLoading) {
+      const timer = setTimeout(() => setShowTickets(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isAppLoading]);
 
   // Lock body scroll when any modal is open (iOS-safe: stores scroll position)
   useEffect(() => {
@@ -435,15 +448,22 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="relative pt-4">
-                      <TicketSelector
-                        key={featuredRaffle.id}
-                        raffleId={featuredRaffle.id}
-                        totalTickets={featuredRaffle.totalTickets}
-                        pricePerTicket={featuredRaffle.ticketPrice}
-                        onCheckout={handleCheckout}
-                        refreshTrigger={refreshTicketsAt}
-                      />
+                    <div className="relative pt-4 overflow-hidden min-h-[400px]">
+                      {showTickets ? (
+                        <TicketSelector
+                          key={featuredRaffle.id}
+                          raffleId={featuredRaffle.id}
+                          totalTickets={featuredRaffle.totalTickets}
+                          pricePerTicket={featuredRaffle.ticketPrice}
+                          onCheckout={handleCheckout}
+                          refreshTrigger={refreshTicketsAt}
+                        />
+                      ) : (
+                        <div className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center p-20 text-center animate-pulse">
+                          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Preparando boletera...</p>
+                        </div>
+                      )}
                     </div>
 
                     <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} facebookUrl={brand.facebookUrl} siteName={brand.siteName} logoUrl={brand.logoUrl} />
