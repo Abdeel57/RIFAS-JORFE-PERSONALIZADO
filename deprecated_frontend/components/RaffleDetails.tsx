@@ -243,10 +243,28 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
   ];
 
 
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    let videoId = '';
+    if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    } else if (url.includes('youtube.com/watch')) {
+      videoId = new URLSearchParams(new URL(url).search).get('v') || '';
+    } else if (url.includes('youtube.com/embed/')) {
+      videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+    }
+
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&modestbranding=1`;
+    }
+    return url;
+  };
+
   const gallery = Array.isArray(raffle.galleryImages) ? raffle.galleryImages : [];
   const image2 = gallery[0];
   const image3 = gallery[1];
   const hasVideo = !!raffle.videoUrl?.trim();
+  const videoEmbedUrl = getEmbedUrl(raffle.videoUrl || '');
 
   return (
     <div className="py-2 animate-in fade-in duration-700 space-y-8 md:space-y-16">
@@ -274,7 +292,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
               <iframe
                 ref={videoRef}
                 className="w-full h-full object-cover scale-[1.01]"
-                src={raffle.videoUrl!}
+                src={videoEmbedUrl}
                 title="Video del Premio"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
