@@ -269,8 +269,8 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-          {hasVideo ? (
-            <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-black">
+          {hasVideo && (
+            <div className="md:col-span-2 group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-black">
               <iframe
                 ref={videoRef}
                 className="w-full h-full object-cover scale-[1.01]"
@@ -301,23 +301,25 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
                 </button>
               </div>
             </div>
-          ) : image2 ? (
+          )}
+
+          {image2 && (
             <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
               <SafeImage src={image2} alt="Detalle 1" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
                 <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Detalle 1</span>
               </div>
             </div>
-          ) : null}
+          )}
 
-          {image3 ? (
+          {image3 && (
             <div className="group relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 md:border-8 border-white h-64 md:h-[450px] bg-slate-100">
               <SafeImage src={image3} alt="Detalle 2" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
                 <span className="text-white font-black text-xs md:text-sm uppercase tracking-[0.2em]">Detalle 2</span>
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
