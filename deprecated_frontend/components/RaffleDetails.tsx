@@ -87,13 +87,13 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
   const pluginSrc =
     `https://www.facebook.com/plugins/page.php` +
     `?href=${encodeURIComponent(facebookUrl)}` +
-    `&tabs=` +
+    `&tabs=timeline` +
     `&width=500` +
-    `&height=230` +
+    `&height=500` +
     `&small_header=false` +
-    `&adapt_container_width=false` +
+    `&adapt_container_width=true` +
     `&hide_cover=false` +
-    `&show_facepile=false` +
+    `&show_facepile=true` +
     `&appid=`;
 
   return (
@@ -141,7 +141,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
 
           {/* Skeleton while iframe loads */}
           {!iframeReady && (
-            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 155 }}>
+            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 500 }}>
               <div className="flex items-center gap-3 px-3 pt-4">
                 <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
                 <div className="space-y-1">
@@ -155,12 +155,12 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
           <iframe
             src={pluginSrc}
             width="500"
-            height="155"
+            height="500"
             className="rounded-xl border-0 block mx-auto"
             style={{
-              width: '500px',
-              height: '155px',
-              maxWidth: '100%',
+              width: '100%',
+              height: '500px',
+              maxWidth: '500px',
               opacity: iframeReady ? 1 : 0,
               transition: 'opacity 0.4s ease',
             }}
