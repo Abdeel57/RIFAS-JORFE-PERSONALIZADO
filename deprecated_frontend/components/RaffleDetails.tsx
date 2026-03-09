@@ -72,10 +72,21 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
 
 interface FacebookSectionProps {
   facebookUrl: string;
+  logoUrl?: string;
+  siteName?: string;
 }
 
-const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
+const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl, logoUrl, siteName }) => {
   const [iframeReady, setIframeReady] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+
+  // Si después de 5 segundos no ha cargado, mostramos el respaldo visual
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!iframeReady) setShowFallback(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [iframeReady]);
 
   if (!facebookUrl) return null;
 
@@ -122,7 +133,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
 
           {/* Open in FB button */}
           <a
-            href={facebookUrl}
+            href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 bg-[#1877F2] hover:bg-[#166fe5] active:scale-95 text-white px-4 py-2 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-wider transition-all shadow-lg shadow-blue-100 flex-shrink-0"
@@ -138,31 +149,60 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
         <div className="mx-5 md:mx-8 h-px bg-slate-100" />
 
         {/* Facebook Page Plugin iframe */}
-        <div className="relative px-3 md:px-5 py-2 overflow-x-auto">
+        <div className="relative px-3 md:px-5 py-2 overflow-x-auto min-h-[130px]">
 
-          {/* Skeleton while iframe loads */}
-          {!iframeReady && (
-            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 130 }}>
-              <div className="flex items-center gap-3 px-3 pt-4">
-                <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
-                <div className="space-y-1">
-                  <div className="h-3 w-36 bg-slate-200 rounded-full" />
-                  <div className="h-2.5 w-24 bg-slate-200 rounded-full" />
+          {/* Fallback Profesional (Se muestra si el plugin de FB falla) */}
+          {(!iframeReady || showFallback) && (
+            <div className="absolute inset-x-3 md:inset-x-5 top-2 flex items-center gap-4 bg-slate-50/50 rounded-2xl px-5 h-[130px] border border-slate-100/50">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-4 border-white shadow-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={siteName} className="w-full h-full object-contain" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-black text-2xl italic">
+                    {siteName?.charAt(0) || 'N'}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <h4 className="text-base md:text-xl font-black text-slate-800 truncate tracking-tight uppercase">
+                    {siteName}
+                  </h4>
+                  <div className="w-3.5 h-3.5 bg-[#1877F2] rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg width="8" height="8" viewBox="0 0 12 12" fill="white"><path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" /></svg>
+                  </div>
+                </div>
+                <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest">Página Oficial Verificada</p>
+                <div className="mt-3 flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-700 leading-none">Activa</span>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Comunidad</span>
+                  </div>
+                  <div className="w-px h-6 bg-slate-200" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-700 leading-none">Seguro</span>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Transparencia</span>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Skeleton while iframe loads */}
+          {!iframeReady && !showFallback && (
+            <div className="absolute inset-x-3 md:inset-x-5 top-2 rounded-2xl bg-slate-100 animate-pulse flex items-center gap-4 p-5 h-[130px]" />
           )}
 
           <iframe
             src={pluginSrc}
             width="500"
             height="130"
-            className="rounded-xl border-0 block mx-auto"
+            className="rounded-xl border-0 block mx-auto relative z-10"
             style={{
               width: '100%',
               height: '130px',
               maxWidth: '500px',
-              opacity: iframeReady ? 1 : 0,
+              opacity: iframeReady && !showFallback ? 1 : 0,
               transition: 'opacity 0.4s ease',
             }}
             scrolling="no"
@@ -346,7 +386,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
       <div className="flex flex-col gap-2 md:gap-3">
 
         {/* Facebook Page Plugin */}
-        <FacebookSection facebookUrl={facebookUrl} />
+        <FacebookSection facebookUrl={facebookUrl} logoUrl={logoUrl} siteName={siteName} />
 
         {/* FAQ — pegado directamente a Facebook */}
         <div className="max-w-4xl mx-auto w-full px-1 md:px-4 pb-0">
