@@ -50,7 +50,9 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
       include: {
         _count: {
           select: {
-            tickets: true,
+            tickets: {
+              where: { status: 'sold' },
+            },
           },
         },
       },
@@ -123,7 +125,9 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
       include: {
         _count: {
           select: {
-            tickets: true,
+            tickets: {
+              where: { status: 'sold' },
+            },
           },
         },
       },
@@ -182,7 +186,9 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
       include: {
         _count: {
           select: {
-            tickets: true,
+            tickets: {
+              where: { status: 'sold' },
+            },
             purchases: true,
           },
         },
