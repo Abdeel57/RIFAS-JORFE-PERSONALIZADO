@@ -80,20 +80,16 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
   if (!facebookUrl) return null;
 
   // Facebook Page Plugin embed URL.
-  // NOTE: adapt_container_width is intentionally FALSE so the plugin always
-  // renders at 500px width, which triggers the large-header mode with the
-  // real cover photo. With adapt=true the narrow mobile container causes FB
-  // to fall back to the small header (no cover photo).
   const pluginSrc =
     `https://www.facebook.com/plugins/page.php` +
     `?href=${encodeURIComponent(facebookUrl)}` +
-    `&tabs=timeline` +
+    `&tabs=` +
     `&width=500` +
-    `&height=500` +
+    `&height=230` +
     `&small_header=false` +
-    `&adapt_container_width=false` +
+    `&adapt_container_width=true` +
     `&hide_cover=false` +
-    `&show_facepile=true` +
+    `&show_facepile=false` +
     `&appid=`;
 
   return (
@@ -141,7 +137,7 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
 
           {/* Skeleton while iframe loads */}
           {!iframeReady && (
-            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 500 }}>
+            <div className="rounded-2xl bg-slate-100 animate-pulse overflow-hidden" style={{ height: 130 }}>
               <div className="flex items-center gap-3 px-3 pt-4">
                 <div className="w-14 h-14 bg-slate-300 rounded-full border-4 border-white flex-shrink-0" />
                 <div className="space-y-1">
@@ -155,11 +151,11 @@ const FacebookSection: React.FC<FacebookSectionProps> = ({ facebookUrl }) => {
           <iframe
             src={pluginSrc}
             width="500"
-            height="500"
+            height="130"
             className="rounded-xl border-0 block mx-auto"
             style={{
               width: '100%',
-              height: '500px',
+              height: '130px',
               maxWidth: '500px',
               opacity: iframeReady ? 1 : 0,
               transition: 'opacity 0.4s ease',
