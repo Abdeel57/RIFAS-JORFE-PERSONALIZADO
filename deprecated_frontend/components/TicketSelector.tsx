@@ -6,7 +6,7 @@ import { apiService } from '../services/apiService.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GAP = 8;       // gap-2 = 8px between items/rows
-const OVERSCAN = 5;  // extra rows rendered above/below viewport (buffer)
+const OVERSCAN = 3;  // Reduced buffer to prevent over-rendering large chunks
 
 
 /**
@@ -80,8 +80,15 @@ const TicketItem = React.memo(({
   onClick: (num: number, status: string) => void;
 }) => {
   const isUnavailable = status === 'sold' || status === 'reserved';
-  const digits = number <= 999 ? 3 : number <= 9999 ? 4 : 5;
-  const padded = number.toString().padStart(digits, '0');
+
+  // Memoize padded number to avoid recalculating on scroll
+  const padded = useMemo(() => {
+    if (number <= 999) return number.toString().padStart(3, '0');
+    if (number <= 9999) return number.toString().padStart(4, '0');
+    if (number <= 99999) return number.toString().padStart(5, '0');
+    if (number <= 999999) return number.toString().padStart(6, '0');
+    return number.toString().padStart(7, '0');
+  }, [number]);
 
   return (
     <button
@@ -107,6 +114,69 @@ const TicketItem = React.memo(({
     >
       {padded}
     </button>
+  );
+});
+
+// ─── VirtualRow Component (Extreme optimization for large lists) ──────────────
+const VirtualRow = React.memo(({
+  index,
+  columnsCount,
+  totalTickets,
+  statusMap,
+  selectedSet,
+  highlightedTicket,
+  lastLuckyNumbers,
+  ticketFontSize,
+  ticketAspectRatio,
+  toggleTicket,
+  measureElement,
+  virtualItem
+}: any) => {
+  const startNum = index * columnsCount + 1;
+  const rowItems = [];
+  for (let i = 0; i < columnsCount; i++) {
+    const num = startNum + i;
+    if (num <= totalTickets) {
+      rowItems.push({
+        number: num,
+        status: statusMap.get(num) || 'available'
+      });
+    }
+  }
+
+  return (
+    <div
+      data-index={index}
+      ref={measureElement}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        transform: `translateY(${virtualItem.start}px)`,
+        paddingBottom: `${GAP}px`,
+      }}
+    >
+      <div style={{ display: 'flex', gap: `${GAP}px` }}>
+        {rowItems.map(ticket => (
+          <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
+            <TicketItem
+              number={ticket.number}
+              status={ticket.status}
+              isSelected={selectedSet.has(ticket.number)}
+              isHighlighted={highlightedTicket === ticket.number}
+              isLucky={lastLuckyNumbers.includes(ticket.number)}
+              fontSize={ticketFontSize}
+              aspectRatio={ticketAspectRatio}
+              onClick={toggleTicket}
+            />
+          </div>
+        ))}
+        {rowItems.length < columnsCount && Array.from({ length: columnsCount - rowItems.length }).map((_, i) => (
+          <div key={`empty-${i}`} style={{ flex: 1, minWidth: 0 }} />
+        ))}
+      </div>
+    </div>
   );
 });
 
@@ -361,57 +431,23 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             }}
           >
             {/* Only the visible rows are rendered */}
-            {virtualizer.getVirtualItems().map(virtualRow => {
-              const startNum = virtualRow.index * columnsCount + 1;
-              const rowItems: Array<{ number: number; status: string }> = [];
-              for (let i = 0; i < columnsCount; i++) {
-                const num = startNum + i;
-                if (num <= totalTickets) {
-                  rowItems.push({
-                    number: num,
-                    status: statusMap.get(num) || 'available'
-                  });
-                }
-              }
-
-              return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                    paddingBottom: `${GAP}px`,
-                  }}
-                >
-                  {/* Row: flex with equal-width items */}
-                  <div style={{ display: 'flex', gap: `${GAP}px` }}>
-                    {rowItems.map(ticket => (
-                      <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
-                        <TicketItem
-                          number={ticket.number}
-                          status={ticket.status}
-                          isSelected={selectedSet.has(ticket.number)}
-                          isHighlighted={highlightedTicket === ticket.number}
-                          isLucky={lastLuckyNumbers.includes(ticket.number)}
-                          fontSize={ticketFontSize}
-                          aspectRatio={ticketAspectRatio}
-                          onClick={toggleTicket}
-                        />
-                      </div>
-                    ))}
-                    {/* Fill gap for incomplete rows */}
-                    {rowItems.length < columnsCount && Array.from({ length: columnsCount - rowItems.length }).map((_, i) => (
-                      <div key={`empty-${i}`} style={{ flex: 1, minWidth: 0 }} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {virtualizer.getVirtualItems().map(virtualRow => (
+              <VirtualRow
+                key={virtualRow.key}
+                index={virtualRow.index}
+                virtualItem={virtualRow}
+                columnsCount={columnsCount}
+                totalTickets={totalTickets}
+                statusMap={statusMap}
+                selectedSet={selectedSet}
+                highlightedTicket={highlightedTicket}
+                lastLuckyNumbers={lastLuckyNumbers}
+                ticketFontSize={ticketFontSize}
+                ticketAspectRatio={ticketAspectRatio}
+                toggleTicket={toggleTicket}
+                measureElement={virtualizer.measureElement}
+              />
+            ))}
           </div>
         </div>
       )}
