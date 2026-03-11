@@ -88,8 +88,8 @@ const OrderCard = ({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={`list-card relative border-l-4 transition-colors ${isPaid ? 'border-emerald-500 bg-white' :
-          isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
-            'border-amber-400 bg-white shadow-md'
+        isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
+          'border-amber-400 bg-white shadow-md'
         }`}
     >
       <div className="flex flex-col gap-3">
@@ -176,28 +176,43 @@ const OrderCard = ({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] overflow-hidden"
+                    className="absolute right-0 bottom-full mb-3 w-56 bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 p-2 z-[100] overflow-hidden"
                   >
+                    <p className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">Acciones de orden</p>
+
                     <button
                       onClick={() => { onEdit(purchase); setMenuOpen(false); }}
-                      className="w-full px-4 py-3 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                      className="w-full px-4 py-3.5 text-left text-xs font-black text-slate-700 hover:bg-slate-50 flex items-center gap-3.5 transition-all rounded-2xl group"
                     >
-                      <Pencil size={14} className="text-blue-500" /> Editar datos
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Pencil size={14} />
+                      </div>
+                      Editar datos
                     </button>
+
                     <button
                       onClick={() => { onRelease(purchase.id); setMenuOpen(false); }}
-                      className="w-full px-4 py-3 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                      className="w-full px-4 py-3.5 text-left text-xs font-black text-red-600 hover:bg-red-50 flex items-center gap-3.5 transition-all rounded-2xl group"
                     >
-                      <XCircle size={14} /> Liberar boletos
+                      <div className="w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <XCircle size={14} />
+                      </div>
+                      Liberar boletos
                     </button>
-                    <div className="border-t border-slate-50 my-1" />
+
+                    <div className="h-px bg-slate-50 my-1 mx-2" />
+
                     <a
                       href={waLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-full px-4 py-3 text-left text-xs font-bold text-[#25D366] hover:bg-emerald-50 flex items-center gap-3 transition-colors"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full px-4 py-3.5 text-left text-xs font-black text-emerald-600 hover:bg-emerald-50/50 flex items-center gap-3.5 transition-all rounded-2xl group"
                     >
-                      <MessageSquare size={14} /> Enviar WhatsApp
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                        <MessageSquare size={14} />
+                      </div>
+                      Enviar WhatsApp
                     </a>
                   </motion.div>
                 )}
