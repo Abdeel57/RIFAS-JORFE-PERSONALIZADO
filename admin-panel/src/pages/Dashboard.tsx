@@ -87,7 +87,7 @@ const OrderCard = ({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className={`list-card relative border-l-4 transition-colors ${menuOpen ? 'z-20 shadow-2xl' : 'z-10'
+      className={`list-card relative border-l-4 transition-colors ${menuOpen ? 'z-20 shadow-2xl overflow-visible' : 'z-10'
         } ${isPaid ? 'border-emerald-500 bg-white' :
           isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
             'border-amber-400 bg-white shadow-md'
