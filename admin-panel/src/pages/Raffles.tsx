@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
@@ -9,7 +10,7 @@ import Skeleton from '../components/Skeleton';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
-  MoreVertical, Trophy, Sliders
+  MoreVertical, Trophy, Sliders, FileSpreadsheet, Download
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -355,6 +356,31 @@ const Raffles = () => {
       t.purchase?.user?.name?.toLowerCase().includes(s) ||
       t.purchase?.user?.phone?.includes(s);
   });
+
+  const handleExportExcel = () => {
+    if (!ticketsList.length) return;
+
+    const soldTickets = ticketsList.filter(t => t.status === 'sold');
+    if (!soldTickets.length) {
+      toast.error('No hay boletos pagados para exportar');
+      return;
+    }
+
+    const data = soldTickets.map(t => ({
+      'Boleto': `#${t.number}`,
+      'Cliente': t.purchase?.user?.name || '—',
+      'Teléfono': t.purchase?.user?.phone || '—',
+      'Estado': 'PAGADO',
+      'Fecha Compra': t.purchase?.createdAt ? new Date(t.purchase.createdAt).toLocaleDateString() : '—',
+      'Método': t.purchase?.paymentMethod || '—'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Boletos Pagados");
+    XLSX.writeFile(wb, `Boletos_Pagados_${viewingTicketsRaffle?.title.substring(0, 25).replace(/\s+/g, '_')}.xlsx`);
+    toast.success('Excel generado correctamente');
+  };
 
   // ─── Main view ─────────────────────────────────────────────────────────────
   return (
@@ -742,10 +768,9 @@ const Raffles = () => {
         )}
       </AnimatePresence>
 
-      {/* ── TICKETS VIEW MODAL (PORTAL) ─────────────────────── */}
       {viewingTicketsRaffle && createPortal(
         <AnimatePresence>
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -754,97 +779,104 @@ const Raffles = () => {
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ y: 50, opacity: 0, scale: 0.95 }}
+              initial={{ y: "100%", opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 50, opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-white/20"
+              exit={{ y: "100%", opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden border border-white/20"
             >
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-                <div>
-                  <h3 className="font-black text-slate-800 tracking-tight leading-none">Boletos de Rifa</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{viewingTicketsRaffle.title}</p>
+              <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+                <div className="min-w-0 pr-2">
+                  <h3 className="font-extrabold text-slate-800 tracking-tight leading-none text-base sm:text-lg">Boletería</h3>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 truncate">{viewingTicketsRaffle.title}</p>
                 </div>
-                <button
-                  onClick={() => setViewingTicketsRaffle(null)}
-                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 active:scale-95 transition-all"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportExcel}
+                    className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center active:scale-95 transition-all shadow-sm border border-emerald-100/50"
+                    title="Exportar a Excel"
+                  >
+                    <FileSpreadsheet size={18} />
+                  </button>
+                  <button
+                    onClick={() => setViewingTicketsRaffle(null)}
+                    className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 active:scale-95 transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Search Bar */}
-              <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 shrink-0">
+              <div className="px-4 pr-3 py-3 bg-slate-50/30 border-b border-slate-100 shrink-0">
                 <div className="relative">
-                  <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Hash size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Buscar por # o por nombre de cliente..."
-                    className="w-full pl-11 pr-4 h-12 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm"
+                    placeholder="Buscar # o cliente..."
+                    className="w-full pl-10 pr-4 h-11 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-blue-400 transition-all"
                     value={ticketSearch}
                     onChange={(e) => setTicketSearch(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
                 {isLoadingTickets ? (
                   <div className="space-y-3 py-10">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div key={i} className="h-16 bg-slate-50 rounded-2xl animate-pulse" />
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                      <div key={i} className="h-14 bg-slate-50 rounded-2xl animate-pulse" />
                     ))}
                   </div>
                 ) : filteredTickets.length === 0 ? (
-                  <div className="py-20 text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                      <Hash size={24} className="text-slate-300" />
-                    </div>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No se encontraron boletos</p>
+                  <div className="py-16 text-center">
+                    <Hash size={32} className="text-slate-200 mx-auto mb-3" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin resultados</p>
                   </div>
                 ) : (
-                  <div className="grid gap-2">
+                  <div className="space-y-2">
                     {filteredTickets.map((ticket) => (
                       <div
                         key={ticket.id}
-                        className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${ticket.status === 'sold' ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
+                        className={`p-2.5 rounded-2xl border flex items-center justify-between transition-all ${ticket.status === 'sold' ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/40 border-dashed border-slate-200 opacity-60'
                           }`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm border-2 ${ticket.status === 'sold' ? 'bg-blue-50 border-blue-100 text-[#2563EB]' : 'bg-slate-100 border-slate-200 text-slate-400'
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-black text-[11px] border-2 ${ticket.status === 'sold' ? 'bg-blue-50 border-blue-100 text-[#2563EB]' : 'bg-slate-100 border-slate-200 text-slate-400'
                             }`}>
                             #{ticket.number.toString().padStart(Math.max(3, viewingTicketsRaffle.totalTickets.toString().length), '0')}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-black text-slate-800 text-xs truncate max-w-[150px]">
+                            <p className="font-black text-slate-800 text-[11px] truncate leading-none">
                               {ticket.purchase?.user?.name || (ticket.status === 'sold' ? '—' : 'Disponible')}
                             </p>
                             {ticket.purchase?.user?.phone && (
-                              <p className="text-[10px] font-bold text-slate-400 mt-0.5">{ticket.purchase.user.phone}</p>
+                              <p className="text-[9px] font-bold text-slate-400 mt-1">{ticket.purchase.user.phone}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
                           {ticket.status === 'sold' && (
-                            <div className="flex flex-col items-end gap-1.5">
-                              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                            <div className="flex flex-col items-end gap-1.2">
+                              <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-emerald-100/50">
                                 PAGADO
-                              </span>
+                              </div>
                               <button
                                 onClick={() => handleSetWinner(ticket)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-90"
+                                className="flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-90 border border-amber-100/50"
                               >
-                                <Trophy size={11} />
+                                <Trophy size={10} />
                                 Ganador
                               </button>
                             </div>
                           )}
                           {ticket.status === 'available' && (
-                            <span className="px-2.5 py-1 bg-slate-100 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                            <span className="px-2 py-1 bg-slate-100 text-slate-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
                               Libre
                             </span>
                           )}
                           {ticket.status === 'reserved' && (
-                            <span className="px-2.5 py-1 bg-amber-50 text-amber-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                            <span className="px-2.5 py-1 bg-amber-50 text-amber-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-amber-100/50">
                               Apartado
                             </span>
                           )}
@@ -855,18 +887,18 @@ const Raffles = () => {
                 )}
               </div>
 
-              <div className="p-6 border-t border-slate-50 bg-white shrink-0 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Muestra: {filteredTickets.length} de {ticketsList.length} boletos
+              <div className="p-4 sm:p-5 border-t border-slate-100 bg-white shadow-inner shrink-0 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                    {filteredTickets.length} / {ticketsList.length}
                   </span>
                 </div>
                 <button
                   onClick={() => setViewingTicketsRaffle(null)}
-                  className="px-6 h-11 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                  className="px-5 h-10 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-slate-200"
                 >
-                  Cerrar Lista
+                  Cerrar
                 </button>
               </div>
             </motion.div>
