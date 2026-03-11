@@ -1,24 +1,17 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
-import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   Home,
   Ticket,
   Settings as SettingsIcon,
-  Bell,
-  BellOff,
-  Users,
-  ShoppingBag,
   LogOut,
-  Zap
 } from 'lucide-react';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, logout } = useAuth();
-  const { subscribed, loading: pushLoading, subscribe, unsubscribe, permission, isSupported } = usePushNotifications();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -57,25 +50,6 @@ const Layout = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Stats or Status */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-xl mr-2">
-              <Zap size={14} className="text-blue-500 fill-blue-500" />
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Optimized UI</span>
-            </div>
-
-            {/* Notifications */}
-            {isSupported && permission !== 'denied' && (
-              <button
-                onClick={subscribed ? unsubscribe : subscribe}
-                disabled={pushLoading}
-                className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${subscribed ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-300'
-                  }`}
-              >
-                <Bell size={18} strokeWidth={2.5} />
-                {subscribed && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-blue-600 rounded-full border-2 border-white" />}
-              </button>
-            )}
-
             {/* Logout */}
             <button
               onClick={handleLogout}
