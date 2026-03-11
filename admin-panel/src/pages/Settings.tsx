@@ -378,7 +378,7 @@ const Settings: React.FC = () => {
 
                     <MenuSection title="Pagos y Ventas">
                         <MenuRow icon={<CreditCard size={18} />} iconBg="bg-emerald-50 text-emerald-500" label="Métodos de Pago" subtitle={settings.bankName || 'Bancos y Transferencia'} onClick={() => setActivePanel('banco')} />
-                        <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Sistema e Inteligencia Artifical" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
+                        <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Validación de pagos" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
                     </MenuSection>
 
                     <MenuSection title="Comunicación">
@@ -536,24 +536,24 @@ const Settings: React.FC = () => {
 
                 {activePanel === 'sistema' && (
                     <div className="space-y-5">
-                        <PanelHeader title="Sistema & IA" icon={<Bot size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <PanelHeader title="Validación de pagos" icon={<Bot size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
                         <div className="admin-card p-6 flex items-start gap-4">
                             <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 flex-shrink-0">
                                 <Bot size={24} />
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center justify-between">
-                                    <p className="font-black text-slate-800">Verificación con Gemini AI</p>
+                                    <p className="font-black text-slate-800">Validación avanzada de pagos</p>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" checked={settings.autoVerificationEnabled} onChange={e => set('autoVerificationEnabled', e.target.checked)} className="sr-only peer" />
                                         <div className="w-12 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
                                     </label>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-2 leading-relaxed">Al activar esta opción, los comprobantes subidos por los clientes serán analizados por Inteligencia Artificial para confirmar el monto y concepto automáticamente.</p>
+                                <p className="text-xs text-slate-400 mt-2 leading-relaxed">Al activar esta opción, los comprobantes subidos por los clientes serán procesados por sistemas avanzados de validación para confirmar el monto y concepto de forma inmediata.</p>
 
                                 <div className={`mt-4 p-4 rounded-2xl border ${settings.autoVerificationEnabled ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-500'} flex items-center gap-3 transition-colors`}>
                                     <div className={`w-2 h-2 rounded-full ${settings.autoVerificationEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{settings.autoVerificationEnabled ? 'INTELIGENCIA ARTIFICIAL EN LÍNEA' : 'SISTEMA IA DESACTIVADO'}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{settings.autoVerificationEnabled ? 'SISTEMA DE VALIDACIÓN EN LÍNEA' : 'SISTEMA DE VALIDACIÓN DESACTIVADO'}</span>
                                 </div>
                             </div>
                         </div>

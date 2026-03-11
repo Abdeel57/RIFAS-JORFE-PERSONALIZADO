@@ -319,9 +319,17 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
       await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
       setIsUploadingProof(false);
 
-      // 3. Iniciar verificación automática "en vivo"
-      setVerificationStatus('verifying');
-      setStep(3); // Cambiamos a la pantalla de "Procesando/Recibido"
+      // 3. Decidir flujo: IA o Manual directo
+      if (dynamicSettings?.autoVerificationEnabled === false) {
+        // FLUJO MANUAL DIRECTO: No pasamos por Step 3 (spinner)
+        setVerificationStatus('manual');
+        setStep(4);
+      } else {
+        // FLUJO IA: Pasamos por Step 3 (validando...) y hacemos polling
+        setVerificationStatus('verifying');
+        setStep(3);
+        pollPurchaseStatus(newPurchaseId);
+      }
 
       // Guardar en localStorage
       localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify({
@@ -333,9 +341,6 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
       }));
 
       onPurchaseSuccess?.();
-
-      // Polling para ver si la IA lo aprueba rápido
-      pollPurchaseStatus(newPurchaseId);
 
     } catch (error: any) {
       const msg = error?.message || 'No se pudo crear la orden. Revisa tus datos e intenta de nuevo.';
@@ -851,11 +856,11 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                     )}
 
                     <div className="space-y-1">
-                      <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias, {formData.name.split(' ')[0]}!</h4>
+                      <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias por participar, {formData.name.split(' ')[0]}!</h4>
                       <p className="text-slate-500 text-sm leading-relaxed px-2">
                         {verificationReason
                           ? getHumanizedReason(verificationReason)
-                          : "Hemos recibido tu comprobante. Nuestro equipo lo validará manualmente pronto."}
+                          : "Hemos recibido tu comprobante correctamente. Tu pago será verificado en unos minutos y te enviaremos la confirmación a tu número de teléfono."}
                       </p>
                     </div>
                   </div>
@@ -911,10 +916,11 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
 
                       <button
                         onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[10px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[9px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110 shadow-lg shadow-blue-100"
                         style={{ backgroundColor: '#1877F2' }}
                       >
-                        Facebook
+                        <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073" /></svg>
+                        Seguir en Facebook
                       </button>
                     </div>
                   </div>
