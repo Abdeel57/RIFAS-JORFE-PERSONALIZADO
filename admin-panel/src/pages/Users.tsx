@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/admin.service';
 import Skeleton from '../components/Skeleton';
-import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X } from 'lucide-react';
+import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X, ChevronRight } from 'lucide-react';
 
 const Users = () => {
   const [users, setUsers] = useState<any[]>([]);

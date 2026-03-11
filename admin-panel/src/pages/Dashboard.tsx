@@ -7,7 +7,7 @@ import Skeleton from '../components/Skeleton';
 import {
   CheckCircle2, XCircle, Clock, MoreHorizontal, MessageSquare,
   ExternalLink, Eye, ChevronRight, Hash, DollarSign, User, Phone,
-  AlertCircle
+  AlertCircle, Loader2, Pencil, X, Search, Calendar, Mail, MapPin
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -96,8 +96,8 @@ const OrderCard = ({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={`list-card relative border-l-4 transition-colors ${isPaid ? 'border-emerald-500 bg-white' :
-          isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
-            'border-amber-400 bg-white shadow-md'
+        isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
+          'border-amber-400 bg-white shadow-md'
         }`}
     >
       <div className="flex flex-col gap-3">
