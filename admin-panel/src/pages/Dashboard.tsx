@@ -1,7 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
+import Skeleton from '../components/Skeleton';
+import {
+  CheckCircle2, XCircle, Clock, MoreHorizontal, MessageSquare,
+  ExternalLink, Eye, ChevronRight, Hash, DollarSign, User, Phone,
+  AlertCircle
+} from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -11,117 +18,25 @@ const fmtTime = (d: string) => {
   const now = new Date();
   const diffMs = now.getTime() - dt.getTime();
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Ahora mismo';
-  if (diffMin < 60) return `Hace ${diffMin} min`;
+  if (diffMin < 1) return 'Ahora';
+  if (diffMin < 60) return `${diffMin}m`;
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `Hace ${diffH}h`;
+  if (diffH < 24) return `${diffH}h`;
   return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 };
 
-/**
- * URL base del frontend público donde vive la página del comprobante.
- * Usa VITE_FRONTEND_URL (variable de entorno Railway) si está definida,
- * de lo contrario usa el origin actual.
- */
 const getFrontendBaseUrl = (): string => {
   const env = (import.meta as any).env?.VITE_FRONTEND_URL;
   if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
   return 'https://naorifas.netlify.app';
 };
 
-/**
- * Normaliza un número de teléfono al formato internacional de México (+52)
- * para usarlo en links de wa.me. Siempre garantiza que el número empiece con 52.
- * Ejemplos:
- *   '6622560890'   -> '526622560890'  OK
- *   '+526622560890' -> '526622560890'  OK
- *   '526622560890'  -> '526622560890'  OK
- */
 const phoneToWA = (phone: string): string => {
   const digits = (phone || '').replace(/\D/g, '');
-  // Si ya tiene código de país mexicano (52 + 10 dígitos = 12 dígitos)
   if (digits.length === 12 && digits.startsWith('52')) return digits;
-  // Si tiene exactamente 10 dígitos (número local México)
   if (digits.length === 10) return '52' + digits;
-  // Si tiene más de 10 dígitos pero no empieza con 52, tomar los últimos 10 y agregar 52
   if (digits.length > 10) return '52' + digits.slice(-10);
-  // Número incompleto: agregar 52 de todas formas
   return '52' + digits;
-};
-
-// ─── Proof Viewer Modal ───────────────────────────────────────────────────────
-
-const ProofViewerModal = ({
-  purchase,
-  onClose,
-  onPay,
-  onRelease,
-  paying,
-}: {
-  purchase: any;
-  onClose: () => void;
-  onPay: (id: string) => void;
-  onRelease: (id: string) => void;
-  paying: string | null;
-}) => {
-  const isPaid = purchase.status === 'paid';
-  const isCancelled = purchase.status === 'cancelled';
-
-  return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm max-h-[88dvh] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-black text-slate-800">Comprobante de Pago</h3>
-            <p className="text-xs text-slate-500">{purchase.user?.name}</p>
-          </div>
-          <button onClick={onClose} className="w-10 h-10 min-w-[44px] min-h-[44px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 transition-colors text-sm font-bold touch-manipulation">✕</button>
-        </div>
-
-        <div className="bg-slate-50 overflow-auto max-h-[50dvh]">
-          {purchase.paymentProofUrl ? (
-            <img
-              src={purchase.paymentProofUrl}
-              alt="Comprobante de pago"
-              className="w-full h-auto object-contain"
-            />
-          ) : (
-            <div className="h-48 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-sm font-medium">Sin comprobante adjunto</p>
-            </div>
-          )}
-        </div>
-
-        {!isPaid && !isCancelled && (
-          <div className="p-4 flex gap-2" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-            <button
-              onClick={() => onRelease(purchase.id)}
-              className="flex-1 min-h-[44px] py-3 bg-slate-100 hover:bg-red-50 active:bg-red-100 text-slate-500 rounded-xl text-xs font-black transition-all uppercase tracking-wide touch-manipulation"
-            >
-              Rechazar
-            </button>
-            <button
-              onClick={() => onPay(purchase.id)}
-              disabled={paying === purchase.id}
-              className="flex-[2] min-h-[44px] py-3 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all uppercase tracking-wide shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
-            >
-              {paying === purchase.id ? 'Procesando...' : '✓ Confirmar Pago'}
-            </button>
-          </div>
-        )}
-        {(isPaid || isCancelled) && (
-          <div className="p-4">
-            <div className={`text-center py-2 rounded-xl text-xs font-black uppercase tracking-wide ${isPaid ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-              {isPaid ? '✓ Pago Confirmado' : 'Orden Liberada'}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
@@ -145,6 +60,7 @@ const OrderCard = ({
   const [expanded, setExpanded] = useState(false);
   const [showProof, setShowProof] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
   const tickets: number[] = purchase.tickets?.map((t: any) => t.number) ?? [];
   const visibleTickets = expanded ? tickets : tickets.slice(0, 5);
   const hasMore = tickets.length > 5;
@@ -163,16 +79,6 @@ const OrderCard = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  // Ocultar nav inferior cuando el menÚ o el comprobante están abiertos
-  useEffect(() => {
-    if (menuOpen || showProof) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
-    }
-    return () => { document.body.classList.remove('modal-open'); };
-  }, [menuOpen, showProof]);
-
   const frontendBase = getFrontendBaseUrl();
   const comprobanteLink = `${frontendBase}/#comprobante?purchase=${purchase.id}`;
 
@@ -183,340 +89,175 @@ const OrderCard = ({
   );
   const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
 
-  const trackMessage = encodeURIComponent(
-    `⏳ Hola ${purchase.user?.name ?? ''}, tu comprobante fue recibido y está siendo verificado.\n\n` +
-    `🎫 Boletos reservados: ${tickets.map(n => `#${fmt(n)}`).join(', ')}\n\n` +
-    `En breve recibirás confirmación de tu pago. ¡Gracias por tu paciencia! 🙏`
-  );
-  const trackLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${trackMessage}`;
-
   return (
-    <>
-      <div
-        className={`list-card relative transition-all duration-300 ${isPaid && !menuOpen ? 'opacity-60' : isCancelled ? 'opacity-40' : ''
-          } ${menuOpen ? 'z-50 overflow-visible opacity-100' : ''}`}
-      >
-        {/* LEFT accent bar by status */}
-        <div
-          className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${isPaid ? 'bg-emerald-400' : isCancelled ? 'bg-slate-300' : 'bg-amber-400'
-            }`}
-        />
-
-        {/* Contenido en columna en móvil: info arriba, botones abajo sin solaparse */}
-        <div className="flex flex-col gap-3 pl-3">
-          {/* Bloque de información */}
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={`list-card relative border-l-4 transition-colors ${isPaid ? 'border-emerald-500 bg-white' :
+          isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
+            'border-amber-400 bg-white shadow-md'
+        }`}
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
           <div className="min-w-0">
-            {/* Fila: nombre + hora + estado */}
-            <div className="flex items-center gap-2 justify-between flex-wrap">
-              <p className="font-black text-slate-800 text-sm truncate">{purchase.user?.name ?? '—'}</p>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-[10px] text-slate-400">{fmtTime(purchase.createdAt)}</span>
-                {!isPaid && !isCancelled && <span className="badge-amber">Pendiente</span>}
-                {isPaid && <span className="badge-green">Pagado</span>}
-                {isCancelled && <span className="badge-red">Liberado</span>}
-              </div>
-            </div>
+            <p className="font-black text-slate-800 text-sm flex items-center gap-2">
+              {purchase.user?.name ?? '—'}
+              <span className="text-[10px] font-bold text-slate-400">{fmtTime(purchase.createdAt)}</span>
+            </p>
+            <p className="text-[11px] text-slate-400">{purchase.user?.phone ?? ''}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isPaid ? (
+              <span className="badge-green h-6 flex items-center"><CheckCircle2 size={10} className="mr-1" /> Pagado</span>
+            ) : isCancelled ? (
+              <span className="badge-red h-6 flex items-center"><XCircle size={10} className="mr-1" /> Liberado</span>
+            ) : (
+              <span className="badge-amber h-6 flex items-center animate-pulse"><Clock size={10} className="mr-1" /> Pendiente</span>
+            )}
+          </div>
+        </div>
 
-            <p className="text-[11px] text-slate-400 mt-0.5">{purchase.user?.phone ?? ''}</p>
-            <p className="text-[11px] font-semibold text-[#2563EB] truncate mt-0.5">{purchase.raffle?.title ?? ''}</p>
+        <p className="text-[10px] font-black text-blue-500 uppercase tracking-wide truncate">{purchase.raffle?.title ?? ''}</p>
 
-            {/* Chips de boletos */}
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {visibleTickets.map((n: number) => (
-                <span
-                  key={n}
-                  className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-black text-slate-700"
-                >
-                  #{fmt(n)}
-                </span>
-              ))}
-              {hasMore && !expanded && (
-                <button
-                  onClick={() => setExpanded(true)}
-                  type="button"
-                  className="px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-lg text-[11px] font-black text-blue-500 hover:bg-blue-100 transition-colors"
-                >
-                  +{tickets.length - 5} más
-                </button>
-              )}
-              {expanded && hasMore && (
-                <button
-                  onClick={() => setExpanded(false)}
-                  type="button"
-                  className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-400 hover:bg-slate-100 transition-colors"
-                >
-                  Ver menos
-                </button>
-              )}
-            </div>
+        <div className="flex flex-wrap gap-1">
+          {visibleTickets.map((n: number) => (
+            <span key={n} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-600">
+              #{fmt(n)}
+            </span>
+          ))}
+          {hasMore && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[10px] font-black text-blue-500 px-1 hover:underline transition-all"
+            >
+              {expanded ? 'Ver menos' : `+${tickets.length - 5} más`}
+            </button>
+          )}
+        </div>
 
-            {/* Total + Comprobante + estado verificación */}
-            <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-              <p className="text-base font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</p>
+        <div className="flex items-center justify-between border-t border-slate-50 pt-2 bg-slate-50/50 -mx-4 px-4 py-2 mt-1">
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-black text-slate-800">${(purchase.totalAmount ?? 0).toLocaleString()}</span>
+
+            {hasProof && (
               <button
                 onClick={() => setShowProof(true)}
-                type="button"
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black transition-all touch-manipulation min-h-[36px] ${hasProof
-                  ? 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'
-                  : 'bg-slate-100 text-slate-500 border border-slate-200'
-                  }`}
-                title={hasProof ? 'Ver comprobante' : 'Sin comprobante'}
+                className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-200 transition-colors shadow-sm active:scale-90"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {hasProof ? 'Comprobante' : 'Sin foto'}
+                <Eye size={18} />
               </button>
-              {verStatus === 'auto_verified' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-black">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                  Banxico ✓
-                </span>
-              )}
-              {verStatus === 'pending_manual' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg text-[10px] font-black">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  Revisar
-                </span>
-              )}
-              {verStatus === 'pending_verification' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-[10px] font-black">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Verificando
-                </span>
-              )}
-            </div>
+            )}
+
+            {verStatus === 'auto_verified' && (
+              <span className="text-[10px] font-black text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg">
+                Banxico ✓
+              </span>
+            )}
           </div>
 
-          {/* Fila de botones de acción: siempre debajo, sin solaparse */}
-          <div className="flex flex-wrap gap-2 items-stretch">
-            {/* Pago — principal */}
+          <div className="flex gap-2">
             {!isPaid && !isCancelled && (
               <button
                 onClick={() => onPay(purchase.id)}
                 disabled={paying === purchase.id}
-                className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-sm shadow-emerald-200 disabled:opacity-60 touch-manipulation"
+                className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white h-11 px-5 rounded-2xl text-xs font-black shadow-lg shadow-emerald-100 flex items-center gap-2 transition-all"
               >
-                {paying === purchase.id ? (
-                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                  </svg>
-                ) : (
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-                Pago
+                {paying === purchase.id ? <Loader2 size={16} className="animate-spin" /> : <DollarSign size={16} />}
+                Confirmar
               </button>
-            )}
-
-            {!isPaid && !isCancelled && (
-              <button
-                onClick={() => onRelease(purchase.id)}
-                className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                Liberar
-              </button>
-            )}
-
-            {isPaid && (
-              <>
-                <button
-                  onClick={() => onSetPending(purchase.id)}
-                  className="flex items-center justify-center min-h-[44px] px-4 py-2.5 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-700 rounded-xl text-xs font-bold transition-all touch-manipulation border border-amber-200"
-                  title="Marcar como pendiente"
-                >
-                  Pendiente
-                </button>
-                <button
-                  onClick={() => onRelease(purchase.id)}
-                  className="flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 bg-slate-100 hover:bg-red-50 active:bg-red-100 hover:text-red-500 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
-                  title="Liberar orden"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  Liberar
-                </button>
-              </>
             )}
 
             <div className="relative" ref={menuRef}>
               <button
-                onClick={() => setMenuOpen(v => !v)}
-                className="flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl text-xs font-bold transition-all touch-manipulation"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-11 h-11 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-500 rounded-2xl flex items-center justify-center transition-all"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-                </svg>
-                Opciones
+                <MoreHorizontal size={20} />
               </button>
 
-              {menuOpen && (
-                <>
-                  {/* Fondo para cerrar al tocar fuera y que el menú destaque */}
-                  <div
-                    className="fixed inset-0 z-[95] bg-slate-900/40"
-                    onClick={() => setMenuOpen(false)}
-                    aria-hidden
-                  />
-                  <div className="absolute right-0 bottom-full mb-1 w-52 min-w-[200px] z-[100] rounded-2xl overflow-hidden bg-white border-2 border-slate-200 shadow-2xl">
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] overflow-hidden"
+                  >
                     <button
                       onClick={() => { onEdit(purchase); setMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
+                      className="w-full px-4 py-3 text-left text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                     >
-                      <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      Editar
+                      <Pencil size={14} className="text-blue-500" /> Editar datos
                     </button>
-                    <div className="border-t border-slate-50" />
                     <button
-                      onClick={() => { setShowProof(true); setMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
+                      onClick={() => { onRelease(purchase.id); setMenuOpen(false); }}
+                      className="w-full px-4 py-3 text-left text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
                     >
-                      <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Ver comprobante
+                      <XCircle size={14} /> Liberar boletos
                     </button>
-                    <div className="border-t border-slate-50" />
-                    <a
-                      href={trackLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation"
-                    >
-                      <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.12 1.2 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.95-.95a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.9v2.02z" />
-                      </svg>
-                      Enviar seguimiento
-                    </a>
-                    <div className="border-t border-slate-50" />
+                    <div className="border-t border-slate-50 my-1" />
                     <a
                       href={waLink}
                       target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 w-full min-h-[44px] px-4 py-3 text-sm font-semibold text-[#25D366] hover:bg-green-50 active:bg-green-100 transition-colors touch-manipulation"
+                      rel="noreferrer"
+                      className="w-full px-4 py-3 text-left text-xs font-bold text-[#25D366] hover:bg-emerald-50 flex items-center gap-3 transition-colors"
                     >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 2.225.569 3.846 1.613 5.385l-.991 3.62 3.867-.996z" />
-                      </svg>
-                      Chat WhatsApp
+                      <MessageSquare size={14} /> Enviar WhatsApp
                     </a>
-                  </div>
-                </>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Proof Viewer Modal */}
-      {showProof && (
-        <ProofViewerModal
-          purchase={purchase}
-          onClose={() => setShowProof(false)}
-          onPay={onPay}
-          onRelease={onRelease}
-          paying={paying}
-        />
-      )}
-    </>
-  );
-};
-
-// ─── Edit Modal (lightweight) ─────────────────────────────────────────────────
-
-const EditModal = ({
-  purchase,
-  onClose,
-  onSave,
-}: {
-  purchase: any;
-  onClose: () => void;
-  onSave: (id: string, status: 'pending' | 'paid' | 'cancelled') => void;
-}) => {
-  const { showConfirm } = useConfirm();
-  const [status, setStatus] = useState<'pending' | 'paid' | 'cancelled'>(purchase.status);
-  const [saving, setSaving] = useState(false);
-
-  // Ocultar nav inferior mientras el modal está abierto
-  useEffect(() => {
-    document.body.classList.add('modal-open');
-    return () => { document.body.classList.remove('modal-open'); };
-  }, []);
-
-  const handleSave = () => {
-    showConfirm({
-      message: '¿Guardar cambios?',
-      onConfirm: async () => {
-        setSaving(true);
-        try {
-          await onSave(purchase.id, status);
-          onClose();
-        } finally {
-          setSaving(false);
-        }
-      },
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[88dvh] overflow-y-auto overflow-x-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-base font-black text-slate-800">Editar Orden</h3>
-          <button onClick={onClose} className="w-10 h-10 min-w-[44px] min-h-[44px] shrink-0 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-full flex items-center justify-center text-slate-500 text-sm touch-manipulation">✕</button>
-        </div>
-        <div className="p-5 space-y-4">
-          <div className="admin-card p-4 space-y-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cliente</p>
-            <p className="font-bold text-slate-800">{purchase.user?.name}</p>
-            <p className="text-sm text-slate-500">{purchase.user?.phone}</p>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Estado</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['pending', 'paid', 'cancelled'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatus(s)}
-                  className={`py-3 rounded-xl text-xs font-black transition-all ${status === s
-                    ? s === 'paid' ? 'bg-emerald-500 text-white shadow-sm' : s === 'cancelled' ? 'bg-red-400 text-white shadow-sm' : 'bg-amber-400 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-500'
-                    }`}
-                >
-                  {s === 'paid' ? 'Pagado' : s === 'cancelled' ? 'Liberado' : 'Pendiente'}
+      {/* Proof Viewer Overlay */}
+      <AnimatePresence>
+        {showProof && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowProof(false)}
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-sm w-full"
+            >
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comprobante</span>
+                <button onClick={() => setShowProof(false)} className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
+                  <X size={18} />
                 </button>
-              ))}
-            </div>
+              </div>
+              <div className="max-h-[70vh] overflow-auto bg-slate-50 p-2">
+                <img src={purchase.paymentProofUrl} alt="Comprobante" className="w-full h-auto rounded-xl" />
+              </div>
+              <div className="p-4 flex gap-2">
+                <button
+                  onClick={() => { onPay(purchase.id); setShowProof(false); }}
+                  className="flex-1 bg-emerald-500 text-white h-12 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-emerald-100"
+                >
+                  Confirmar Pago
+                </button>
+              </div>
+            </motion.div>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving || status === purchase.status}
-            className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm transition-colors"
-          >
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
-        </div>
-      </div>
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-
-const FILTERS = [
-  { key: 'pending', label: 'Pendientes', color: 'bg-amber-500' },
-  { key: 'all', label: 'Todas', color: 'bg-slate-400' },
-  { key: 'paid', label: 'Pagadas', color: 'bg-emerald-500' },
-] as const;
 
 const Dashboard = () => {
   const { showConfirm } = useConfirm();
@@ -526,12 +267,11 @@ const Dashboard = () => {
   const [paying, setPaying] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<any>(null);
 
-  const load = async (f: typeof filter) => {
+  const loadData = async (f: string) => {
     setIsLoading(true);
     try {
       const params = f === 'all' ? {} : { status: f };
       const data = await adminService.getPurchases(params);
-      // sort: newest first
       setPurchases((data ?? []).sort((a: any, b: any) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
@@ -542,21 +282,29 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => { load(filter); }, [filter]);
+  useEffect(() => { loadData(filter); }, [filter]);
 
   const handlePay = (id: string) => {
     showConfirm({
-      message: '¿Confirmar pago?',
+      message: '¿Confirmar este pago ahora?',
       onConfirm: async () => {
         setPaying(id);
+        const originalData = [...purchases];
+        // Optimistic update
+        setPurchases(prev => prev.map(p => p.id === id ? { ...p, status: 'paid' } : p));
+
         try {
           await adminService.updatePurchaseStatus(id, 'paid');
-          setPurchases(prev =>
-            prev.map(p => p.id === id ? { ...p, status: 'paid' } : p)
-          );
-          toast.success('Pago confirmado');
-        } catch (e: any) {
-          toast.error(e.response?.data?.error || 'Error al actualizar el pago');
+          toast.success('¡Pago confirmado!');
+          // If in "pending" view, remove it smoothly
+          if (filter === 'pending') {
+            setTimeout(() => {
+              setPurchases(prev => prev.filter(p => p.id !== id));
+            }, 400);
+          }
+        } catch (e) {
+          setPurchases(originalData);
+          toast.error('No se pudo confirmar el pago');
           throw e;
         } finally {
           setPaying(null);
@@ -565,83 +313,71 @@ const Dashboard = () => {
     });
   };
 
-  const handleSetPending = (id: string) => {
-    showConfirm({
-      message: '¿Marcar esta orden como pendiente? Los boletos quedarán reservados.',
-      onConfirm: async () => {
-        try {
-          await adminService.updatePurchaseStatus(id, 'pending');
-          setPurchases(prev =>
-            prev.map(p => p.id === id ? { ...p, status: 'pending' } : p)
-          );
-          toast.success('Orden marcada como pendiente');
-        } catch (e: any) {
-          toast.error(e.response?.data?.error || 'Error al actualizar');
-          throw e;
-        }
-      },
-    });
-  };
-
   const handleRelease = (id: string) => {
     showConfirm({
-      message: '¿Liberar (cancelar) esta orden y devolver los boletos?',
+      message: '¿Liberar estos boletos? La orden se cancelará.',
       onConfirm: async () => {
+        const originalData = [...purchases];
+        setPurchases(prev => prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p));
         try {
           await adminService.updatePurchaseStatus(id, 'cancelled');
-          setPurchases(prev =>
-            prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p)
-          );
           toast.success('Orden liberada');
-        } catch (e: any) {
-          toast.error(e.response?.data?.error || 'Error al liberar la orden');
+          if (filter !== 'all') {
+            setTimeout(() => {
+              setPurchases(prev => prev.filter(p => p.id !== id));
+            }, 400);
+          }
+        } catch (e) {
+          setPurchases(originalData);
+          toast.error('Error al liberar');
           throw e;
         }
       },
     });
   };
 
-  const handleEditSave = async (id: string, status: 'pending' | 'paid' | 'cancelled') => {
-    try {
-      await adminService.updatePurchaseStatus(id, status);
-      setPurchases(prev =>
-        prev.map(p => p.id === id ? { ...p, status } : p)
-      );
-      setEditTarget(null);
-      toast.success('Cambios guardados');
-    } catch (e: any) {
-      toast.error(e.response?.data?.error || 'Error al actualizar');
-      throw e;
-    }
+  const handleSetPending = (id: string) => {
+    adminService.updatePurchaseStatus(id, 'pending').then(() => {
+      setPurchases(prev => prev.map(p => p.id === id ? { ...p, status: 'pending' } : p));
+      toast.success('Regresado a pendiente');
+    });
   };
 
   const pendingCount = purchases.filter(p => p.status === 'pending').length;
 
+  const filters = [
+    { id: 'pending', label: 'Pendientes', color: 'bg-amber-500' },
+    { id: 'all', label: 'Todas', color: 'bg-blue-500' },
+    { id: 'paid', label: 'Pagadas', color: 'bg-emerald-500' }
+  ];
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="section-title">Órdenes</h2>
-          <p className="section-sub">Marcá los pagos recibidos</p>
+          <h2 className="section-title">Panel Principal</h2>
+          <p className="section-sub">Resumen de actividad reciente</p>
         </div>
         {pendingCount > 0 && filter === 'pending' && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-2xl flex items-center gap-2 shadow-sm"
+          >
             <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-            <span className="text-xs font-black text-amber-600">{pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}</span>
-          </div>
+            <span className="text-[10px] font-black text-amber-700 uppercase tracking-tight">{pendingCount} Pendientes</span>
+          </motion.div>
         )}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl">
-        {FILTERS.map(f => (
+      {/* Filter Chips */}
+      <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl overflow-x-auto scrollbar-none">
+        {filters.map(f => (
           <button
-            key={f.key}
-            onClick={() => setFilter(f.key as typeof filter)}
-            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${filter === f.key
-              ? 'bg-white text-slate-800 shadow-sm'
-              : 'text-slate-400 hover:text-slate-600'
+            key={f.id}
+            onClick={() => setFilter(f.id as any)}
+            className={`flex-1 min-h-[40px] px-5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${filter === f.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
               }`}
           >
             {f.label}
@@ -649,47 +385,93 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center h-48 gap-3">
-          <div className="w-10 h-10 border-[3px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          <p className="text-sm text-slate-400 font-medium">Cargando órdenes...</p>
-        </div>
-      ) : purchases.length === 0 ? (
-        <div className="admin-card p-12 flex flex-col items-center gap-3">
-          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center">
-            <svg className="w-7 h-7 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <p className="text-slate-500 font-semibold text-sm">
-            {filter === 'pending' ? '¡Todo al día! Sin pendientes 🎉' : 'No hay órdenes aquí'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {purchases.map(purchase => (
-            <OrderCard
-              key={purchase.id}
-              purchase={purchase}
-              onPay={handlePay}
-              onSetPending={handleSetPending}
-              onRelease={handleRelease}
-              onEdit={setEditTarget}
-              paying={paying}
-            />
-          ))}
-        </div>
-      )}
+      {/* Main List */}
+      <div className="space-y-3">
+        {isLoading ? (
+          <Skeleton count={5} className="h-44 w-full" />
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {purchases.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="admin-card p-16 text-center"
+              >
+                <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 size={40} />
+                </div>
+                <p className="text-slate-500 font-bold">¡Todo al día!</p>
+                <p className="text-xs text-slate-400 mt-1">No hay órdenes en esta categoría</p>
+              </motion.div>
+            ) : (
+              <LayoutGroup>
+                {purchases.map(p => (
+                  <OrderCard
+                    key={p.id}
+                    purchase={p}
+                    onPay={handlePay}
+                    onSetPending={handleSetPending}
+                    onRelease={handleRelease}
+                    onEdit={(p) => setEditTarget(p)}
+                    paying={paying}
+                  />
+                ))}
+              </LayoutGroup>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
 
-      {/* Edit Modal */}
-      {editTarget && (
-        <EditModal
-          purchase={editTarget}
-          onClose={() => setEditTarget(null)}
-          onSave={handleEditSave}
-        />
-      )}
+      {/* Edit Modal (Lightweight) */}
+      <AnimatePresence>
+        {editTarget && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditTarget(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-black text-slate-800">Editar Datos</h3>
+                <button onClick={() => setEditTarget(null)} className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input className="admin-input pl-11" defaultValue={editTarget.user.name} readOnly />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
+                  <AlertCircle className="text-amber-500 flex-shrink-0" />
+                  <p className="text-[11px] text-amber-700 font-medium">Solo los administradores pueden modificar datos de contacto. Por favor verifique antes de cambiar el estado.</p>
+                </div>
+
+                <button
+                  onClick={() => setEditTarget(null)}
+                  className="w-full h-12 bg-blue-600 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg shadow-blue-100"
+                >
+                  Listo
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

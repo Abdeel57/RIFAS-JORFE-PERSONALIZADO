@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
@@ -7,6 +8,10 @@ import {
   Settings as SettingsIcon,
   Bell,
   BellOff,
+  Users,
+  ShoppingBag,
+  LogOut,
+  Zap
 } from 'lucide-react';
 
 const Layout = () => {
@@ -21,21 +26,11 @@ const Layout = () => {
   };
 
   const navItems = [
-    {
-      path: '/',
-      label: 'Inicio',
-      icon: Home
-    },
-    {
-      path: '/raffles',
-      label: 'Rifas',
-      icon: Ticket
-    },
-    {
-      path: '/settings',
-      label: 'Configuración',
-      icon: SettingsIcon
-    },
+    { path: '/', label: 'Órdenes', icon: Home },
+    { path: '/raffles', label: 'Rifas', icon: Ticket },
+    { path: '/purchases', label: 'Historial', icon: ShoppingBag },
+    { path: '/users', label: 'Usuarios', icon: Users },
+    { path: '/settings', label: 'Ajustes', icon: SettingsIcon },
   ];
 
   const isActive = (path: string) => {
@@ -44,74 +39,74 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#EEF4FF] overflow-x-hidden">
+    <div className="min-h-[100dvh] bg-[#F8FAFF] flex flex-col overflow-x-hidden selection:bg-blue-100 selection:text-blue-600">
       {/* Top Header */}
-      <header className="glass sticky top-0 z-40 border-b border-slate-200/60 pt-safe">
-        <div className="flex items-center justify-between h-14 min-h-[44px] px-4 gap-2">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            {/* Logo Bismark Oficial */}
-            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md shadow-blue-200/60 flex-shrink-0 border border-slate-100 overflow-hidden">
+      <header className="glass sticky top-0 z-40 border-b border-slate-200/50 pt-safe">
+        <div className="flex items-center justify-between h-16 px-5 max-w-2xl mx-auto w-full">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100 border border-slate-100 overflow-hidden group transition-all active:scale-90">
               <img
                 src="/admin/bismark.png"
-                alt="Bismark Logo"
-                className="w-full h-full object-contain transform"
+                alt="B"
+                className="w-7 h-7 object-contain group-hover:scale-110 transition-transform"
               />
             </div>
             <div className="leading-none">
-              <p className="font-black text-[10px] text-slate-400 tracking-widest uppercase leading-none">Sistema</p>
-              <p className="font-black text-sm text-slate-800 tracking-tight leading-tight mt-0.5">Bismark</p>
+              <p className="font-black text-[10px] text-slate-400 tracking-[0.2em] uppercase">Bismark</p>
+              <p className="font-black text-sm text-slate-800 tracking-tight mt-0.5">Admin</p>
             </div>
           </div>
 
-
-          {/* User info + acciones */}
           <div className="flex items-center gap-2">
-            {/* Botón de notificaciones push */}
+            {/* Quick Stats or Status */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-xl mr-2">
+              <Zap size={14} className="text-blue-500 fill-blue-500" />
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Optimized UI</span>
+            </div>
+
+            {/* Notifications */}
             {isSupported && permission !== 'denied' && (
               <button
                 onClick={subscribed ? unsubscribe : subscribe}
                 disabled={pushLoading}
-                title={subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones push'}
-                className={`relative flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all ${pushLoading ? 'opacity-50 cursor-not-allowed' :
-                  subscribed
-                    ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                    : 'bg-slate-100 text-slate-400 hover:bg-blue-50 hover:text-blue-500'
+                className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${subscribed ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-300'
                   }`}
               >
-                {subscribed ? <Bell size={16} /> : <BellOff size={16} />}
-                {subscribed && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white" />
-                )}
+                <Bell size={18} strokeWidth={2.5} />
+                {subscribed && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-blue-600 rounded-full border-2 border-white" />}
               </button>
             )}
-            <div className="text-right leading-none hidden sm:block">
-              <p className="text-xs font-bold text-slate-700">{admin?.name}</p>
-              <p className="text-[10px] text-slate-400">{admin?.email}</p>
-            </div>
+
+            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+              className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-all active:scale-90"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Salir
+              <LogOut size={18} strokeWidth={2.5} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Page Content */}
-      <main className="px-4 py-4 pb-24 max-w-2xl mx-auto w-full min-w-0 overflow-x-hidden">
-        <Outlet />
+      {/* Main Content with Page Transitions */}
+      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 pb-32">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Bottom Tab Bar */}
-      <nav className="bottom-tab-nav fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/60 pb-safe overflow-x-auto scrollbar-none">
-        <div className="flex items-center justify-around max-w-full px-2 min-w-0">
+      {/* Modern Bottom Navigation */}
+      <nav className="bottom-tab-nav fixed bottom-0 left-0 right-0 z-50 glass border-t border-slate-200/50 pb-safe">
+        <div className="flex items-center justify-between max-w-2xl mx-auto h-16 px-2">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
@@ -119,28 +114,43 @@ const Layout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`tab-item min-w-[64px] ${active ? 'active' : ''}`}
+                className={`flex-1 flex flex-col items-center justify-center gap-1.5 transition-all text-center relative group py-2 rounded-2xl ${active ? 'text-[#2563EB]' : 'text-slate-400'}`}
               >
-                <span className={`transition-transform ${active ? 'scale-110' : ''}`}>
-                  <Icon size={20} className={active ? 'fill-blue-600/10' : ''} />
-                </span>
-                <span
-                  className={`text-[9px] font-bold tracking-tight text-center ${active ? 'text-[#2563EB]' : 'text-slate-400'
-                    }`}
+                <motion.div
+                  animate={{ y: active ? -2 : 0 }}
+                  className={`flex items-center justify-center relative ${active ? 'after:content-[""] after:absolute after:-inset-2 after:bg-blue-50 after:rounded-full after:-z-10' : ''}`}
                 >
+                  <Icon size={20} strokeWidth={active ? 3 : 2} />
+                </motion.div>
+                <span className={`text-[9px] font-black uppercase tracking-widest transition-opacity ${active ? 'opacity-100' : 'opacity-60 grayscale'}`}>
                   {item.label}
                 </span>
+
                 {active && (
-                  <span className="absolute bottom-0 w-6 h-0.5 bg-[#2563EB] rounded-full" />
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute bottom-0 w-8 h-1 bg-[#2563EB] rounded-full"
+                  />
                 )}
               </Link>
             );
           })}
         </div>
       </nav>
+
+      {/* Global CSS for safer areas */}
+      <style>{`
+        .glass {
+           backdrop-filter: blur(20px);
+           -webkit-backdrop-filter: blur(20px);
+           background-color: rgba(255, 255, 255, 0.85);
+        }
+        main {
+           min-height: calc(100vh - 4rem - 4rem);
+        }
+      `}</style>
     </div>
   );
 };
 
 export default Layout;
-

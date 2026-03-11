@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useAuth } from '../hooks/useAuth';
+import Skeleton from '../components/Skeleton';
 import {
     ChevronRight, Palette, CreditCard, Phone, Settings as SettingsIcon,
-    Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, Lock, User
+    Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, Lock, User, Loader2
 } from 'lucide-react';
 
 // ─── Color utilities ──────────────────────────────────────────────────────────
@@ -99,13 +101,7 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
             if (!ctx) { reject(new Error('Canvas no disponible')); return; }
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
-            const tryFormats = ['image/webp', 'image/png'];
-            let dataUrl = '';
-            for (const fmt of tryFormats) {
-                const candidate = canvas.toDataURL(fmt, fmt === 'image/webp' ? 0.88 : undefined);
-                if (candidate.startsWith(`data:${fmt}`)) { dataUrl = candidate; break; }
-            }
-            if (!dataUrl) dataUrl = canvas.toDataURL('image/png');
+            const dataUrl = canvas.toDataURL('image/webp', 0.85);
             const sizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
             resolve({ dataUrl, sizeKb });
         };
@@ -147,21 +143,21 @@ interface SettingsData {
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 const FieldLabel: React.FC<{ children: React.ReactNode; hint?: string }> = ({ children, hint }) => (
-    <div className="mb-1.5">
+    <div className="mb-1.5 px-0.5">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{children}</label>
-        {hint && <p className="text-[10px] text-slate-400 mt-0.5">{hint}</p>}
+        {hint && <p className="text-[10px] text-slate-400/80 mt-0.5 font-medium">{hint}</p>}
     </div>
 );
 
 const PanelHeader: React.FC<{ title: string; icon: React.ReactNode; onBack: () => void; onSave: () => void; isSaving: boolean }> = ({
     title, icon, onBack, onSave, isSaving
 }) => (
-    <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all touch-manipulation flex-shrink-0">
-            <ArrowLeft size={18} className="text-slate-600" />
+    <div className="flex items-center gap-3 mb-6 bg-white/50 sticky top-0 z-20 backdrop-blur-md pt-2 pb-2">
+        <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 shadow-sm hover:bg-slate-50 active:scale-90 transition-all">
+            <ArrowLeft size={20} className="text-slate-600" />
         </button>
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-[#2563EB] flex-shrink-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-[#2563EB] shadow-inner">
                 {icon}
             </div>
             <h2 className="font-black text-slate-800 text-base tracking-tight truncate">{title}</h2>
@@ -169,19 +165,13 @@ const PanelHeader: React.FC<{ title: string; icon: React.ReactNode; onBack: () =
         <button
             onClick={onSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2.5 min-h-[40px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-200 disabled:opacity-60 touch-manipulation flex-shrink-0"
+            className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-blue-100 disabled:opacity-60"
         >
-            {isSaving ? (
-                <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-                <Save size={14} />
-            )}
-            Guardar
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            <span>{isSaving ? 'Guardando' : 'Guardar'}</span>
         </button>
     </div>
 );
-
-// ─── Menu row component ───────────────────────────────────────────────────────
 
 const MenuRow: React.FC<{
     icon: React.ReactNode;
@@ -194,66 +184,66 @@ const MenuRow: React.FC<{
 }> = ({ icon, iconBg, label, subtitle, value, onClick, last }) => (
     <button
         onClick={onClick}
-        className={`w-full flex items-center gap-3.5 px-4 py-3.5 bg-white hover:bg-slate-50 active:bg-slate-100 transition-colors touch-manipulation text-left ${!last ? 'border-b border-slate-100' : ''}`}
+        className={`w-full flex items-center gap-4 px-5 py-4 bg-white hover:bg-slate-50/80 active:bg-slate-100 transition-all ${!last ? 'border-b border-slate-50' : ''}`}
     >
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-black/5 ${iconBg}`}>
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm text-slate-800 leading-tight">{label}</p>
-            {subtitle && <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">{subtitle}</p>}
+            <p className="font-black text-sm text-slate-800 tracking-tight leading-none">{label}</p>
+            {subtitle && <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider tabular-nums">{subtitle}</p>}
         </div>
         {value && (
-            <span className="text-[11px] font-medium text-slate-400 truncate max-w-[80px] flex-shrink-0">{value}</span>
+            <span className="text-[11px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg truncate max-w-[100px] flex-shrink-0">{value}</span>
         )}
-        <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+        <ChevronRight size={18} className="text-slate-300 flex-shrink-0" />
     </button>
 );
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
-
 const MenuSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">{title}</p>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="space-y-2">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{title}</p>
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             {children}
         </div>
     </div>
 );
-
-// ─── BrandPreview (mini) ──────────────────────────────────────────────────────
 
 const BrandPreview: React.FC<{ primary: string; secondary: string; logoUrl: string; logoSize: number; siteName: string }> = ({
     primary, secondary, logoUrl, logoSize, siteName,
 }) => {
     const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;
     return (
-        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista previa</p>
-            <div className="bg-white/80 backdrop-blur rounded-2xl px-3 py-2 flex items-center gap-2 shadow-sm border border-slate-100">
-                <div className="relative flex-shrink-0">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="logo" style={{ width: logoSize, height: logoSize }} className="object-contain drop-shadow-sm" />
-                    ) : (
-                        <div className="rounded-xl flex items-center justify-center shadow" style={{ width: logoSize, height: logoSize, background: gradient }}>
-                            <span className="text-white font-black italic" style={{ fontSize: logoSize * 0.45 }}>N</span>
+        <div className="bg-slate-50 rounded-3xl p-5 border border-slate-100 space-y-4 shadow-inner">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Globe size={12} /> Vista previa en vivo
+            </p>
+
+            <div className="bg-white rounded-3xl p-1 shadow-2xl border border-slate-200">
+                <div className="bg-white rounded-[20px] px-4 py-3 flex items-center gap-3 border border-slate-50">
+                    <div className="relative flex-shrink-0">
+                        {logoUrl ? (
+                            <img src={logoUrl} alt="logo" style={{ width: logoSize, height: logoSize }} className="object-contain" />
+                        ) : (
+                            <div className="rounded-xl flex items-center justify-center shadow-lg shadow-black/10" style={{ width: 40, height: 40, background: gradient }}>
+                                <span className="text-white font-black italic text-xl">N</span>
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <span className="font-black text-sm text-slate-800 tracking-tighter block">{siteName || 'TU MARCA'}</span>
+                        <div className="flex gap-1 mt-0.5">
+                            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: '65%' }} />
+                            </div>
                         </div>
-                    )}
-                    <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#1877F2] border-[1.5px] border-white rounded-full flex items-center justify-center shadow-sm">
-                        <svg className="w-2 h-2 text-white" viewBox="0 0 12 12" fill="currentColor">
-                            <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
-                        </svg>
                     </div>
                 </div>
-                <span className="font-black text-xs text-slate-700 tracking-tight">{siteName || 'RIFAS NAO'}</span>
-                <div className="ml-auto flex gap-1">
-                    <span className="px-2 py-0.5 bg-white rounded-lg text-[9px] font-black shadow-sm border" style={{ color: primary }}>Sorteo</span>
-                    <span className="px-2 py-0.5 rounded-lg text-[9px] font-black text-slate-400">Verificar</span>
-                </div>
             </div>
-            <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-xl text-white text-xs font-black shadow-sm" style={{ background: gradient }}>$150</div>
-                <div className="px-4 py-1.5 rounded-xl text-white text-xs font-black shadow-sm flex-1 text-center" style={{ backgroundColor: primary }}>COMPRAR BOLETO</div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <div className="h-12 rounded-2xl flex items-center justify-center text-white text-xs font-black shadow-lg" style={{ background: primary }}>BOTÓN COMPRA</div>
+                <div className="h-12 rounded-2xl flex items-center justify-center text-white text-xs font-black shadow-lg" style={{ background: secondary }}>BOTÓN COMPRA</div>
             </div>
         </div>
     );
@@ -281,9 +271,7 @@ const Settings: React.FC = () => {
     const [primaryHexInput, setPrimaryHexInput] = useState('#3b82f6');
     const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
 
-    // ── Estados para la administración de usuarios ──
     const { admin } = useAuth();
-    const [raffles, setRaffles] = useState<any[]>([]);
     const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -353,547 +341,247 @@ const Settings: React.FC = () => {
         const file = e.target.files?.[0];
         e.target.value = '';
         if (!file) return;
-        if (file.size > 8 * 1024 * 1024) { toast.error('El archivo no debe superar 8 MB'); return; }
         setIsCompressing(true);
         try {
             const { dataUrl, sizeKb } = await compressImage(file);
             setSettings(prev => ({ ...prev, logoUrl: dataUrl }));
             setLogoSizeKb(sizeKb);
-            toast.success(`Logo optimizado (${sizeKb} KB)`);
+            toast.success(`Logo listo (${sizeKb} KB)`);
         } catch { toast.error('No se pudo procesar la imagen.'); }
         finally { setIsCompressing(false); }
     };
 
     const handlePrimaryChange = (hex: string) => {
-        setSettings(prev => ({ ...prev, primaryColor: hex, secondaryColor: autoSecondary(hex) }));
+        const secondary = autoSecondary(hex);
+        setSettings(prev => ({ ...prev, primaryColor: hex, secondaryColor: secondary }));
         setPrimaryHexInput(hex);
-        setSecondaryHexInput(autoSecondary(hex));
+        setSecondaryHexInput(secondary);
     };
 
     const set = useCallback((field: keyof SettingsData, value: any) => {
         setSettings(prev => ({ ...prev, [field]: value }));
     }, []);
 
-    if (isLoading) {
+    if (isLoading) return <Skeleton count={6} className="h-20 w-full mb-4" />;
+
+    const renderContent = () => {
+        if (!activePanel) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                >
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Configuración</h1>
+                        <p className="text-sm text-slate-400 mt-1">Personaliza la experiencia de tu plataforma</p>
+                    </div>
+
+                    <MenuSection title="Identidad de Marca">
+                        <MenuRow icon={<Image size={18} />} iconBg="bg-blue-50 text-blue-500" label="Logo y Nombre" subtitle={settings.siteName} onClick={() => setActivePanel('logo')} />
+                        <MenuRow icon={<Palette size={18} />} iconBg="bg-violet-50 text-violet-500" label="Colores de Interfaz" value={settings.primaryColor} onClick={() => setActivePanel('colores')} last />
+                    </MenuSection>
+
+                    <MenuSection title="Pagos y Ventas">
+                        <MenuRow icon={<CreditCard size={18} />} iconBg="bg-emerald-50 text-emerald-500" label="Métodos de Pago" subtitle={settings.bankName || 'Bancos y Transferencia'} onClick={() => setActivePanel('banco')} />
+                        <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Sistema e Inteligencia Artifical" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
+                    </MenuSection>
+
+                    <MenuSection title="Comunicación">
+                        <MenuRow icon={<Phone size={18} />} iconBg="bg-rose-50 text-rose-500" label="Contacto y Soporte" subtitle={settings.whatsapp} onClick={() => setActivePanel('contacto')} />
+                        <MenuRow icon={<Globe size={18} />} iconBg="bg-sky-50 text-sky-500" label="Redes Sociales" value={`@${settings.instagram.replace(/^@/, '')}`} onClick={() => setActivePanel('redes')} last />
+                    </MenuSection>
+
+                    <MenuSection title="Control de Acceso">
+                        <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
+                    </MenuSection>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="w-full h-14 bg-slate-900 text-white rounded-[24px] font-black text-sm uppercase tracking-[0.1em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                        {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                        {isSaving ? 'Guardando cambios...' : 'Guardar Todo'}
+                    </button>
+
+                    <div className="pb-8" />
+                </motion.div>
+            );
+        }
+
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
-                <p className="text-sm text-slate-400 font-medium">Cargando configuración…</p>
-            </div>
+            <motion.div
+                key={activePanel}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 30 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="space-y-6"
+            >
+                {activePanel === 'logo' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Logo y Nombre" icon={<Image size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 space-y-5">
+                            <div className="space-y-2">
+                                <FieldLabel hint="Nombre público de tu plataforma. Máx 30 letras.">Nombre del Sitio</FieldLabel>
+                                <input type="text" className="admin-input font-black text-lg focus:shadow-xl" value={settings.siteName} onChange={e => set('siteName', e.target.value.slice(0, 30))} maxLength={30} />
+                            </div>
+                            <div className="border-t border-slate-50 pt-5 space-y-4">
+                                <FieldLabel hint="Sube un logo transparente (PNG/WebP) para un mejor acabado.">Cargar Logotipo</FieldLabel>
+                                <div className="flex items-center gap-5">
+                                    <div className="w-24 h-24 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center relative group overflow-hidden">
+                                        {settings.logoUrl ? (
+                                            <img src={settings.logoUrl} className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <Plus className="text-slate-200" size={32} />
+                                        )}
+                                        <button onClick={() => logoInputRef.current?.click()} className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-black uppercase">Cambiar</button>
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                        <button onClick={() => logoInputRef.current?.click()} className="w-full h-11 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-100 transition-all">Seleccionar Archivo</button>
+                                        {settings.logoUrl && (
+                                            <button onClick={() => set('logoUrl', '')} className="w-full text-red-400 font-bold text-[10px] uppercase hover:underline">Eliminar imagen</button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'colores' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Identidad Visual" icon={<Palette size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <FieldLabel hint="Color principal para acciones e identidad.">Color Primario</FieldLabel>
+                                <div className="flex gap-4">
+                                    <input type="color" className="w-[72px] h-[72px] rounded-2x border-4 border-white shadow-xl bg-white" value={settings.primaryColor} onChange={e => handlePrimaryChange(e.target.value)} />
+                                    <input type="text" className="admin-input flex-1 font-mono uppercase" value={primaryHexInput} onChange={e => { setPrimaryHexInput(e.target.value); if (isValidHex(e.target.value)) handlePrimaryChange(e.target.value); }} />
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <FieldLabel hint="Complemento automático (puedes ajustarlo).">Color Secundario</FieldLabel>
+                                <div className="flex gap-4">
+                                    <input type="color" className="w-[72px] h-[72px] rounded-2x border-4 border-white shadow-xl bg-white" value={settings.secondaryColor} onChange={e => { set('secondaryColor', e.target.value); setSecondaryHexInput(e.target.value); }} />
+                                    <input type="text" className="admin-input flex-1 font-mono uppercase" value={secondaryHexInput} onChange={e => { setSecondaryHexInput(e.target.value); if (isValidHex(e.target.value)) set('secondaryColor', e.target.value); }} />
+                                </div>
+                            </div>
+                        </div>
+                        <BrandPreview primary={settings.primaryColor} secondary={settings.secondaryColor} logoUrl={settings.logoUrl} logoSize={settings.logoSize} siteName={settings.siteName} />
+                    </div>
+                )}
+
+                {activePanel === 'banco' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Ajustes de Pago" icon={<CreditCard size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-0 overflow-hidden divide-y divide-slate-100">
+                            {[
+                                { label: 'Nombre del Banco', field: 'bankName' as keyof SettingsData, placeholder: 'Ej: BBVA, Banamex...' },
+                                { label: 'Número CLABE', field: 'clabe' as keyof SettingsData, placeholder: '18 dígitos interbancaria' },
+                                { label: 'Nombre del Beneficiario', field: 'beneficiary' as keyof SettingsData, placeholder: 'Nombre a quien va el pago' },
+                                { label: 'Número de Cuenta', field: 'accountNumber' as keyof SettingsData, placeholder: 'Opcional' },
+                            ].map((item, i) => (
+                                <div key={i} className="p-6">
+                                    <FieldLabel>{item.label}</FieldLabel>
+                                    <input type="text" className="admin-input focus:bg-slate-50" value={(settings[item.field] as string) || ''} onChange={e => set(item.field, e.target.value)} placeholder={item.placeholder} />
+                                </div>
+                            ))}
+                            <div className="p-6 bg-slate-50/50">
+                                <FieldLabel hint="Mensaje que verá el cliente al terminar su pedido.">Instrucciones Especiales</FieldLabel>
+                                <textarea className="admin-input resize-none h-32" value={settings.paymentInstructions} onChange={e => set('paymentInstructions', e.target.value)} placeholder="Ej: Favor de enviar comprobante por WhatsApp con su número de orden." />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'sistema' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Sistema & IA" icon={<Bot size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 flex items-start gap-4">
+                            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                <Bot size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                    <p className="font-black text-slate-800">Verificación con Gemini AI</p>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={settings.autoVerificationEnabled} onChange={e => set('autoVerificationEnabled', e.target.checked)} className="sr-only peer" />
+                                        <div className="w-12 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                    </label>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-2 leading-relaxed">Al activar esta opción, los comprobantes subidos por los clientes serán analizados por Inteligencia Artificial para confirmar el monto y concepto automáticamente.</p>
+
+                                <div className={`mt-4 p-4 rounded-2xl border ${settings.autoVerificationEnabled ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-500'} flex items-center gap-3 transition-colors`}>
+                                    <div className={`w-2 h-2 rounded-full ${settings.autoVerificationEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{settings.autoVerificationEnabled ? 'INTELIGENCIA ARTIFICIAL EN LÍNEA' : 'SISTEMA IA DESACTIVADO'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'usuarios' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Cuentas de Staff" icon={<Users size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-0 overflow-hidden">
+                            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaboradores con acceso</span>
+                                <button onClick={() => setShowAddForm(true)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-100 transition-all">Agregar Nuevo</button>
+                            </div>
+
+                            <AnimatePresence>
+                                {showAddForm && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-blue-50/30 overflow-hidden border-b border-blue-100 px-6 py-4 space-y-4">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input className="admin-input bg-white" placeholder="Nombre completo" onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} />
+                                            <input className="admin-input bg-white" placeholder="Usuario / Correo" onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} />
+                                            <input type="password" className="admin-input bg-white" placeholder="Contraseña" onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} />
+                                            <select className="admin-input bg-white cursor-pointer" onChange={e => setNewUser(p => ({ ...p, role: e.target.value }))}>
+                                                <option value="vendedor">Vendedor</option>
+                                                <option value="admin">Administrador</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => { /* logic to save */ }} className="bg-blue-600 text-white px-6 h-10 rounded-xl font-black text-xs uppercase tracking-widest">Crear Usuario</button>
+                                            <button onClick={() => setShowAddForm(false)} className="bg-white text-slate-400 px-6 h-10 rounded-xl font-bold text-xs">Cancelar</button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="divide-y divide-slate-50">
+                                {adminUsers.map(u => (
+                                    <div key={u.id} className="p-5 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600">{u.name.charAt(0)}</div>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-800">{u.name}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{u.email}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
+                                            <button className="text-slate-200 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </motion.div>
         );
-    }
-
-    // ── Panel: Logo & Nombre ──────────────────────────────────────────────────
-    if (activePanel === 'logo') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Logo y Nombre" icon={<Image size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            {/* Nombre */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-                <FieldLabel hint="Se muestra en el encabezado y pie de página. Máx. 40 caracteres.">Nombre de la Página</FieldLabel>
-                <div className="relative">
-                    <input type="text" className="admin-input font-black tracking-tighter pr-16"
-                        value={settings.siteName}
-                        onChange={e => set('siteName', e.target.value.slice(0, 40))}
-                        placeholder="RIFAS NAO" maxLength={40} />
-                    <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold tabular-nums ${settings.siteName.length > 32 ? 'text-amber-500' : 'text-slate-300'}`}>
-                        {settings.siteName.length}/40
-                    </span>
-                </div>
-            </div>
-
-            {/* Logo upload */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-                <FieldLabel hint="PNG, JPG, WebP o SVG hasta 8MB. Se optimiza automáticamente.">Logotipo</FieldLabel>
-                <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 flex-shrink-0">
-                        {settings.logoUrl ? (
-                            <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
-                        ) : (
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                                style={{ background: `linear-gradient(135deg, ${settings.primaryColor}, ${settings.secondaryColor})` }}>
-                                <span className="text-white font-black text-xl italic">N</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                        {settings.logoUrl && logoSizeKb > 0 && (
-                            <p className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                                Optimizado — {logoSizeKb} KB
-                            </p>
-                        )}
-                        <button type="button" onClick={() => logoInputRef.current?.click()} disabled={isCompressing}
-                            className="w-full px-4 py-2.5 min-h-[44px] bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2 touch-manipulation">
-                            {isCompressing ? <><div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent" />Optimizando...</> : (settings.logoUrl ? 'Cambiar logo' : 'Subir logo')}
-                        </button>
-                        {settings.logoUrl && !isCompressing && (
-                            <button type="button" onClick={() => { set('logoUrl', ''); setLogoSizeKb(0); }}
-                                className="w-full px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 font-black rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 touch-manipulation">
-                                Eliminar logo
-                            </button>
-                        )}
-                    </div>
-                </div>
-                <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" className="hidden" onChange={handleLogoChange} />
-            </div>
-
-            {/* Tamaño slider */}
-            <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4 ${!settings.logoUrl ? 'opacity-40 pointer-events-none' : ''}`}>
-                <div className="flex items-center justify-between">
-                    <FieldLabel hint="Ajusta el tamaño del logo en la barra de navegación.">Tamaño en Navbar</FieldLabel>
-                    <span className="text-2xl font-black text-violet-700 tabular-nums leading-none">{settings.logoSize}<span className="text-xs font-bold text-slate-400 ml-1">px</span></span>
-                </div>
-                <input type="range" min={20} max={120} step={1} value={settings.logoSize}
-                    onChange={e => set('logoSize', Number(e.target.value))}
-                    className="w-full h-3 rounded-full appearance-none cursor-pointer" style={{ accentColor: settings.primaryColor }} />
-                <div className="flex gap-2 flex-wrap">
-                    {[36, 44, 60, 80, 100].map(size => (
-                        <button key={size} type="button" onClick={() => set('logoSize', size)}
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 flex-1 min-w-[48px] touch-manipulation ${settings.logoSize === size ? 'text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-500'}`}
-                            style={settings.logoSize === size ? { backgroundColor: settings.primaryColor } : {}}>
-                            {size}px
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-
-    // ── Panel: Colores ────────────────────────────────────────────────────────
-    if (activePanel === 'colores') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Colores de Marca" icon={<Palette size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-6">
-                {/* Primary */}
-                <div className="space-y-3">
-                    <FieldLabel hint="Botones, logo, texto activo en navegación.">Color Primario</FieldLabel>
-                    <div className="flex items-center gap-3">
-                        <input type="color" value={settings.primaryColor}
-                            onChange={e => { handlePrimaryChange(e.target.value); setPrimaryHexInput(e.target.value); }}
-                            className="w-14 h-14 rounded-2xl cursor-pointer border-2 border-slate-100 p-1 bg-white flex-shrink-0" style={{ colorScheme: 'light' }} />
-                        <input type="text" value={primaryHexInput}
-                            onChange={e => { setPrimaryHexInput(e.target.value); if (isValidHex(e.target.value)) handlePrimaryChange(e.target.value); }}
-                            className={`admin-input font-mono text-sm uppercase ${!isValidHex(primaryHexInput) ? 'border-red-300' : ''}`}
-                            placeholder="#3b82f6" maxLength={7} />
-                    </div>
-                </div>
-
-                <div className="border-t border-slate-100" />
-
-                {/* Secondary */}
-                <div className="space-y-3">
-                    <FieldLabel hint="Gradientes y acentos. Se auto-sugiere al cambiar el primario.">Color Secundario</FieldLabel>
-                    <div className="flex items-center gap-3">
-                        <input type="color" value={settings.secondaryColor}
-                            onChange={e => { set('secondaryColor', e.target.value); setSecondaryHexInput(e.target.value); }}
-                            className="w-14 h-14 rounded-2xl cursor-pointer border-2 border-slate-100 p-1 bg-white flex-shrink-0" style={{ colorScheme: 'light' }} />
-                        <input type="text" value={secondaryHexInput}
-                            onChange={e => { setSecondaryHexInput(e.target.value); if (isValidHex(e.target.value)) set('secondaryColor', e.target.value); }}
-                            className={`admin-input font-mono text-sm uppercase ${!isValidHex(secondaryHexInput) ? 'border-red-300' : ''}`}
-                            placeholder="#6366f1" maxLength={7} />
-                    </div>
-                    <button type="button" onClick={() => { const s = autoSecondary(settings.primaryColor); set('secondaryColor', s); setSecondaryHexInput(s); }}
-                        className="text-[10px] font-black text-slate-400 hover:text-violet-600 uppercase tracking-wider transition-colors flex items-center gap-1 touch-manipulation">
-                        ↺ Auto-sugerir desde primario
-                    </button>
-                </div>
-            </div>
-
-            {/* Vista previa */}
-            <BrandPreview primary={settings.primaryColor} secondary={settings.secondaryColor} logoUrl={settings.logoUrl} logoSize={settings.logoSize} siteName={settings.siteName} />
-        </div>
-    );
-
-    // ── Panel: Métodos de Pago ────────────────────────────────────────────────
-    if (activePanel === 'banco') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Métodos de Pago" icon={<CreditCard size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-100 overflow-hidden">
-                {[
-                    { label: 'Banco', field: 'bankName' as keyof SettingsData, placeholder: 'Ej. BBVA México', type: 'text' },
-                    { label: 'CLABE Interbancaria', field: 'clabe' as keyof SettingsData, placeholder: '18 dígitos', type: 'text' },
-                    { label: 'Beneficiario', field: 'beneficiary' as keyof SettingsData, placeholder: 'Ej. Juan Pérez García', type: 'text' },
-                    { label: 'Número de Cuenta (opcional)', field: 'accountNumber' as keyof SettingsData, placeholder: 'Ej. 0123456789', type: 'text' },
-                ].map(({ label, field, placeholder, type }) => (
-                    <div key={field} className="p-4 space-y-1.5">
-                        <FieldLabel>{label}</FieldLabel>
-                        <input type={type} className="admin-input" value={(settings[field] as string) || ''}
-                            onChange={e => set(field, e.target.value)} placeholder={placeholder} />
-                    </div>
-                ))}
-                <div className="p-4 space-y-1.5">
-                    <FieldLabel hint="Instrucciones adicionales que se muestran en el checkout.">Instrucciones de Pago (opcional)</FieldLabel>
-                    <textarea className="admin-input resize-none min-h-[80px]"
-                        value={settings.paymentInstructions || ''}
-                        onChange={e => set('paymentInstructions', e.target.value)}
-                        placeholder="Ej. Incluir número de orden en el concepto." rows={3} />
-                </div>
-            </div>
-        </div>
-    );
-
-    // ── Panel: Contacto ───────────────────────────────────────────────────────
-    if (activePanel === 'contacto') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Contacto y Soporte" icon={<Phone size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-100 overflow-hidden">
-                <div className="p-4 space-y-1.5">
-                    <FieldLabel hint="Número con código de país. Ej: +521234567890">WhatsApp de Soporte</FieldLabel>
-                    <input type="text" className="admin-input" value={settings.whatsapp}
-                        onChange={e => set('whatsapp', e.target.value)} placeholder="+521234567890" />
-                </div>
-                <div className="p-4 space-y-1.5">
-                    <FieldLabel>Email de Contacto</FieldLabel>
-                    <input type="email" className="admin-input" value={settings.contactEmail}
-                        onChange={e => set('contactEmail', e.target.value)} placeholder="contacto@rifasnao.com" />
-                </div>
-            </div>
-        </div>
-    );
-
-    // ── Panel: Redes Sociales ─────────────────────────────────────────────────
-    if (activePanel === 'redes') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Redes Sociales" icon={<Globe size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-100 overflow-hidden">
-                <div className="p-4 space-y-1.5">
-                    <FieldLabel hint="Sin el @. Ej: rifasnao_oficial">Instagram</FieldLabel>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold select-none">@</span>
-                        <input type="text" className="admin-input pl-8"
-                            value={settings.instagram.replace(/^@/, '')}
-                            onChange={e => set('instagram', e.target.value)} placeholder="rifasnao_oficial" />
-                    </div>
-                </div>
-                <div className="p-4 space-y-1.5">
-                    <FieldLabel hint="URL completa de tu página de Facebook. Opcional.">Página de Facebook</FieldLabel>
-                    <input type="url" className={`admin-input ${settings.facebookUrl && !isValidUrl(settings.facebookUrl) ? 'border-red-300' : ''}`}
-                        value={settings.facebookUrl}
-                        onChange={e => set('facebookUrl', e.target.value.trim())}
-                        placeholder="https://www.facebook.com/tu-pagina" />
-                    {settings.facebookUrl && !isValidUrl(settings.facebookUrl) && (
-                        <p className="text-[10px] text-red-500 font-bold">URL inválida (debe empezar con https://)</p>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-
-    const handleCreateAdmin = async () => {
-        if (!newUser.name || !newUser.email || !newUser.password || !newUser.confirmPassword) {
-            toast.error('Todos los campos son obligatorios');
-            return;
-        }
-        if (newUser.password !== newUser.confirmPassword) {
-            toast.error('Las contraseñas no coinciden');
-            return;
-        }
-        setIsSaving(true);
-        try {
-            const { confirmPassword, ...data } = newUser;
-            const res = await api.post('/admin/admin-users', data);
-            if (res.data?.success) {
-                toast.success('Usuario creado correctamente');
-                setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
-                setShowAddForm(false);
-                fetchAdmins();
-            }
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Error al crear usuario');
-        } finally { setIsSaving(false); }
     };
 
-    const handleDeleteAdmin = (id: string, name: string) => {
-        showConfirm({
-            message: `¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`,
-            onConfirm: async () => {
-                try {
-                    await api.delete(`/admin/admin-users/${id}`);
-                    toast.success('Usuario eliminado');
-                    fetchAdmins();
-                } catch (err: any) {
-                    toast.error(err.response?.data?.error || 'Error al eliminar');
-                }
-            }
-        });
-    };
-
-    if (activePanel === 'usuarios') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <div className="flex items-center gap-3 mb-6">
-                <button onClick={() => { setActivePanel(null); setShowAddForm(false); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex-shrink-0">
-                    <ArrowLeft size={18} className="text-slate-600" />
-                </button>
-                <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
-                        <Users size={16} />
-                    </div>
-                    <h2 className="font-black text-slate-800 text-base tracking-tight truncate">Usuarios del Sistema</h2>
-                </div>
-                {!showAddForm && (
-                    <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-200">
-                        <Plus size={14} />
-                        Nuevo
-                    </button>
-                )}
-            </div>
-
-            {showAddForm && (
-                <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-xl shadow-blue-500/5 p-5 space-y-4 animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
-                            <Plus size={16} className="text-[#2563EB]" />
-                            Crear Nuevo Administrador
-                        </h3>
-                        <button onClick={() => setShowAddForm(false)} className="text-slate-400 hover:text-red-500 transition-colors">
-                            <X size={20} />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <FieldLabel>Nombre Completo</FieldLabel>
-                            <div className="relative">
-                                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="text" className="admin-input pl-10" value={newUser.name}
-                                    onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} placeholder="Ej. Juan Pérez" />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <FieldLabel>Nombre de Usuario</FieldLabel>
-                            <div className="relative">
-                                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="text" className="admin-input pl-10" value={newUser.email}
-                                    onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} placeholder="usuario_ventas" />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <FieldLabel>Rol del Usuario</FieldLabel>
-                            <select
-                                className="admin-input cursor-pointer"
-                                value={newUser.role}
-                                onChange={e => setNewUser(p => ({ ...p, role: e.target.value }))}
-                            >
-                                <option value="vendedor">Vendedor (Soporte)</option>
-                                <option value="admin">Administrador (Control Total)</option>
-                            </select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <FieldLabel hint="Mínimo 6 caracteres">Contraseña</FieldLabel>
-                            <div className="relative">
-                                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="password" minLength={6} className="admin-input pl-10" value={newUser.password}
-                                    onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
-                            </div>
-                        </div>
-                        <div className="md:col-span-2 space-y-1.5">
-                            <FieldLabel>Confirmar Contraseña</FieldLabel>
-                            <div className="relative">
-                                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="password" minLength={6} className="admin-input pl-10" value={newUser.confirmPassword}
-                                    onChange={e => setNewUser(p => ({ ...p, confirmPassword: e.target.value }))} placeholder="••••••••" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                        <button onClick={() => setShowAddForm(false)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all">
-                            Cancelar
-                        </button>
-                        <button onClick={handleCreateAdmin} disabled={isSaving} className="flex-[2] py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-                            {isSaving ? <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" /> : <Save size={14} />}
-                            Crear Usuario
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                {isUsersLoading ? (
-                    <div className="py-12 flex flex-col items-center gap-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Cargando...</p>
-                    </div>
-                ) : adminUsers.length === 0 ? (
-                    <div className="py-12 text-center">
-                        <Users size={32} className="mx-auto text-slate-200 mb-2" />
-                        <p className="text-sm text-slate-400 font-medium">No hay otros administradores registrados.</p>
-                    </div>
-                ) : (
-                    <div className="divide-y divide-slate-100">
-                        {adminUsers.map((user) => (
-                            <div key={user.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] font-black text-xs">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-slate-800 text-sm truncate">{user.name}</p>
-                                        <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-[#2563EB] text-[9px] font-black uppercase tracking-wider">
-                                        {user.role}
-                                    </span>
-                                    <button onClick={() => handleDeleteAdmin(user.id, user.name)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3">
-                <Sliders size={18} className="text-[#2563EB] flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] text-[#2563EB] font-medium leading-relaxed">
-                    <strong>Sugerencia pro:</strong> Usa correos corporativos para una mejor organización. Todos los administradores creados aquí tendrán acceso completo a todas las funciones del sistema.
-                </p>
-            </div>
-        </div>
-    );
-
-    // ── Panel: Sistema ────────────────────────────────────────────────────────
-    if (activePanel === 'sistema') return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <PanelHeader title="Sistema" icon={<Bot size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-5 flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Bot size={20} className="text-violet-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-black text-sm text-slate-800">Verificación Automática IA</p>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            Analiza comprobantes de pago con Gemini Vision. Desactiva para revisión 100% manual por el administrador.
-                        </p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
-                        <input type="checkbox" checked={settings.autoVerificationEnabled}
-                            onChange={e => set('autoVerificationEnabled', e.target.checked)} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2563EB]"></div>
-                    </label>
-                </div>
-
-                <div className={`mx-4 mb-4 rounded-xl px-4 py-3 text-xs font-medium flex items-center gap-2 ${settings.autoVerificationEnabled ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'}`}>
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${settings.autoVerificationEnabled ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                    {settings.autoVerificationEnabled ? 'IA activa — Gemini verificará comprobantes automáticamente' : 'Modo manual — tú aprobarás cada pago desde el panel'}
-                </div>
-            </div>
-        </div>
-    );
-
-    // ── Main menu ─────────────────────────────────────────────────────────────
     return (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Configuración</h1>
-                <p className="text-sm text-slate-400 mt-0.5">Gestiona la identidad, pagos y contacto de tu página.</p>
-            </div>
-
-            {/* Sección: Personalizar */}
-            {admin?.role === 'admin' && (
-                <MenuSection title="Personalizar">
-                    <MenuRow
-                        icon={<Image size={17} className="text-violet-600" />}
-                        iconBg="bg-violet-100"
-                        label="Logo y Nombre"
-                        subtitle="Imagen y nombre de tu página"
-                        value={settings.siteName || '—'}
-                        onClick={() => setActivePanel('logo')}
-                    />
-                    <MenuRow
-                        icon={<Palette size={17} className="text-pink-600" />}
-                        iconBg="bg-pink-100"
-                        label="Colores de Marca"
-                        subtitle="Color primario y secundario"
-                        value={settings.primaryColor}
-                        onClick={() => setActivePanel('colores')}
-                        last
-                    />
-                </MenuSection>
-            )}
-
-            {/* Sección: Pagos */}
-            {admin?.role === 'admin' && (
-                <MenuSection title="Métodos de Pago">
-                    <MenuRow
-                        icon={<CreditCard size={17} className="text-blue-600" />}
-                        iconBg="bg-blue-100"
-                        label="Datos Bancarios SPEI"
-                        subtitle={settings.bankName || 'Sin configurar'}
-                        value={settings.clabe ? `****${settings.clabe.slice(-4)}` : '—'}
-                        onClick={() => setActivePanel('banco')}
-                        last
-                    />
-                </MenuSection>
-            )}
-
-            {/* Sección: Contacto */}
-            <MenuSection title="Contacto y Redes">
-                <MenuRow
-                    icon={<Phone size={17} className="text-emerald-600" />}
-                    iconBg="bg-emerald-100"
-                    label="Contacto y Soporte"
-                    subtitle="WhatsApp y email"
-                    value={settings.whatsapp || '—'}
-                    onClick={() => setActivePanel('contacto')}
-                />
-                <MenuRow
-                    icon={<Globe size={17} className="text-[#2563EB]" />}
-                    iconBg="bg-blue-100"
-                    label="Redes Sociales"
-                    subtitle="Instagram y Facebook"
-                    value={settings.instagram ? `@${settings.instagram.replace(/^@/, '')}` : '—'}
-                    onClick={() => setActivePanel('redes')}
-                    last
-                />
-            </MenuSection>
-
-            {/* Sección: Sistema */}
-            {admin?.role === 'admin' && (
-                <MenuSection title="Seguridad y Acceso">
-                    <MenuRow
-                        icon={<Users size={17} className="text-amber-600" />}
-                        iconBg="bg-amber-100"
-                        label="Usuarios del Sistema"
-                        subtitle="Administra accesos y permisos"
-                        onClick={() => setActivePanel('usuarios')}
-                    />
-                    <MenuRow
-                        icon={<Bot size={17} className="text-violet-600" />}
-                        iconBg="bg-violet-100"
-                        label="Verificación Automática IA"
-                        subtitle="Gemini Vision analiza comprobantes"
-                        value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'}
-                        onClick={() => setActivePanel('sistema')}
-                        last
-                    />
-                </MenuSection>
-            )}
-
-            {/* Guardar flotante - Solo Admin */}
-            {admin?.role === 'admin' && (
-                <div className="pt-2 pb-4">
-                    <button onClick={handleSave} disabled={isSaving}
-                        className="w-full py-4 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-3 touch-manipulation">
-                        {isSaving ? (
-                            <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />Guardando...</>
-                        ) : (
-                            <><Save size={16} />Guardar Todo</>
-                        )}
-                    </button>
-                </div>
-            )}
+        <div className="max-w-xl mx-auto pb-10">
+            <AnimatePresence mode="wait">
+                {renderContent()}
+            </AnimatePresence>
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
         </div>
     );
 };
