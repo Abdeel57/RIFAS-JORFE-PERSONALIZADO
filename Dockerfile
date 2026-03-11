@@ -13,6 +13,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
+# ── Build Frontend ─────────────────────────────────────────────────────────────
+WORKDIR /app/deprecated_frontend
+
+COPY deprecated_frontend/package*.json ./
+RUN npm install
+
+COPY deprecated_frontend/ ./
+RUN echo '{"apiUrl":"/api"}' > public/config.json
+RUN npm run build
+RUN mkdir -p ../backend/dist && mv dist ../backend/dist/frontend
+
 # ── Build Admin Panel ──────────────────────────────────────────────────────────
 WORKDIR /app/admin-panel
 

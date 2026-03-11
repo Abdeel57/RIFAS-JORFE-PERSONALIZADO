@@ -325,10 +325,10 @@ const Raffles = () => {
           };
           if (editingRaffle) {
             await adminService.updateRaffle(editingRaffle.id, submitData);
-            toast.success('✅ Rifa actualizada correctamente');
+            toast.success('Rifa actualizada correctamente');
           } else {
             await adminService.createRaffle(submitData);
-            toast.success('✅ Rifa creada correctamente');
+            toast.success('Rifa creada correctamente');
           }
           handleClose();
           loadRaffles();

@@ -104,9 +104,9 @@ const Purchases = () => {
     const env = (import.meta as any).env?.VITE_FRONTEND_URL;
     if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
 
-    // Si estamos en producción (Railway/Netlify), preferir siempre la URL real del frontend
+    // En producción: frontend en mismo dominio (/) → usar origin
     if (window.location.hostname !== 'localhost') {
-      return 'https://naorifas.netlify.app';
+      return window.location.origin;
     }
 
     const currentOrigin = window.location.origin;

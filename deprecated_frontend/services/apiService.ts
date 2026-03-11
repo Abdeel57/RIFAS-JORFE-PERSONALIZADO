@@ -1,9 +1,9 @@
 /**
  * Base URL del API:
  * 1. Se intenta cargar desde /config.json (mismo origen, cacheado 5 min) para no depender del build.
- * 2. Si falla, se usa VITE_API_URL del build (Netlify) o este fallback absoluto.
+ * 2. Si falla, se usa VITE_API_URL del build o fallback /api (same-origin).
  */
-const DEFAULT_API = 'https://paginas-production.up.railway.app/api';
+const DEFAULT_API = '/api';
 
 // ── In-memory cache con TTL ─────────────────────────────────────────────────
 interface CacheEntry<T> {

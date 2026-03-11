@@ -33,17 +33,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Ruta raíz para health checks y verificación simple
-app.get('/', (req, res) => {
-  console.log('🏠 [ROOT] Request reached root');
-  res.status(200).json({
-    status: 'ok',
-    message: 'Backend is running and reachable!',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV
-  });
-});
-
 // Health check - debe funcionar siempre, incluso si hay errores de configuración
 app.get('/health', (req, res) => {
   console.log('🏥 [HEALTH] Health check llamado');
@@ -85,9 +74,6 @@ if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
 }
 
-// Orígenes del frontend público (Netlify) — imprescindible para naorifas.netlify.app
-allowedOrigins.push('https://naorifas.netlify.app');
-allowedOrigins.push('http://naorifas.netlify.app');
 // Local y desarrollo
 allowedOrigins.push('http://localhost:3000');
 allowedOrigins.push('http://localhost:5173');
@@ -97,6 +83,7 @@ allowedOrigins.push('http://127.0.0.1:5173');
 // Agregar dinámicamente el host actual (Railway)
 if (process.env.RAILWAY_PUBLIC_DOMAIN) {
   allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+  allowedOrigins.push(`http://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
 }
 // Regex: permitir cualquier subdominio de netlify.app y railway.app
 const allowedOriginPatterns: RegExp[] = [/\.netlify\.app$/i, /\.railway\.app$/i];
@@ -250,6 +237,31 @@ app.get(['/admin', '/admin/*'], (req, res) => {
   });
 });
 
+// Servir archivos estáticos del frontend público (tienda de sorteos)
+const frontendPath = path.join(__dirname, 'frontend');
+if (fs.existsSync(frontendPath)) {
+  console.log('✅ Directorio frontend encontrado');
+  app.use('/', express.static(frontendPath, {
+    index: false,
+    maxAge: '1y',
+    etag: true,
+  }));
+  // Catch-all para SPA: rutas que no sean /api, /admin, /health sirven index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path === '/health' || req.path === '/test-logging') {
+      return next();
+    }
+    const indexPath = path.join(frontendPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        next(err);
+      }
+    });
+  });
+} else {
+  console.warn('❌ Directorio frontend NO encontrado en:', frontendPath);
+}
+
 // Error handler
 app.use(errorHandler);
 
@@ -286,7 +298,7 @@ const server = app.listen(Number(finalPort), '0.0.0.0', () => {
   }
 
   console.log(`📋 Rutas Principales:`);
-  console.log(`   - GET /`);
+  console.log(`   - GET /, /* (frontend público)`);
   console.log(`   - GET /health`);
   console.log(`   - GET /api/*`);
   console.log(`   - ALL /admin/*`);

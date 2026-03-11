@@ -322,7 +322,7 @@ const Settings: React.FC = () => {
                 try {
                     const response = await api.put('/settings', settings);
                     if (response.data?.success) {
-                        toast.success('✅ Configuración guardada');
+                        toast.success('Configuración guardada');
                     }
                 } catch { toast.error('Error al guardar'); }
                 finally { setIsSaving(false); }
