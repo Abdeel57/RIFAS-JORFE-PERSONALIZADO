@@ -245,16 +245,24 @@ const Raffles = () => {
     });
   };
 
-  // Lock scroll when modal is open
+  // Lock scroll cuando cualquier modal está abierto — tarjeta estática, fondo fijo
+  const scrollLockRef = useRef<number>(0);
+  const anyModalOpen = isModalOpen || !!viewingTicketsRaffle || !!winnerTarget || !!winnerModalRaffle;
   useEffect(() => {
-    if (isModalOpen || viewingTicketsRaffle || winnerTarget || winnerModalRaffle) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none'; // Evitar scroll lateral en móviles
+    if (anyModalOpen) {
+      scrollLockRef.current = window.scrollY;
+      document.body.classList.add('modal-open');
+      document.body.style.top = `-${scrollLockRef.current}px`;
     } else {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollLockRef.current);
     }
-  }, [isModalOpen, viewingTicketsRaffle, winnerTarget, winnerModalRaffle]);
+    return () => {
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+    };
+  }, [anyModalOpen]);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -262,16 +270,6 @@ const Raffles = () => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, []);
-
-  // Ocultar la barra de navegación inferior cuando el modal está abierto
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
-    }
-    return () => { document.body.classList.remove('modal-open'); };
-  }, [isModalOpen]);
 
   useEffect(() => { loadRaffles(); }, []);
 
@@ -726,7 +724,7 @@ const Raffles = () => {
 
               <StepBar current={wizardStep} />
 
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain -webkit-overflow-scrolling-touch">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={wizardStep}
@@ -767,13 +765,13 @@ const Raffles = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 min-w-0">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha del Sorteo</label>
-                          <div className="relative">
-                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                          <div className="relative min-w-0 overflow-hidden">
+                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                             <input type="datetime-local" value={formData.drawDate}
                               onChange={e => set('drawDate', e.target.value)}
-                              className="admin-input pl-11" />
+                              className="admin-input pl-11 w-full min-w-0 max-w-full" style={{ minWidth: 0 }} />
                           </div>
                         </div>
 
