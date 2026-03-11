@@ -6,7 +6,7 @@ import { adminService } from '../services/admin.service';
 import Skeleton from '../components/Skeleton';
 import {
   CheckCircle2, XCircle, Clock, MoreHorizontal, MessageSquare,
-  Eye, ChevronRight, DollarSign, User, AlertCircle, Loader2, Pencil, X, Search, ShoppingBag, RefreshCw
+  Eye, ChevronRight, DollarSign, User, AlertCircle, Loader2, Pencil, X, Search, ShoppingBag, RefreshCw, Phone, Save
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -276,6 +276,7 @@ const Dashboard = () => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [filter, setFilter] = useState<'pending' | 'all' | 'paid'>('pending');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<any>(null);
@@ -478,29 +479,74 @@ const Dashboard = () => {
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre del Cliente</label>
                   <div className="relative">
                     <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                    <input className="admin-input pl-11" defaultValue={editTarget.user?.name || ''} readOnly />
+                    <input
+                      className="admin-input pl-11"
+                      value={editTarget.user?.name || ''}
+                      onChange={e => setEditTarget({ ...editTarget, user: { ...editTarget.user, name: e.target.value } })}
+                    />
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
-                  <AlertCircle className="text-amber-500 flex-shrink-0" size={18} />
-                  <p className="text-[11px] text-amber-700 font-medium">Solo los administradores pueden modificar datos de contacto. Por favor verifique antes de cambiar el estado.</p>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono (WhatsApp)</label>
+                  <div className="relative">
+                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input
+                      className="admin-input pl-11"
+                      value={editTarget.user?.phone || ''}
+                      onChange={e => setEditTarget({ ...editTarget, user: { ...editTarget.user, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } })}
+                    />
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => setEditTarget(null)}
-                  className="w-full h-12 bg-blue-600 text-white rounded-2xl font-black text-sm transition-all active:scale-95 shadow-lg shadow-blue-100"
-                >
-                  Listo
-                </button>
+                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex gap-3">
+                  <AlertCircle className="text-blue-500 flex-shrink-0" size={18} />
+                  <p className="text-[11px] text-blue-700 font-medium leading-relaxed">
+                    Al modificar estos datos, se actualizarán en todas las órdenes actuales de este cliente.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setEditTarget(null)}
+                    className="flex-1 h-12 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setIsSaving(true);
+                        await adminService.updateUser(editTarget.user.id, {
+                          name: editTarget.user.name,
+                          phone: editTarget.user.phone
+                        });
+                        toast.success('Datos actualizados');
+                        loadData(filter);
+                        setEditTarget(null);
+                      } catch (e) {
+                        toast.error('Error al guardar cambios');
+                      } finally {
+                        setIsSaving(false);
+                      }
+                    }}
+                    disabled={isSaving}
+                    className="flex-[2] h-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                  >
+                    {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Guardar Cambios
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+
     </div>
   );
 };

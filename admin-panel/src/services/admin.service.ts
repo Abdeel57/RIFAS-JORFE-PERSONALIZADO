@@ -91,6 +91,11 @@ export const adminService = {
     return response.data.data;
   },
 
+  async updateUser(id: string, data: { name?: string; phone?: string; email?: string }) {
+    const response = await api.put(`/admin/users/${id}`, data);
+    return response.data.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

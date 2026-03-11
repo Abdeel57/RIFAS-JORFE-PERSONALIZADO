@@ -20,6 +20,7 @@ import {
 import {
     getUsers,
     getUserById,
+    updateUser as updateUserController,
 } from '../controllers/admin/user.controller';
 import {
     getAdmins,
@@ -64,6 +65,7 @@ router.put('/purchases/:id/status', updatePurchaseStatus);
 // Users (Raffle Participants)
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
+router.put('/users/:id', updateUserController);
 
 // Admin Users (Management) - SOLO ADMINS
 router.get('/admin-users', isAdmin, getAdmins);
