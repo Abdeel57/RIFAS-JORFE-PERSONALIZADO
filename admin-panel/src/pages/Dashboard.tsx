@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -43,6 +44,7 @@ const OrderCard = ({
   onSetPending,
   onRelease,
   onEdit,
+  onViewProof,
   paying,
 }: {
   purchase: any;
@@ -50,11 +52,11 @@ const OrderCard = ({
   onSetPending: (id: string) => void;
   onRelease: (id: string) => void;
   onEdit: (p: any) => void;
+  onViewProof: (p: any) => void;
   paying: string | null;
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [showProof, setShowProof] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const tickets: number[] = purchase.tickets?.map((t: any) => t.number) ?? [];
@@ -137,7 +139,7 @@ const OrderCard = ({
 
             {hasProof && (
               <button
-                onClick={() => setShowProof(true)}
+                onClick={() => onViewProof(purchase)}
                 className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-200 transition-colors shadow-sm active:scale-90"
               >
                 <Eye size={18} />
@@ -223,48 +225,6 @@ const OrderCard = ({
         </div>
       </div>
 
-      {/* Proof Viewer Overlay */}
-      <AnimatePresence>
-        {showProof && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowProof(false)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-sm w-full"
-            >
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comprobante</span>
-                <button onClick={() => setShowProof(false)} className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-colors">
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="max-h-[70vh] overflow-auto bg-slate-50 p-2 text-center">
-                {purchase.paymentProofUrl ? (
-                  <img src={purchase.paymentProofUrl} alt="Comprobante" className="w-full h-auto rounded-xl inline-block" />
-                ) : (
-                  <div className="p-10 text-slate-300">Sin imagen</div>
-                )}
-              </div>
-              <div className="p-4 flex gap-2">
-                <button
-                  onClick={() => { onPay(purchase); setShowProof(false); }}
-                  className="flex-1 bg-emerald-500 text-white h-12 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-emerald-100"
-                >
-                  Confirmar Pago
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };
@@ -280,6 +240,17 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<any>(null);
+  const [proofTarget, setProofTarget] = useState<any>(null);
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    if (editTarget || proofTarget) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [editTarget, proofTarget]);
 
   const loadData = async (f: string) => {
     setIsLoading(true);
@@ -494,6 +465,7 @@ const Dashboard = () => {
                     onSetPending={handleSetPending}
                     onRelease={handleRelease}
                     onEdit={(p) => setEditTarget(p)}
+                    onViewProof={(p) => setProofTarget(p)}
                     paying={paying}
                   />
                 ))}
@@ -503,49 +475,53 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Edit Modal (Lightweight) */}
+      {/* Edit Modal (Portal) */}
       <AnimatePresence>
-        {editTarget && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        {editTarget && createPortal(
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 h-[100dvh]">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setEditTarget(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setEditTarget(null)}
             />
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6"
+              initial={{ y: 50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 50, opacity: 0, scale: 0.95 }}
+              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-7 border border-white/20"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-black text-slate-800">Editar Datos</h3>
-                <button onClick={() => setEditTarget(null)} className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
-                  <X size={18} />
+                <h3 className="font-extrabold text-slate-800 tracking-tight">Editar Datos</h3>
+                <button
+                  onClick={() => setEditTarget(null)}
+                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 active:scale-90 transition-transform"
+                >
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre del Cliente</label>
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Cliente</label>
                   <div className="relative">
                     <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                     <input
-                      className="admin-input pl-11"
+                      className="admin-input pl-11 h-12"
                       value={editTarget.user?.name || ''}
                       onChange={e => setEditTarget({ ...editTarget, user: { ...editTarget.user, name: e.target.value } })}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono (WhatsApp)</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (WhatsApp)</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                     <input
-                      className="admin-input pl-11"
+                      className="admin-input pl-11 h-12"
+                      placeholder="10 dígitos"
                       value={editTarget.user?.phone || ''}
                       onChange={e => setEditTarget({ ...editTarget, user: { ...editTarget.user, phone: e.target.value.replace(/\D/g, '').slice(0, 10) } })}
                     />
@@ -555,11 +531,11 @@ const Dashboard = () => {
                 <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex gap-3">
                   <AlertCircle className="text-blue-500 flex-shrink-0" size={18} />
                   <p className="text-[11px] text-blue-700 font-medium leading-relaxed">
-                    Al modificar estos datos, se actualizarán en todas las órdenes actuales de este cliente.
+                    Cambios aplicados a todas las órdenes de este cliente.
                   </p>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-4">
                   <button
                     onClick={() => setEditTarget(null)}
                     className="flex-1 h-12 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
@@ -587,18 +563,88 @@ const Dashboard = () => {
                     className="flex-[2] h-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
                   >
                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                    Guardar Cambios
+                    Guardar
                   </button>
                 </div>
               </div>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 
+      {/* Proof Viewer Overlay (Portal) */}
+      <AnimatePresence>
+        {proofTarget && createPortal(
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 pt-safe pb-safe h-[100dvh]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/90 backdrop-blur-md"
+              onClick={() => setProofTarget(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-2xl max-w-sm w-full border border-white/20 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none">Comprobante</span>
+                  <span className="text-[11px] font-bold text-slate-800 mt-1 truncate max-w-[200px]">{proofTarget.user?.name}</span>
+                </div>
+                <button
+                  onClick={() => setProofTarget(null)}
+                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 active:scale-90 transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
+              <div className="flex-1 overflow-y-auto bg-slate-50 p-4 text-center custom-scrollbar-light">
+                {proofTarget.paymentProofUrl ? (
+                  <img
+                    src={proofTarget.paymentProofUrl}
+                    alt="Comprobante"
+                    className="w-full h-auto rounded-2xl shadow-sm inline-block border border-slate-200"
+                  />
+                ) : (
+                  <div className="py-20 flex flex-col items-center gap-3 text-slate-300">
+                    <Eye size={40} className="opacity-20" />
+                    <p className="text-xs font-black uppercase tracking-widest">Sin imagen</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-5 bg-white border-t border-slate-50 flex flex-col gap-3 shrink-0">
+                {!isPaidStatus(proofTarget.status) && (
+                  <button
+                    onClick={() => { handlePay(proofTarget); setProofTarget(null); }}
+                    className="w-full bg-emerald-500 text-white h-14 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-2"
+                  >
+                    <DollarSign size={18} />
+                    Confirmar Pago
+                  </button>
+                )}
+                <button
+                  onClick={() => setProofTarget(null)}
+                  className="w-full bg-slate-100 text-slate-500 h-12 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </div>,
+          document.body
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+// Helper para evitar redundancia
+const isPaidStatus = (s: string) => s === 'paid';
 
 export default Dashboard;
