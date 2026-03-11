@@ -10,7 +10,7 @@ import Skeleton from '../components/Skeleton';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
-  MoreVertical, Trophy, Sliders, FileSpreadsheet, Download,
+  MoreVertical, Trophy, Sliders, FileSpreadsheet, Download, RefreshCw, Save,
   Dice5, UserCheck, Play, RotateCcw, AlertCircle, Sparkles
 } from 'lucide-react';
 
@@ -102,21 +102,22 @@ const ImageField: React.FC<{
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="space-y-2"
+            className="space-y-3"
           >
-            <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video">
-              <img src={value} alt="preview" className="w-full h-full object-cover"
+            <div className="relative rounded-[1.5rem] overflow-hidden border border-slate-100 bg-slate-50 shadow-inner group aspect-video">
+              <img src={value} alt="preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 onError={e => (e.currentTarget.style.display = 'none')} />
+              <div className="absolute inset-0 bg-slate-900/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-                className="flex-1 flex items-center justify-center gap-2 min-h-[40px] bg-blue-50 hover:bg-blue-100 active:scale-95 text-[#2563EB] rounded-xl text-xs font-bold transition-all disabled:opacity-50">
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {uploading ? 'Subiendo...' : 'Cambiar imagen'}
+                className="flex-1 flex items-center justify-center gap-2 min-h-[44px] bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-slate-200">
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {uploading ? 'PROCESANDO...' : 'CAMBIAR'}
               </button>
               <button type="button" onClick={() => onChange('')}
-                className="min-h-[40px] px-3 bg-red-50 hover:bg-red-100 active:scale-95 text-red-500 rounded-xl transition-all">
-                <X size={16} />
+                className="min-h-[44px] px-4 bg-red-50 hover:bg-red-100 active:scale-95 text-red-500 rounded-xl transition-all border border-red-100/50 shadow-sm">
+                <Trash2 size={16} />
               </button>
             </div>
           </motion.div>
@@ -127,15 +128,21 @@ const ImageField: React.FC<{
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-            className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 hover:border-blue-300 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full aspect-video border-2 border-dashed border-slate-100 rounded-[1.5rem] flex flex-col items-center justify-center gap-3 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 group active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {uploading ? (
-              <Loader2 size={24} className="animate-spin text-blue-400" />
-            ) : (
-              <Upload size={22} className="text-slate-300" />
-            )}
-            <span className="text-xs font-bold text-slate-400">{uploading ? 'Subiendo...' : 'Toca para subir imagen'}</span>
-            <span className="text-[10px] text-slate-300">JPG, PNG, WebP</span>
+            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+              {uploading ? (
+                <Loader2 size={20} className="animate-spin text-blue-500" />
+              ) : (
+                <Plus size={22} className="text-slate-300" />
+              )}
+            </div>
+            <div className="text-center">
+              <span className="block text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                {uploading ? 'Subiendo...' : 'Agregar Imagen'}
+              </span>
+              <span className="text-[10px] font-bold text-slate-300">Formato: 16:9</span>
+            </div>
           </motion.button>
         )}
       </AnimatePresence>
@@ -241,8 +248,10 @@ const Raffles = () => {
   useEffect(() => {
     if (isModalOpen || viewingTicketsRaffle || winnerTarget || winnerModalRaffle) {
       document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none'; // Evitar scroll lateral en móviles
     } else {
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
   }, [isModalOpen, viewingTicketsRaffle, winnerTarget, winnerModalRaffle]);
 
@@ -638,44 +647,50 @@ const Raffles = () => {
       {/* ── MODAL ─────────────────────────────────────────── */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10"
+              initial={{ y: '100%', opacity: 0.5, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: '100%', opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 400, mass: 0.8 }}
+              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10 border border-white/20"
             >
               {/* Modal Header */}
-              <div className="flex items-center gap-3 px-5 pt-5 pb-0 shrink-0">
+              <div className="flex items-center gap-4 px-6 pt-6 pb-2 shrink-0">
                 {wizardStep !== 'info' ? (
                   <button onClick={prevStep}
-                    className="w-10 h-10 min-w-[44px] min-h-[44px] bg-slate-100 hover:bg-slate-200 active:scale-90 rounded-xl flex items-center justify-center text-slate-600 transition-all flex-shrink-0">
-                    <ArrowLeft size={18} />
+                    className="w-11 h-11 bg-slate-50 hover:bg-slate-100 active:scale-90 rounded-2xl flex items-center justify-center text-slate-400 transition-all flex-shrink-0 group">
+                    <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
                   </button>
                 ) : (
-                  <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Ticket size={18} className="text-[#2563EB]" />
+                  <div className="w-11 h-11 flex-shrink-0 rounded-2xl bg-blue-50 flex items-center justify-center">
+                    <Trophy size={20} className="text-[#2563EB]" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-black text-slate-800 leading-tight">
+                  <h3 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none mb-1">
                     {editingRaffle ? 'Editar Rifa' : 'Nueva Rifa'}
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-medium">
-                    Paso {steps.findIndex(s => s.id === wizardStep) + 1} de {steps.length}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                      Paso {steps.findIndex(s => s.id === wizardStep) + 1} de {steps.length}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-300">•</span>
+                    <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">
+                      {steps.find(s => s.id === wizardStep)?.label}
+                    </span>
+                  </div>
                 </div>
                 <button onClick={handleClose}
-                  className="w-10 h-10 min-w-[44px] min-h-[44px] bg-slate-100 hover:bg-slate-200 active:scale-90 rounded-xl flex items-center justify-center text-slate-500 transition-all flex-shrink-0">
-                  <X size={18} />
+                  className="w-11 h-11 bg-slate-50 hover:bg-slate-100 active:scale-90 rounded-2xl flex items-center justify-center text-slate-400 transition-all flex-shrink-0">
+                  <X size={20} />
                 </button>
               </div>
 
@@ -793,18 +808,25 @@ const Raffles = () => {
                             className="admin-input" />
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {(['active', 'completed'] as const).map(status => (
-                              <button key={status} type="button"
-                                onClick={() => set('status', status)}
-                                className={`min-h-[44px] rounded-xl text-sm font-bold transition-all active:scale-95 border-2 ${formData.status === status
-                                  ? status === 'active' ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-600 text-white border-slate-500'
-                                  : 'bg-white text-slate-500 border-slate-200'}`}>
-                                {status === 'active' ? '● Activa' : '○ Completada'}
-                              </button>
-                            ))}
+                        <div className="space-y-1.5 pt-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado de la Rifa</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button key="active" type="button"
+                              onClick={() => set('status', 'active')}
+                              className={`h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 flex items-center justify-center gap-2 ${formData.status === 'active'
+                                ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+                              <div className={`w-2 h-2 rounded-full ${formData.status === 'active' ? 'bg-blue-500 animate-pulse' : 'bg-slate-300'}`} />
+                              Activa
+                            </button>
+                            <button key="completed" type="button"
+                              onClick={() => set('status', 'completed')}
+                              className={`h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 flex items-center justify-center gap-2 ${formData.status === 'completed'
+                                ? 'bg-slate-900 text-white border-slate-800 shadow-lg shadow-slate-200'
+                                : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+                              <CheckCircle2 size={16} className={formData.status === 'completed' ? 'text-emerald-400' : 'text-slate-300'} />
+                              Finalizada
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -813,23 +835,26 @@ const Raffles = () => {
                 </AnimatePresence>
               </div>
 
-              <div className="px-5 py-4 border-t border-slate-100 bg-white shrink-0 space-y-2">
-                {wizardStep !== 'config' ? (
-                  <button type="button" onClick={nextStep} disabled={!canGoNext()}
-                    className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase transition-all">
-                    Siguiente <ChevronRight size={18} />
+              <div className="p-6 border-t border-slate-50 bg-white shrink-0">
+                <div className="flex gap-3">
+                  <button type="button" onClick={handleClose}
+                    className="flex-1 h-14 bg-slate-50 hover:bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all active:scale-95">
+                    Cerrar
                   </button>
-                ) : (
-                  <button type="button" onClick={handleSubmit} disabled={!canSubmit() || isSaving}
-                    className="w-full flex items-center justify-center gap-2 min-h-[52px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 disabled:opacity-40 text-white font-black rounded-2xl text-sm uppercase transition-all">
-                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                    {isSaving ? 'Guardando...' : editingRaffle ? 'Guardar Cambios' : 'Crear Rifa'}
-                  </button>
-                )}
-                <button type="button" onClick={handleClose}
-                  className="w-full min-h-[44px] bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl text-sm transition-all">
-                  Cancelar
-                </button>
+                  {wizardStep !== 'config' ? (
+                    <button type="button" onClick={nextStep} disabled={!canGoNext()}
+                      className="flex-[2] flex items-center justify-center gap-2 h-14 bg-[#2563EB] hover:bg-blue-700 active:scale-95 disabled:opacity-40 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-blue-100">
+                      Siguiente
+                      <ChevronRight size={18} />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={handleSubmit} disabled={!canSubmit() || isSaving}
+                      className="flex-[2] flex items-center justify-center gap-2 h-14 bg-emerald-500 hover:bg-emerald-600 active:scale-95 disabled:opacity-40 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-emerald-100">
+                      {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                      {isSaving ? 'GUARDANDO...' : editingRaffle ? 'GUARDAR' : 'CREAR'}
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
