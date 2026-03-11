@@ -25,10 +25,10 @@ else
 fi
 
 echo "=== STARTUP: seeding admin ==="
-if node dist/scripts/seed.js 2>/dev/null; then
+if node dist/scripts/seed.js; then
   echo "=== STARTUP: seed ok ==="
 else
-  echo "=== STARTUP: seed skipped or failed (continuing) ==="
+  echo "=== STARTUP: seed failed (revisa logs arriba) - continuando ==="
 fi
 
 echo "=== STARTUP: launching node ==="

@@ -5,7 +5,7 @@ cmds = ["npm install"]
 cmds = ["npm run prisma:generate", "npm run build"]
 
 [start]
-cmd = "node dist/scripts/resolve-failed-migration.js && npx prisma migrate deploy && node dist/index.js"
+cmd = "node dist/scripts/resolve-failed-migration.js && npx prisma migrate deploy && node dist/scripts/seed.js && node dist/index.js"
 
 [variables]
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
