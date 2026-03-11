@@ -5,32 +5,18 @@ import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const GAP = 8;       // gap-2 = 8px between items/rows
-const OVERSCAN = 3;  // Reduced buffer to prevent over-rendering large chunks
-
+const GAP = 8;
+const OVERSCAN = 3;
 
 /**
- * Determines optimal column count, font size and aspect ratio based on:
- * - containerWidth: measured inner width of the scroll container (px)
- * - maxTickets: total tickets → determines digit count
- *
- * 5-digit numbers get wide rectangular buttons (aspectRatio 2.5:1) with fewer
- * columns so each number has generous horizontal space and is easy to read.
- * ≤4-digit numbers keep the original square (1:1) layout.
+ * Determines optimal column count, font size and aspect ratio.
  */
 function computeLayout(
   containerWidth: number,
   maxTickets: number,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
-
-  // Siempre usamos el diseño cuadrado (aspectRatio: 1) que le gusta al usuario.
-  // Eliminamos la lógica que cambiaba a botones rectangulares para 5 dígitos,
-  // manteniendo la consistencia visual al cambiar entre rifas.
   const aspectRatio = 1;
-
-  // Ajustamos el tamaño mínimo recomendado según los dígitos para legibilidad,
-  // pero manteniendo el mismo rango de columnas preferido.
   const minBtnSize = digits >= 7 ? 54 : digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
 
   const preferred =
@@ -45,8 +31,6 @@ function computeLayout(
   }
 
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
-
-  // Fuente adaptativa: un poco más pequeña si hay muchos dígitos para que quepa en el cuadrado
   let fontSize = '9px';
   if (digits >= 7) {
     fontSize = btnW >= 80 ? '10px' : btnW >= 58 ? '9px' : '8px';
@@ -59,12 +43,11 @@ function computeLayout(
   return { cols, fontSize, aspectRatio };
 }
 
-// ─── TicketItem (memoized — never re-renders unless its own props change) ─────
+// ─── TicketItem ──────────────────────────────────────────────────────────────
 const TicketItem = React.memo(({
   number,
   status,
   isSelected,
-  isHighlighted,
   isLucky,
   fontSize,
   aspectRatio,
@@ -73,7 +56,6 @@ const TicketItem = React.memo(({
   number: number;
   status: string;
   isSelected: boolean;
-  isHighlighted: boolean;
   isLucky: boolean;
   fontSize: string;
   aspectRatio: number;
@@ -81,7 +63,6 @@ const TicketItem = React.memo(({
 }) => {
   const isUnavailable = status === 'sold' || status === 'reserved';
 
-  // Memoize padded number to avoid recalculating on scroll
   const padded = useMemo(() => {
     if (number <= 999) return number.toString().padStart(3, '0');
     if (number <= 9999) return number.toString().padStart(4, '0');
@@ -92,7 +73,6 @@ const TicketItem = React.memo(({
 
   return (
     <button
-      id={`ticket-${number}`}
       onClick={() => onClick(number, status)}
       disabled={isUnavailable}
       style={{ width: '100%', aspectRatio: `${aspectRatio} / 1`, fontSize }}
@@ -107,76 +87,11 @@ const TicketItem = React.memo(({
               ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce'
               : isSelected
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10'
-                : isHighlighted
-                  ? 'bg-blue-50 text-blue-600 border border-blue-200 scale-105'
-                  : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
+                : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
       `}
     >
       {padded}
     </button>
-  );
-});
-
-// ─── VirtualRow Component (Extreme optimization for large lists) ──────────────
-const VirtualRow = React.memo(({
-  index,
-  columnsCount,
-  totalTickets,
-  statusMap,
-  selectedSet,
-  highlightedTicket,
-  lastLuckyNumbers,
-  ticketFontSize,
-  ticketAspectRatio,
-  toggleTicket,
-  measureElement,
-  virtualItem
-}: any) => {
-  const startNum = index * columnsCount + 1;
-  const rowItems = [];
-  for (let i = 0; i < columnsCount; i++) {
-    const num = startNum + i;
-    if (num <= totalTickets) {
-      rowItems.push({
-        number: num,
-        status: statusMap.get(num) || 'available'
-      });
-    }
-  }
-
-  return (
-    <div
-      data-index={index}
-      ref={measureElement}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        transform: `translateY(${virtualItem.start}px)`,
-        paddingBottom: `${GAP}px`,
-      }}
-    >
-      <div style={{ display: 'flex', gap: `${GAP}px` }}>
-        {rowItems.map(ticket => (
-          <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
-            <TicketItem
-              number={ticket.number}
-              status={ticket.status}
-              isSelected={selectedSet.has(ticket.number)}
-              isHighlighted={highlightedTicket === ticket.number}
-              isLucky={lastLuckyNumbers.includes(ticket.number)}
-              fontSize={ticketFontSize}
-              aspectRatio={ticketAspectRatio}
-              onClick={toggleTicket}
-            />
-          </div>
-        ))}
-        {rowItems.length < columnsCount && Array.from({ length: columnsCount - rowItems.length }).map((_, i) => (
-          <div key={`empty-${i}`} style={{ flex: 1, minWidth: 0 }} />
-        ))}
-      </div>
-    </div>
   );
 });
 
@@ -197,7 +112,6 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   pricePerTicket,
   onCheckout,
   refreshTrigger,
-  isVirtual = false,
 }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -207,8 +121,12 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [lastLuckyNumbers, setLastLuckyNumbers] = useState<number[]>([]);
   const [statusMap, setStatusMap] = useState<Map<number, string>>(new Map());
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
+  const [discoveryTickets, setDiscoveryTickets] = useState<number[]>([]);
+  const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(false);
 
-  // ── Layout measurement (columns + font size + aspect ratio adapt to width) ─
+  // Modo Descubrimiento si > 100,000 boletos
+  const isDiscoveryMode = totalTickets > 100000;
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [columnsCount, setColumnsCount] = useState(10);
   const [rowHeight, setRowHeight] = useState(52);
@@ -222,7 +140,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     const recalculate = (width: number) => {
       const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets);
       const itemW = (width - (cols - 1) * GAP) / cols;
-      const itemH = itemW / aspectRatio; // height derived from aspect ratio
+      const itemH = itemW / aspectRatio;
       setColumnsCount(cols);
       setRowHeight(Math.ceil(itemH) + GAP);
       setTicketFontSize(fontSize);
@@ -233,9 +151,28 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     observer.observe(container);
     recalculate(container.clientWidth || 300);
     return () => observer.disconnect();
-  }, [totalTickets]); // re-run if totalTickets changes (different raffle)
+  }, [totalTickets]);
 
-  // ── Load tickets ──────────────────────────────────────────────────────────
+  // ── Generador de boletos al azar 100% disponibles ────────────────────────
+  const generateRandomDiscovery = useCallback((currentMap: Map<number, string>) => {
+    setIsDiscoveryLoading(true);
+    const count = 1000;
+    const randoms: number[] = [];
+    let attempts = 0;
+    const maxAttempts = 15000;
+
+    while (randoms.length < count && attempts < maxAttempts) {
+      attempts++;
+      const num = Math.floor(Math.random() * totalTickets) + 1;
+      if (!randoms.includes(num) && (currentMap.get(num) || 'available') === 'available') {
+        randoms.push(num);
+      }
+    }
+    setDiscoveryTickets(randoms.sort((a, b) => a - b));
+    setTimeout(() => setIsDiscoveryLoading(false), 300);
+  }, [totalTickets]);
+
+  // Load tickets
   useEffect(() => {
     if (!raffleId) return;
     setIsLoadingTickets(true);
@@ -244,6 +181,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         const tickets = await apiService.getRaffleTickets(raffleId);
         const map = new Map<number, string>(tickets.map((t: any) => [t.number, t.status]));
         setStatusMap(map);
+        if (isDiscoveryMode) generateRandomDiscovery(map);
       } catch {
         setStatusMap(new Map());
       } finally {
@@ -251,10 +189,63 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       }
     };
     load();
-  }, [raffleId, totalTickets, refreshTrigger]);
+  }, [raffleId, totalTickets, refreshTrigger, isDiscoveryMode, generateRandomDiscovery]);
 
-  // ── Virtualizer setup ─────────────────────────────────────────────────────
-  const totalRows = Math.ceil(totalTickets / columnsCount);
+  // ── Búsqueda Inteligente ──
+  const searchResults = useMemo(() => {
+    if (!searchTerm || searchTerm.trim().length < 1) return null;
+    const term = searchTerm.trim();
+    const results: number[] = [];
+    const maxResults = 1000;
+
+    // Exacto
+    const exact = parseInt(term);
+    if (!isNaN(exact) && exact >= 1 && exact <= totalTickets) {
+      if ((statusMap.get(exact) || 'available') === 'available') {
+        results.push(exact);
+      }
+    }
+
+    // Terminaciones y similares
+    const suffixNum = parseInt(term);
+    if (!isNaN(suffixNum)) {
+      const step = Math.pow(10, term.length);
+      for (let base = 0; base < totalTickets && results.length < maxResults; base += step) {
+        const candidate = base + suffixNum;
+        if (candidate >= 1 && candidate <= totalTickets && candidate !== exact) {
+          if ((statusMap.get(candidate) || 'available') === 'available') {
+            if (!results.includes(candidate)) results.push(candidate);
+          }
+        }
+      }
+    }
+
+    // Prefijos
+    if (term.length > 0 && results.length < maxResults) {
+      for (let k = 0; k <= (7 - term.length); k++) {
+        const base = parseInt(term) * Math.pow(10, k);
+        const nextBase = (parseInt(term) + 1) * Math.pow(10, k);
+        for (let num = base; num < nextBase && num <= totalTickets && results.length < maxResults; num++) {
+          if (num >= 1 && (statusMap.get(num) || 'available') === 'available') {
+            if (!results.includes(num)) results.push(num);
+          }
+        }
+      }
+    }
+
+    return results.sort((a, b) => a - b);
+  }, [searchTerm, totalTickets, statusMap]);
+
+  // Qué renderizar
+  const ticketsToRender = useMemo(() => {
+    if (searchResults !== null) return searchResults;
+    if (isDiscoveryMode) return discoveryTickets;
+    return null; // El virtualizer mapeará el rango 1...totalTickets
+  }, [searchResults, isDiscoveryMode, discoveryTickets]);
+
+  const totalItemsCount = ticketsToRender !== null ? ticketsToRender.length : totalTickets;
+  const totalRows = Math.ceil(totalItemsCount / columnsCount);
+
   const virtualizer = useVirtualizer({
     count: totalRows,
     getScrollElement: () => scrollContainerRef.current,
@@ -262,15 +253,12 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     overscan: OVERSCAN,
   });
 
-  // Update size estimates when rowHeight changes (e.g. on window resize)
   useEffect(() => {
-    virtualizer.measure();
-  }, [rowHeight]);
+    virtualizer.scrollToIndex(0);
+  }, [ticketsToRender?.length]);
 
-  // ── O(1) selection lookup ─────────────────────────────────────────────────
   const selectedSet = useMemo(() => new Set(selectedTickets), [selectedTickets]);
 
-  // ── Toggle ticket selection ───────────────────────────────────────────────
   const toggleTicket = useCallback((num: number, status: string) => {
     if (status !== 'available' || isAnimating) return;
     setSelectedTickets(prev => {
@@ -283,7 +271,6 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     });
   }, [isAnimating]);
 
-  // ── Lucky machine ─────────────────────────────────────────────────────────
   const runLuckyMachine = (count: number) => {
     setIsMachineOpen(false);
     setIsAnimating(true);
@@ -291,20 +278,15 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     soundService.playMachineRoll();
 
     setTimeout(() => {
-      // Para optimizar en 1M, no filtramos TODO el array. 
-      // Buscamos números al azar hasta encontrar 'count' disponibles.
       const lucky: number[] = [];
       let attempts = 0;
-      const maxAttempts = 1000; // seguridad
-
-      while (lucky.length < count && attempts < maxAttempts) {
+      while (lucky.length < count && attempts < 2000) {
         attempts++;
         const num = Math.floor(Math.random() * totalTickets) + 1;
         if (!selectedSet.has(num) && (statusMap.get(num) || 'available') === 'available') {
           if (!lucky.includes(num)) lucky.push(num);
         }
       }
-
       setLastLuckyNumbers(lucky);
       setSelectedTickets(prev => [...prev, ...lucky]);
       setIsAnimating(false);
@@ -313,146 +295,142 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     }, 1200);
   };
 
-  // ── Search ────────────────────────────────────────────────────────────────
-  const highlightedTicket = useMemo(() => {
-    const num = parseInt(searchTerm);
-    return !isNaN(num) && num >= 1 && num <= totalTickets ? num : null;
-  }, [searchTerm, totalTickets]);
-
-  // Scroll virtualizer to the searched ticket's row instantly
-  useEffect(() => {
-    if (!highlightedTicket) return;
-    const rowIndex = Math.floor((highlightedTicket - 1) / columnsCount);
-    virtualizer.scrollToIndex(rowIndex, { align: 'center', behavior: 'smooth' });
-  }, [highlightedTicket, columnsCount]);
-
-  useEffect(() => {
-    if (selectedTickets.length === 0) setIsTrayExpanded(false);
-  }, [selectedTickets]);
-
   const totalPrice = selectedTickets.length * pricePerTicket;
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-5 md:p-8 space-y-6 relative transition-all duration-300">
-
+    <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-5 md:p-8 space-y-6 relative overflow-hidden">
       {isAnimating && (
-        <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300 rounded-[2rem]">
+        <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
           <div className="text-5xl animate-bounce mb-4">🎰</div>
-          <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">
-            BUSCANDO TU SUERTE...
-          </h3>
+          <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">BUSCANDO TU SUERTE...</h3>
         </div>
       )}
 
       <div className="text-center">
         <h2 className="text-xl font-black text-slate-800 tracking-tight">Elige tus Boletos</h2>
-        <div className="flex items-center justify-center gap-2 mt-0.5">
-          <p className="text-slate-400 text-xs font-medium">Pulsa los números para elegir</p>
-          {isVirtual && (
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100 animate-pulse">
-              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-3H8v-3h3V7.5L16.5 12 11 16.5z" /></svg>
-              Optimizado
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Search + Lucky machine */}
-      <div className="flex gap-2">
-        <div className="relative flex-grow">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-300">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </span>
-          <input
-            type="number"
-            placeholder="Ej. 777"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-base font-bold text-slate-600"
-          />
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
-            className={`h-full px-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group
-              ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
-          >
-            {!isMachineOpen && (
-              <div className="absolute inset-0 bg-[length:300%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" style={{
-                backgroundImage: 'linear-gradient(90deg, #ff0000, #ff6600, #ffdd00, #00cc00, #0088ff, #6600ff, #ff0099, #ff0000)',
-              }} />
-            )}
-            <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
-              🎰 <span className="hidden sm:inline">Suerte</span>
-            </span>
-          </button>
-
-          {isMachineOpen && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
-              {[1, 5, 10, 20].map(qty => (
-                <button
-                  key={qty}
-                  onClick={() => runLuckyMachine(qty)}
-                  className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all"
-                >
-                  +{qty}
-                </button>
-              ))}
+        <div className="flex flex-col items-center gap-1 mt-1">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            {isDiscoveryMode ? 'Modo de Selección Inteligente' : 'Pulsa los números para elegir'}
+          </p>
+          {isDiscoveryMode && (
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100">
+                1M Boletos Optimizado
+              </span>
+              <span className="text-[9px] font-bold text-slate-300">
+                Libres: {totalItemsCount} disponibles
+              </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Virtual ticket grid */}
-      {isLoadingTickets ? (
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <div className="relative flex-grow">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-300">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </span>
+            <input
+              type="text"
+              placeholder={isDiscoveryMode ? "Busca terminaciones ej. '777'..." : "Busca un número..."}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-base font-bold text-slate-600"
+            />
+          </div>
+
+          {!searchTerm && isDiscoveryMode && (
+            <button
+              onClick={() => { soundService.playSelect(); generateRandomDiscovery(statusMap); }}
+              className="h-[52px] bg-white border border-slate-100 px-4 rounded-2xl flex items-center gap-2 hover:bg-slate-50 transition-all active:scale-95 group shadow-sm"
+            >
+              <div className={isDiscoveryLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}>
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline">Regenerar</span>
+            </button>
+          )}
+
+          <div className="relative">
+            <button
+              onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
+              className={`h-[52px] px-4 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
+            >
+              {!isMachineOpen && <div className="absolute inset-0 bg-[length:300%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" style={{ backgroundImage: 'linear-gradient(90deg, #ff0000, #ff6600, #ffdd00, #00cc00, #0088ff, #6600ff, #ff0099, #ff0000)' }} />}
+              <span className="relative z-10 flex items-center gap-2 drop-shadow-md">🎰 <span className="hidden sm:inline">Suerte</span></span>
+            </button>
+            {isMachineOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
+                {[5, 10, 20, 50].map(qty => (
+                  <button key={qty} onClick={() => runLuckyMachine(qty)} className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all">+{qty}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {searchTerm && (
+          <div className="px-1 flex items-center justify-between">
+            <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest italic">Resultados para "{searchTerm}" (Solo disponibles)</span>
+            <button onClick={() => setSearchTerm('')} className="text-[9px] font-black text-slate-300 hover:text-red-400">Limpiar ×</button>
+          </div>
+        )}
+      </div>
+
+      {isLoadingTickets || isDiscoveryLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
-          <p className="text-slate-400 text-xs font-bold animate-pulse">
-            Preparando {totalTickets.toLocaleString()} boletos...
-          </p>
+          <p className="text-slate-400 text-xs font-bold animate-pulse">Cargando boletos...</p>
         </div>
       ) : (
-        /* Scroll container — this is what the virtualizer watches */
-        <div
-          ref={scrollContainerRef}
-          className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
-          {/* Inner div sized to the TOTAL virtual height — creates the scrollbar track */}
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {/* Only the visible rows are rendered */}
-            {virtualizer.getVirtualItems().map(virtualRow => (
-              <VirtualRow
-                key={virtualRow.key}
-                index={virtualRow.index}
-                virtualItem={virtualRow}
-                columnsCount={columnsCount}
-                totalTickets={totalTickets}
-                statusMap={statusMap}
-                selectedSet={selectedSet}
-                highlightedTicket={highlightedTicket}
-                lastLuckyNumbers={lastLuckyNumbers}
-                ticketFontSize={ticketFontSize}
-                ticketAspectRatio={ticketAspectRatio}
-                toggleTicket={toggleTicket}
-                measureElement={virtualizer.measureElement}
-              />
-            ))}
+        <div ref={scrollContainerRef} className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+            {virtualizer.getVirtualItems().map(virtualRow => {
+              const startIdx = virtualRow.index * columnsCount;
+              const rowItems = [];
+              for (let i = 0; i < columnsCount; i++) {
+                const globalIdx = startIdx + i;
+                if (ticketsToRender !== null) {
+                  if (globalIdx < ticketsToRender.length) {
+                    const num = ticketsToRender[globalIdx];
+                    rowItems.push({ number: num, status: statusMap.get(num) || 'available' });
+                  }
+                } else {
+                  const num = globalIdx + 1;
+                  if (num <= totalTickets) {
+                    rowItems.push({ number: num, status: statusMap.get(num) || 'available' });
+                  }
+                }
+              }
+
+              return (
+                <div key={virtualRow.key} data-index={virtualRow.index} ref={virtualizer.measureElement} style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)`, paddingBottom: `${GAP}px` }}>
+                  <div style={{ display: 'flex', gap: `${GAP}px` }}>
+                    {rowItems.map(ticket => (
+                      <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
+                        <TicketItem
+                          number={ticket.number}
+                          status={ticket.status}
+                          isSelected={selectedSet.has(ticket.number)}
+                          isLucky={lastLuckyNumbers.includes(ticket.number)}
+                          fontSize={ticketFontSize}
+                          aspectRatio={ticketAspectRatio}
+                          onClick={toggleTicket}
+                        />
+                      </div>
+                    ))}
+                    {rowItems.length < columnsCount && Array.from({ length: columnsCount - rowItems.length }).map((_, i) => (
+                      <div key={`empty-${i}`} style={{ flex: 1, minWidth: 0 }} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-4 px-1 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-100 rounded-full" /><span>Libre</span></div>
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-600 rounded-full" /><span>Mío</span></div>
@@ -460,73 +438,34 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-50 rounded-full opacity-50" /><span>Vendido</span></div>
       </div>
 
-      {/* Selected tickets tray */}
       {selectedTickets.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] px-4 pb-4 animate-in slide-in-from-bottom-5 will-change-transform">
-          <div
-            className="max-w-md mx-auto bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[2rem] overflow-hidden transition-all duration-300 ease-out"
-            style={{ maxHeight: isTrayExpanded ? '50vh' : '72px' }}
-          >
-            <div
-              onClick={() => setIsTrayExpanded(!isTrayExpanded)}
-              className="px-4 py-2.5 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors"
-            >
+        <div className="fixed bottom-0 left-0 right-0 z-[60] px-4 pb-4 animate-in slide-in-from-bottom-5">
+          <div className="max-w-md mx-auto bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-[2rem] overflow-hidden transition-all duration-300" style={{ maxHeight: isTrayExpanded ? '50vh' : '72px' }}>
+            <div onClick={() => setIsTrayExpanded(!isTrayExpanded)} className="px-4 py-2.5 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors">
               <div className="flex flex-col pl-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-                  Total a pagar
-                </span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total a pagar</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-800 font-black text-xl tracking-tighter">
-                    ${totalPrice.toLocaleString()}
-                  </span>
-                  <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-0.5 rounded-full">
-                    {selectedTickets.length} boleto(s)
-                  </span>
+                  <span className="text-slate-800 font-black text-xl tracking-tighter">${totalPrice.toLocaleString()}</span>
+                  <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-0.5 rounded-full">{selectedTickets.length} boleto(s)</span>
                 </div>
               </div>
-
               <div className="flex items-center gap-2">
-                <button
-                  className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-green-100 animate-soft-glow"
-                  onClick={e => { e.stopPropagation(); onCheckout(selectedTickets); }}
-                >
-                  Pagar
-                </button>
+                <button className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg animate-soft-glow" onClick={e => { e.stopPropagation(); onCheckout(selectedTickets); }}>Pagar</button>
                 <div className={`p-1 transition-transform duration-300 ${isTrayExpanded ? 'rotate-180 text-blue-600' : 'text-slate-300'}`}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" />
-                  </svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>
                 </div>
               </div>
             </div>
-
             <div className={`px-5 pb-6 pt-2 transition-opacity duration-200 ${isTrayExpanded ? 'opacity-100' : 'opacity-0'}`}>
               <div className="flex items-center justify-between mb-4 border-t border-slate-50 pt-4">
                 <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">Tus números</span>
-                <button
-                  onClick={e => { e.stopPropagation(); soundService.playDeselect(); setSelectedTickets([]); }}
-                  className="text-red-400 text-[9px] font-black uppercase"
-                >
-                  Vaciar
-                </button>
+                <button onClick={e => { e.stopPropagation(); soundService.playDeselect(); setSelectedTickets([]); }} className="text-red-400 text-[9px] font-black uppercase">Vaciar</button>
               </div>
-
-              <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                 {selectedTickets.sort((a, b) => a - b).map(num => (
-                  <div
-                    key={num}
-                    onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }}
-                    className="group bg-slate-50 border border-slate-100 rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:border-red-100 hover:bg-red-50 relative cursor-pointer active:scale-90"
-                  >
-                    <span className="text-slate-700 font-black text-[11px]">
-                      #{num.toString().padStart(3, '0')}
-                    </span>
-                    <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">
-                      Quitar
-                    </span>
-                    <div className="absolute top-1 right-1 sm:hidden">
-                      <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-                    </div>
+                  <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-slate-50 border border-slate-100 rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90">
+                    <span className="text-slate-700 font-black text-[11px]">#{num.toString().padStart(3, '0')}</span>
+                    <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                   </div>
                 ))}
               </div>
@@ -539,24 +478,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         .custom-scrollbar-light::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
-        @keyframes rainbow-bg {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 150% 50%; }
-          100% { background-position: 300% 50%; }
-        }
+        @keyframes rainbow-bg { 0% { background-position: 0% 50%; } 50% { background-position: 150% 50%; } 100% { background-position: 300% 50%; } }
         .animate-rainbow-bg { animation: rainbow-bg 4s ease-in-out infinite; }
-
-        @keyframes soft-glow {
-          0%   { box-shadow: 0 0 0 0    rgba(22,163,74,0.4); }
-          70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0);   }
-          100% { box-shadow: 0 0 0 0    rgba(22,163,74,0);   }
-        }
+        @keyframes soft-glow { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.4); } 70% { box-shadow: 0 0 0 10px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
         .animate-soft-glow { animation: soft-glow 2s infinite ease-in-out; }
-
-        @media (max-width: 768px) {
-          .custom-scrollbar-light::-webkit-scrollbar { width: 0px; }
-        }
+        @media (max-width: 768px) { .custom-scrollbar-light::-webkit-scrollbar { width: 0px; } }
       `}</style>
     </div>
   );
