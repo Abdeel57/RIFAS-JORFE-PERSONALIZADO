@@ -46,7 +46,7 @@ const OrderCard = ({
   paying,
 }: {
   purchase: any;
-  onPay: (id: string) => void;
+  onPay: (p: any) => void;
   onSetPending: (id: string) => void;
   onRelease: (id: string) => void;
   onEdit: (p: any) => void;
@@ -154,7 +154,7 @@ const OrderCard = ({
           <div className="flex gap-2">
             {!isPaid && !isCancelled && (
               <button
-                onClick={() => onPay(purchase.id)}
+                onClick={() => onPay(purchase)}
                 disabled={paying === purchase.id}
                 className="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white h-11 px-5 rounded-2xl text-xs font-black shadow-lg shadow-emerald-100 flex items-center gap-2 transition-all"
               >
@@ -255,7 +255,7 @@ const OrderCard = ({
               </div>
               <div className="p-4 flex gap-2">
                 <button
-                  onClick={() => { onPay(purchase.id); setShowProof(false); }}
+                  onClick={() => { onPay(purchase); setShowProof(false); }}
                   className="flex-1 bg-emerald-500 text-white h-12 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-emerald-100"
                 >
                   Confirmar Pago
@@ -302,7 +302,8 @@ const Dashboard = () => {
 
   useEffect(() => { loadData(filter); }, [filter]);
 
-  const handlePay = (id: string) => {
+  const handlePay = (purchase: any) => {
+    const id = purchase.id;
     showConfirm({
       message: '¿Confirmar este pago ahora?',
       onConfirm: async () => {
@@ -313,6 +314,21 @@ const Dashboard = () => {
         try {
           await adminService.updatePurchaseStatus(id, 'paid');
           toast.success('¡Pago confirmado!');
+
+          // Preparar mensaje de WhatsApp
+          const siteUrl = window.location.origin.replace('/admin', '');
+          const ticketLink = `${siteUrl}/#comprobante?purchase=${id}`;
+          const waMessage = encodeURIComponent(
+            `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago ha sido confirmado correctamente.\n\n` +
+            `¡Gracias por participar en nuestra rifa! 🎟️\n\n` +
+            `Tu boleto digital está listo aquí:\n${ticketLink}\n\n` +
+            `¡Mucha suerte! 🍀`
+          );
+          const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
+
+          // Abrir WhatsApp automáticamente
+          window.open(waLink, '_blank');
+
           if (filter === 'pending') {
             setTimeout(() => {
               setPurchases(prev => prev.filter(p => p.id !== id));

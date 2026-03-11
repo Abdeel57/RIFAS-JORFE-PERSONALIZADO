@@ -63,6 +63,11 @@ const Purchases = () => {
             // Update local state with fresh data from server
             setPurchases(prev => prev.map(p => p.id === purchaseId ? updated : p));
             toast.success('Pago confirmado correctamente');
+
+            // AUTOMATIC WHATSAPP REDIRECTION
+            setTimeout(() => {
+              handleSendWhatsApp(updated);
+            }, 500);
           } else {
             setSelectedPurchase(null);
             toast.success(status === 'cancelled' ? 'Compra cancelada' : 'Marcada como pendiente');
@@ -75,7 +80,6 @@ const Purchases = () => {
           // Revert on error
           setPurchases(previousPurchases);
           toast.error(error.response?.data?.error || 'Error al actualizar la compra');
-          throw error;
         } finally {
           setUpdatingId(null);
         }
@@ -101,16 +105,19 @@ const Purchases = () => {
   const getFrontendBaseUrl = () => {
     const env = import.meta.env?.VITE_FRONTEND_URL;
     if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
-    return 'https://naorifas.netlify.app';
+    // Fallback detection logic
+    const currentOrigin = window.location.origin;
+    return currentOrigin.replace('/admin', '');
   };
 
   const buildWhatsAppMessage = (purchase: any) => {
     const baseUrl = getFrontendBaseUrl();
-    const comprobanteLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
+    const ticketLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
 
-    return `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
-      `*Descarga tu boleto digital aquí:*\n${comprobanteLink}\n\n` +
-      `¡Gracias por participar! Mucha suerte 🍀`;
+    return `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago ha sido confirmado correctamente.\n\n` +
+      `¡Gracias por participar en nuestra rifa! 🎟️\n\n` +
+      `Tu boleto digital está listo aquí:\n${ticketLink}\n\n` +
+      `¡Mucha suerte! 🍀`;
   };
 
   const formatPhoneForWhatsApp = (phone: string): string => {
