@@ -49,27 +49,28 @@ const steps: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
 const StepBar: React.FC<{ current: WizardStep }> = ({ current }) => {
   const idx = steps.findIndex(s => s.id === current);
   return (
-    <div className="flex items-center gap-0 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-      {steps.map((step, i) => {
-        const done = i < idx;
-        const active = i === idx;
-        return (
-          <div key={step.id} className="flex items-center flex-1">
-            <div className={`flex items-center gap-1.5 flex-1 ${i < steps.length - 1 ? '' : 'justify-end'}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-xs font-black
-                ${done ? 'bg-emerald-500 text-white' : active ? 'bg-[#2563EB] text-white shadow-sm shadow-blue-200' : 'bg-slate-200 text-slate-400'}`}>
-                {done ? <CheckCircle2 size={14} /> : step.icon}
+    <div className="px-10 py-6 border-b border-slate-50 bg-slate-50/10 relative">
+      <div className="absolute top-[44px] left-10 right-10 h-0.5 bg-slate-100 -z-0" />
+      <motion.div
+        initial={false}
+        animate={{ width: `calc(${idx} * 50%)` }}
+        className="absolute top-[44px] left-10 h-0.5 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] z-0"
+      />
+
+      <div className="flex justify-between items-center relative z-10">
+        {steps.map((step, i) => {
+          const done = i < idx;
+          const active = i === idx;
+          return (
+            <div key={step.id} className="flex flex-col items-center">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-500 font-extrabold border-4 border-white
+                ${done ? 'bg-emerald-500 text-white shadow-lg' : active ? 'bg-[#2563EB] text-white shadow-2xl shadow-blue-200 scale-110' : 'bg-white text-slate-200 shadow-sm'}`}>
+                {done ? <CheckCircle2 size={18} /> : step.icon}
               </div>
-              <span className={`text-[10px] font-bold hidden sm:block ${active ? 'text-[#2563EB]' : done ? 'text-emerald-600' : 'text-slate-400'}`}>
-                {step.label}
-              </span>
             </div>
-            {i < steps.length - 1 && (
-              <div className={`h-0.5 flex-1 mx-2 rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-slate-200'}`} />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -662,7 +663,6 @@ const Raffles = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={handleClose}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div
@@ -893,9 +893,14 @@ const Raffles = () => {
 
               <div className="p-6 border-t border-slate-50 bg-white shrink-0">
                 <div className="flex gap-3">
-                  <button type="button" onClick={handleClose}
-                    className="flex-1 h-14 bg-slate-50 hover:bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all active:scale-95">
-                    Cerrar
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    disabled={wizardStep === 'info'}
+                    className="flex-1 h-14 bg-slate-50 hover:bg-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft size={16} />
+                    Atrás
                   </button>
                   {wizardStep !== 'config' ? (
                     <button type="button" onClick={nextStep} disabled={!canGoNext()}
