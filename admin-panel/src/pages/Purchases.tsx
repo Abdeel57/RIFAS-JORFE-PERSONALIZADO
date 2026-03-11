@@ -65,9 +65,7 @@ const Purchases = () => {
             toast.success('Pago confirmado correctamente');
 
             // AUTOMATIC WHATSAPP REDIRECTION
-            setTimeout(() => {
-              handleSendWhatsApp(updated);
-            }, 500);
+            handleSendWhatsApp(updated);
           } else {
             setSelectedPurchase(null);
             toast.success(status === 'cancelled' ? 'Compra cancelada' : 'Marcada como pendiente');
@@ -131,9 +129,28 @@ const Purchases = () => {
   const handleSendWhatsApp = (purchase: any) => {
     const phone = formatPhoneForWhatsApp(purchase.user.phone);
     const msg = buildWhatsAppMessage(purchase);
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-    toast.success('WhatsApp abierto con el mensaje listo');
+    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+
+    // Lógica robusta para evitar bloqueos de popups y mejorar experiencia en móvil
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // En móvil es mejor redirigir directamente para que abra la app
+      window.location.assign(url);
+    } else {
+      // En desktop intentamos abrir nueva pestaña
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+
+      // Si el navegador bloqueó el popup
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        toast.success('Redirigiendo a WhatsApp...');
+        setTimeout(() => {
+          window.location.assign(url);
+        }, 1000);
+      } else {
+        toast.success('Abriendo WhatsApp en una nueva pestaña');
+      }
+    }
   };
 
   const handleCopyMessage = (purchase: any) => {

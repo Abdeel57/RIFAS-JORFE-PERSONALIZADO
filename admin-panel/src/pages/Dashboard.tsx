@@ -316,18 +316,29 @@ const Dashboard = () => {
           toast.success('¡Pago confirmado!');
 
           // Preparar mensaje de WhatsApp
-          const siteUrl = window.location.origin.replace('/admin', '');
+          const siteUrl = window.location.origin;
           const ticketLink = `${siteUrl}/#comprobante?purchase=${id}`;
-          const waMessage = encodeURIComponent(
+          const waMessage =
             `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago ha sido confirmado correctamente.\n\n` +
             `¡Gracias por participar en nuestra rifa! 🎟️\n\n` +
             `Tu boleto digital está listo aquí:\n${ticketLink}\n\n` +
-            `¡Mucha suerte! 🍀`
-          );
-          const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
+            `¡Mucha suerte! 🍀`;
 
-          // Abrir WhatsApp automáticamente
-          window.open(waLink, '_blank');
+          const waLink = `https://api.whatsapp.com/send?phone=${phoneToWA(purchase.user?.phone ?? '')}&text=${encodeURIComponent(waMessage)}`;
+
+          // Lógica robusta para abrir WhatsApp
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile) {
+            window.location.assign(waLink);
+          } else {
+            const win = window.open(waLink, '_blank', 'noopener,noreferrer');
+            if (!win || win.closed || typeof win.closed === 'undefined') {
+              // Si el bloqueador de popups lo detuvo, redirigimos en la misma pestaña tras un pequeño delay
+              setTimeout(() => {
+                window.location.assign(waLink);
+              }, 1000);
+            }
+          }
 
           if (filter === 'pending') {
             setTimeout(() => {
