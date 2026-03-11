@@ -267,6 +267,7 @@ const Settings: React.FC = () => {
     const { admin } = useAuth();
     const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
+    const [isCreatingUser, setIsCreatingUser] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
 
@@ -282,6 +283,57 @@ const Settings: React.FC = () => {
     useEffect(() => {
         if (activePanel === 'usuarios') fetchAdmins();
     }, [activePanel]);
+
+    const handleCreateAdmin = async () => {
+        const { name, email, password, confirmPassword, role } = newUser;
+        if (!name.trim() || name.trim().length < 2) {
+            toast.error('El nombre debe tener al menos 2 caracteres');
+            return;
+        }
+        if (!email.trim() || email.trim().length < 3) {
+            toast.error('El usuario/correo debe tener al menos 3 caracteres');
+            return;
+        }
+        if (!password || password.length < 6) {
+            toast.error('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+        if (password !== confirmPassword) {
+            toast.error('Las contraseñas no coinciden');
+            return;
+        }
+        setIsCreatingUser(true);
+        try {
+            const res = await api.post('/admin/admin-users', { name: name.trim(), email: email.trim(), password, role });
+            if (res.data?.success) {
+                toast.success('Usuario creado correctamente');
+                setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
+                setShowAddForm(false);
+                fetchAdmins();
+            }
+        } catch (err: any) {
+            const msg = err.response?.data?.error || err.message || 'Error al crear usuario';
+            toast.error(msg);
+        } finally {
+            setIsCreatingUser(false);
+        }
+    };
+
+    const handleDeleteAdmin = (id: string, name: string) => {
+        showConfirm({
+            message: `¿Eliminar a "${name}"? Debe haber al menos un administrador en el sistema.`,
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/admin/admin-users/${id}`);
+                    toast.success('Usuario eliminado');
+                    fetchAdmins();
+                } catch (err: any) {
+                    const msg = err.response?.data?.error || err.message || 'Error al eliminar';
+                    toast.error(msg);
+                }
+            },
+        });
+    };
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -573,38 +625,48 @@ const Settings: React.FC = () => {
                                 {showAddForm && (
                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-blue-50/30 overflow-hidden border-b border-blue-100 px-6 py-4 space-y-4">
                                         <div className="grid grid-cols-2 gap-3">
-                                            <input className="admin-input bg-white" placeholder="Nombre completo" onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} />
-                                            <input className="admin-input bg-white" placeholder="Usuario / Correo" onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} />
-                                            <input type="password" className="admin-input bg-white" placeholder="Contraseña" onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} />
-                                            <select className="admin-input bg-white cursor-pointer" onChange={e => setNewUser(p => ({ ...p, role: e.target.value }))}>
+                                            <input className="admin-input bg-white" placeholder="Nombre completo" value={newUser.name} onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} />
+                                            <input className="admin-input bg-white" placeholder="Usuario / Correo (para login)" value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} />
+                                            <input type="password" className="admin-input bg-white" placeholder="Contraseña (mín. 6 caracteres)" value={newUser.password} onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} />
+                                            <input type="password" className="admin-input bg-white" placeholder="Confirmar contraseña" value={newUser.confirmPassword} onChange={e => setNewUser(p => ({ ...p, confirmPassword: e.target.value }))} />
+                                            <select className="admin-input bg-white cursor-pointer col-span-2" value={newUser.role} onChange={e => setNewUser(p => ({ ...p, role: e.target.value }))}>
                                                 <option value="vendedor">Vendedor</option>
                                                 <option value="admin">Administrador</option>
                                             </select>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => { /* logic to save */ }} className="bg-blue-600 text-white px-6 h-10 rounded-xl font-black text-xs uppercase tracking-widest">Crear Usuario</button>
-                                            <button onClick={() => setShowAddForm(false)} className="bg-white text-slate-400 px-6 h-10 rounded-xl font-bold text-xs">Cancelar</button>
+                                            <button onClick={handleCreateAdmin} disabled={isCreatingUser} className="bg-blue-600 text-white px-6 h-10 rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-50 flex items-center gap-2">
+                                                {isCreatingUser ? <Loader2 size={14} className="animate-spin" /> : null}
+                                                {isCreatingUser ? 'Creando...' : 'Crear Usuario'}
+                                            </button>
+                                            <button onClick={() => { setShowAddForm(false); setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' }); }} disabled={isCreatingUser} className="bg-white text-slate-400 px-6 h-10 rounded-xl font-bold text-xs">Cancelar</button>
                                         </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
                             <div className="divide-y divide-slate-50">
-                                {adminUsers.map(u => (
-                                    <div key={u.id} className="p-5 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600">{u.name.charAt(0)}</div>
-                                            <div>
-                                                <p className="text-sm font-black text-slate-800">{u.name}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{u.email}</p>
+                                {isUsersLoading ? (
+                                    <div className="p-6 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
+                                ) : adminUsers.length === 0 ? (
+                                    <div className="p-8 text-center text-slate-400 text-sm">No hay colaboradores. Agrega uno con el botón de arriba.</div>
+                                ) : (
+                                    adminUsers.map(u => (
+                                        <div key={u.id} className="p-5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600">{u.name.charAt(0)}</div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-800">{u.name}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{u.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
+                                                <button onClick={() => handleDeleteAdmin(u.id, u.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50" title="Eliminar"><Trash2 size={16} /></button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
-                                            <button className="text-slate-200 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
