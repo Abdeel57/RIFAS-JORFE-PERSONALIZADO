@@ -845,47 +845,60 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                 // ── VISTA MANUAL (FLUJO NORMAL) ──
                 <>
                   <div className="space-y-4">
-                    {verificationReason ? (
-                      <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto text-amber-500 animate-in fade-in zoom-in duration-500">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+                    <div className="relative w-24 h-24 mx-auto mb-8">
+                      <div className="absolute inset-0 bg-blue-100 opacity-30 blur-2xl rounded-full" />
+                      <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(37,99,235,0.3)] animate-in zoom-in-50 duration-500">
+                        <p className="text-4xl">🎟️</p>
                       </div>
-                    ) : (
-                      <p className="text-4xl animate-bounce">🎟️</p>
-                    )}
-
-                    <div className="space-y-1">
-                      <h4 className="text-2xl font-black text-slate-800 tracking-tight">¡Gracias por participar, {formData.name.split(' ')[0]}!</h4>
-                      <p className="text-slate-500 text-sm leading-relaxed px-2">
-                        {verificationReason
-                          ? getHumanizedReason(verificationReason)
-                          : "Hemos recibido tu comprobante correctamente. Tu pago será verificado en unos minutos y te enviaremos la confirmación a tu número de teléfono."}
-                      </p>
                     </div>
+
+                    <div className="space-y-2">
+                      <h4 className="text-3xl font-black text-slate-800 tracking-tighter uppercase italic leading-none">
+                        ¡CASI LISTO, {formData.name.split(' ')[0].toUpperCase()}!
+                      </h4>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Pedido Recibido con Éxito</span>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-500 text-sm leading-relaxed px-6">
+                      Hemos recibido tu comprobante correctamente. Tu participación está <span className="text-blue-600 font-black italic">siendo procesada</span>.
+                    </p>
                   </div>
 
                   {!verificationReason && (
                     <div
-                      className="rounded-2xl p-4 text-left space-y-2 border"
+                      className="rounded-[2rem] p-6 text-left space-y-4 border shadow-sm relative overflow-hidden"
                       style={{
-                        backgroundColor: 'rgba(var(--brand-primary-rgb), 0.05)',
-                        borderColor: 'rgba(var(--brand-primary-rgb), 0.12)',
+                        backgroundColor: 'rgba(var(--brand-primary-rgb), 0.03)',
+                        borderColor: 'rgba(var(--brand-primary-rgb), 0.1)',
                       }}
                     >
-                      <p
-                        className="text-[9px] font-black uppercase tracking-widest"
-                        style={{ color: 'var(--brand-primary)' }}
-                      >¿Qué sigue?</p>
-                      <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--brand-primary)' }}>Próximos pasos</p>
+                        <div className="flex gap-1">
+                          <div className="w-1 h-1 rounded-full bg-blue-200" />
+                          <div className="w-1 h-1 rounded-full bg-blue-300" />
+                          <div className="w-1 h-1 rounded-full bg-blue-400" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
                         {[
-                          { icon: '🔍', text: 'El admin verifica tu comprobante' },
-                          { icon: '✅', text: 'Recibes confirmación por mensaje' },
-                          { icon: '🎰', text: 'Participas en el sorteo' },
+                          { title: 'Validación', text: 'El administrador confirmará tu pago' },
+                          { title: 'Notificación', text: 'Recibirás tu boleto por WhatsApp' },
+                          { title: 'Sorteo', text: '¡Participas directo por el gran premio!' },
                         ].map((item, i) => (
-                          <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                            <span>{item.icon}</span>
-                            <span>{item.text}</span>
+                          <div key={i} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white" style={{ background: 'var(--brand-primary)' }}>{i + 1}</div>
+                              {i < 2 && <div className="w-0.5 h-full bg-slate-100 my-1" />}
+                            </div>
+                            <div className="space-y-0.5 pb-1">
+                              <p className="text-xs font-black text-slate-800 leading-none">{item.title}</p>
+                              <p className="text-[10px] text-slate-400 font-medium leading-tight">{item.text}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -893,8 +906,8 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   )}
 
                   <div className="flex flex-col gap-2.5 px-2">
-                    {/* Botón de aclaración si hubo "error" en validación automática */}
-                    {(verificationReason || verificationStatus === 'manual') && (
+                    {/* Botón de aclaración SOLO si hubo error real en validación automática (no en modo manual) */}
+                    {(verificationReason && verificationStatus !== 'manual') && (
                       <button
                         onClick={handleSupportWhatsApp}
                         className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-green-200 hover:brightness-105 active:scale-[0.98] transition-all"
