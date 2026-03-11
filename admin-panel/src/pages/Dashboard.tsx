@@ -139,10 +139,15 @@ const OrderCard = ({
 
             {hasProof && (
               <button
-                onClick={() => onViewProof(purchase)}
-                className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-200 transition-colors shadow-sm active:scale-90"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewProof(purchase);
+                }}
+                className="relative z-30 w-11 h-11 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center hover:bg-blue-200 transition-all shadow-sm active:scale-90"
+                title="Ver comprobante"
               >
-                <Eye size={18} />
+                <Eye size={20} />
               </button>
             )}
 
@@ -476,9 +481,9 @@ const Dashboard = () => {
       </div>
 
       {/* Edit Modal (Portal) */}
-      <AnimatePresence>
-        {editTarget && createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 h-[100dvh]">
+      {editTarget && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -568,15 +573,15 @@ const Dashboard = () => {
                 </div>
               </div>
             </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Proof Viewer Overlay (Portal) */}
-      <AnimatePresence>
-        {proofTarget && createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 pt-safe pb-safe h-[100dvh]">
+      {proofTarget && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -585,6 +590,7 @@ const Dashboard = () => {
               onClick={() => setProofTarget(null)}
             />
             <motion.div
+              key="proof-modal"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -597,13 +603,13 @@ const Dashboard = () => {
                 </div>
                 <button
                   onClick={() => setProofTarget(null)}
-                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 active:scale-90 transition-all"
+                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 active:scale-90 transition-all font-bold"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto bg-slate-50 p-4 text-center custom-scrollbar-light">
+              <div className="flex-1 overflow-y-auto bg-slate-50 p-4 text-center">
                 {proofTarget.paymentProofUrl ? (
                   <img
                     src={proofTarget.paymentProofUrl}
@@ -636,10 +642,10 @@ const Dashboard = () => {
                 </button>
               </div>
             </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
