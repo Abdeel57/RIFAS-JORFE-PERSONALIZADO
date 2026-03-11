@@ -302,6 +302,16 @@ const Dashboard = () => {
 
   useEffect(() => { loadData(filter); }, [filter]);
 
+  const getFrontendBaseUrl = () => {
+    const env = (import.meta as any).env?.VITE_FRONTEND_URL;
+    if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
+    const currentOrigin = window.location.origin;
+    if (currentOrigin.includes('admin')) {
+      return currentOrigin.replace(/admin\./, '').replace('/admin', '');
+    }
+    return currentOrigin;
+  };
+
   const handlePay = (purchase: any) => {
     const id = purchase.id;
     showConfirm({
@@ -315,13 +325,21 @@ const Dashboard = () => {
           await adminService.updatePurchaseStatus(id, 'paid');
           toast.success('¡Pago confirmado!');
 
-          // Preparar mensaje de WhatsApp
-          const siteUrl = window.location.origin;
-          const ticketLink = `${siteUrl}/#comprobante?purchase=${id}`;
+          // Preparar mensaje de WhatsApp profesional
+          const baseUrl = getFrontendBaseUrl();
+          const ticketLink = `${baseUrl}/#comprobante?purchase=${id}`;
+          const verifyLink = `${baseUrl}/#verify`;
+
+          const ticketsList = purchase.tickets
+            ? purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ')
+            : 'Confirmados';
+
           const waMessage =
             `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago ha sido confirmado correctamente.\n\n` +
-            `¡Gracias por participar en nuestra rifa! 🎟️\n\n` +
-            `Tu boleto digital está listo aquí:\n${ticketLink}\n\n` +
+            `¡Gracias por participar! 🎟️\n\n` +
+            `🎫 *Boletos:* ${ticketsList}\n` +
+            `📍 *Boleto Digital:* ${ticketLink}\n` +
+            `🔗 *Verificar:* ${verifyLink}\n\n` +
             `¡Mucha suerte! 🍀`;
 
           const waLink = `https://api.whatsapp.com/send?phone=${phoneToWA(purchase.user?.phone ?? '')}&text=${encodeURIComponent(waMessage)}`;
@@ -333,7 +351,6 @@ const Dashboard = () => {
           } else {
             const win = window.open(waLink, '_blank', 'noopener,noreferrer');
             if (!win || win.closed || typeof win.closed === 'undefined') {
-              // Si el bloqueador de popups lo detuvo, redirigimos en la misma pestaña tras un pequeño delay
               setTimeout(() => {
                 window.location.assign(waLink);
               }, 1000);

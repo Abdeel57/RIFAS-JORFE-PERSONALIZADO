@@ -101,20 +101,29 @@ const Purchases = () => {
   };
 
   const getFrontendBaseUrl = () => {
-    const env = import.meta.env?.VITE_FRONTEND_URL;
+    const env = (import.meta as any).env?.VITE_FRONTEND_URL;
     if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
-    // Fallback detection logic
     const currentOrigin = window.location.origin;
-    return currentOrigin.replace('/admin', '');
+    if (currentOrigin.includes('admin')) {
+      return currentOrigin.replace(/admin\./, '').replace('/admin', '');
+    }
+    return currentOrigin;
   };
 
   const buildWhatsAppMessage = (purchase: any) => {
     const baseUrl = getFrontendBaseUrl();
     const ticketLink = `${baseUrl}/#comprobante?purchase=${purchase.id}`;
+    const verifyLink = `${baseUrl}/#verify`;
+
+    const ticketsList = purchase.tickets
+      ? purchase.tickets.map((t: any) => `#${t.number.toString().padStart(3, '0')}`).join(', ')
+      : 'Confirmados';
 
     return `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago ha sido confirmado correctamente.\n\n` +
-      `¡Gracias por participar en nuestra rifa! 🎟️\n\n` +
-      `Tu boleto digital está listo aquí:\n${ticketLink}\n\n` +
+      `¡Gracias por participar! 🎟️\n\n` +
+      `🎫 *Boletos:* ${ticketsList}\n` +
+      `📍 *Boleto Digital:* ${ticketLink}\n` +
+      `🔗 *Verificar:* ${verifyLink}\n\n` +
       `¡Mucha suerte! 🍀`;
   };
 
