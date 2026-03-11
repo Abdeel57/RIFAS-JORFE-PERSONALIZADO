@@ -103,6 +103,12 @@ const Purchases = () => {
   const getFrontendBaseUrl = () => {
     const env = (import.meta as any).env?.VITE_FRONTEND_URL;
     if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
+
+    // Si estamos en producción (Railway/Netlify), preferir siempre la URL real del frontend
+    if (window.location.hostname !== 'localhost') {
+      return 'https://naorifas.netlify.app';
+    }
+
     const currentOrigin = window.location.origin;
     if (currentOrigin.includes('admin')) {
       return currentOrigin.replace(/admin\./, '').replace('/admin', '');
