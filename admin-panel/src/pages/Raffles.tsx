@@ -168,6 +168,12 @@ const Raffles = () => {
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [ticketSearch, setTicketSearch] = useState('');
   const [winnerTarget, setWinnerTarget] = useState<any>(null);
+  const [visibleCount, setVisibleCount] = useState(1000);
+
+  // Reiniciar contador al buscar para mantener fluidez
+  useEffect(() => {
+    setVisibleCount(1000);
+  }, [ticketSearch]);
 
   // Lock scroll when modal is open
   useEffect(() => {
@@ -316,6 +322,7 @@ const Raffles = () => {
   // ─── Tickets Logic ────────────────────────────────────────────────────────
   const loadTickets = async (raffleId: string) => {
     setIsLoadingTickets(true);
+    setVisibleCount(1000); // Reset count on load
     try {
       const data = await adminService.getTickets({ raffleId });
       setTicketsList(data);
@@ -834,7 +841,7 @@ const Raffles = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filteredTickets.map((ticket) => (
+                    {filteredTickets.slice(0, visibleCount).map((ticket) => (
                       <div
                         key={ticket.id}
                         className={`p-2.5 rounded-2xl border flex items-center justify-between transition-all ${ticket.status === 'sold' ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50/40 border-dashed border-slate-200 opacity-60'
@@ -883,6 +890,15 @@ const Raffles = () => {
                         </div>
                       </div>
                     ))}
+
+                    {filteredTickets.length > visibleCount && (
+                      <button
+                        onClick={() => setVisibleCount(prev => prev + 1000)}
+                        className="w-full py-4 mt-2 bg-slate-50 hover:bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest rounded-2xl border-2 border-dashed border-slate-200 transition-all active:scale-[0.98]"
+                      >
+                        Cargar 1,000 boletos más...
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -891,7 +907,7 @@ const Raffles = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                    {filteredTickets.length} / {ticketsList.length}
+                    {Math.min(visibleCount, filteredTickets.length)} / {filteredTickets.length} mostrados
                   </span>
                 </div>
                 <button
