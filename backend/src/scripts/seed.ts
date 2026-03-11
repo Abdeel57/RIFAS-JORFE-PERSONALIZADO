@@ -6,21 +6,36 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // ── 1. Admin por defecto ──────────────────────────────────────────────────
-  const adminEmail = 'admin@bismark.com';
-  const adminPassword = 'admin123456';
+  // ── 1. Admin por defecto (plantilla Bismark) ─────────────────────────────
+  const adminUsuario = 'Bismark';
+  const adminPassword = 'admin123';
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
-  const existingAdmin = await prisma.admin.findUnique({ where: { email: adminEmail } });
-  if (!existingAdmin) {
-    await prisma.admin.create({
-      data: { email: adminEmail, passwordHash, name: 'Administrador', role: 'admin' },
-    });
-    console.log('✅ Admin creado:');
-    console.log(`   Email: ${adminEmail}`);
-    console.log(`   Password: ${adminPassword}`);
-  } else {
+  let admin = await prisma.admin.findUnique({ where: { email: adminUsuario } });
+  if (admin) {
     console.log('ℹ️  Admin ya existe');
+  } else {
+    // Actualizar admins antiguos (admin@bismark.com, admin@rifasnao.com) a las nuevas credenciales
+    const oldEmails = ['admin@bismark.com', 'admin@rifasnao.com'];
+    for (const oldEmail of oldEmails) {
+      const oldAdmin = await prisma.admin.findUnique({ where: { email: oldEmail } });
+      if (oldAdmin) {
+        await prisma.admin.update({
+          where: { email: oldEmail },
+          data: { email: adminUsuario, passwordHash, name: 'Administrador' },
+        });
+        console.log(`✅ Admin actualizado: ${oldEmail} → ${adminUsuario}`);
+        break;
+      }
+    }
+    if (!admin && !(await prisma.admin.findUnique({ where: { email: adminUsuario } }))) {
+      await prisma.admin.create({
+        data: { email: adminUsuario, passwordHash, name: 'Administrador', role: 'admin' },
+      });
+      console.log('✅ Admin creado:');
+    }
+    console.log(`   Usuario: ${adminUsuario}`);
+    console.log(`   Password: ${adminPassword}`);
   }
 
   // ── 2. Rifa iPhone de prueba (999 boletos @ $1) ──────────────────────────
@@ -112,7 +127,7 @@ async function main() {
 
   console.log('\n✨ Seed completado con éxito');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`Admin: ${adminEmail} / ${adminPassword}`);
+  console.log(`Admin: ${adminUsuario} / ${adminPassword}`);
   console.log('Rifa: iPhone 16 Pro Max — 999 boletos @ $1 MXN');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }

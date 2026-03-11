@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function testLogin() {
   console.log('🧪 Probando login con credenciales...');
 
-  const email = 'admin@bismark.com';
+  const email = 'Bismark';
   const password = 'admin123456';
 
   try {

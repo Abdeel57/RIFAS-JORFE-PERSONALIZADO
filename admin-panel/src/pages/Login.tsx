@@ -79,7 +79,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="admin-input"
-                placeholder="Ej. admin_bismark"
+                placeholder="Ej. Bismark"
               />
             </div>
 
