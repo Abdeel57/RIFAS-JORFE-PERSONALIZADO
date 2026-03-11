@@ -26,7 +26,7 @@ interface FormData {
   ticketPrice: string;
   totalTickets: string;
   drawDate: string;
-  status: 'active' | 'completed';
+  status: 'active' | 'completed' | 'draft';
 }
 
 type WizardStep = 'info' | 'media' | 'config';
@@ -35,15 +35,15 @@ const EMPTY_FORM: FormData = {
   title: '', subtitle: '', description: '',
   prizeImage: '', galleryImages: '', videoUrl: '',
   ticketPrice: '', totalTickets: '',
-  drawDate: '', status: 'active',
+  drawDate: '', status: 'draft',
 };
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 const steps: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
-  { id: 'info', label: 'Información', icon: <FileText size={14} /> },
-  { id: 'media', label: 'Imágenes', icon: <Image size={14} /> },
-  { id: 'config', label: 'Configurar', icon: <DollarSign size={14} /> },
+  { id: 'info', label: 'General', icon: <FileText size={14} /> },
+  { id: 'media', label: 'Multimedia', icon: <Video size={14} /> },
+  { id: 'config', label: 'Finalizar', icon: <Sliders size={14} /> },
 ];
 
 const StepBar: React.FC<{ current: WizardStep }> = ({ current }) => {
@@ -529,8 +529,13 @@ const Raffles = () => {
                             className="w-full h-full object-cover"
                             onError={e => { e.currentTarget.parentElement!.style.display = 'none'; }} />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${isActive ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-slate-700 text-slate-200 border-slate-600'}`}>
-                            {isActive ? '● Activa' : '○ Completada'}
+                          <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-500 text-white border-emerald-400' :
+                            raffle.status === 'draft' ? 'bg-slate-900/80 text-white border-white/20 backdrop-blur-md' :
+                              'bg-slate-700 text-slate-200 border-slate-600'
+                            }`}>
+                            {raffle.status === 'active' ? '● Activa' :
+                              raffle.status === 'draft' ? '✎ Borrador' :
+                                '○ Completada'}
                           </span>
                         </div>
                       )}
@@ -542,8 +547,13 @@ const Raffles = () => {
                             {raffle.subtitle && <p className="text-xs text-slate-400 mt-0.5 truncate">{raffle.subtitle}</p>}
                           </div>
                           {!raffle.prizeImage && (
-                            <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                              {isActive ? 'Activa' : 'Completada'}
+                            <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                              raffle.status === 'draft' ? 'bg-slate-100 text-slate-900 border-slate-200' :
+                                'bg-slate-100 text-slate-500 border-slate-200'
+                              }`}>
+                              {raffle.status === 'active' ? 'Activa' :
+                                raffle.status === 'draft' ? 'Borrador' :
+                                  'Completada'}
                             </span>
                           )}
                         </div>
@@ -706,11 +716,11 @@ const Raffles = () => {
                     transition={{ duration: 0.2 }}
                     className="p-5"
                   >
-                    {/* Step 1: Información */}
+                    {/* Step 1: Información General y Configuración Base */}
                     {wizardStep === 'info' && (
-                      <div className="space-y-4">
+                      <div className="space-y-5">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                             Título del Premio <span className="text-red-400">*</span>
                           </label>
                           <input type="text" value={formData.title}
@@ -719,30 +729,56 @@ const Raffles = () => {
                             placeholder="Ej. GANA $50,000 EN EFECTIVO" />
                         </div>
 
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Boleto</label>
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                              <input type="number" value={formData.ticketPrice}
+                                onChange={e => set('ticketPrice', e.target.value)}
+                                className="admin-input pl-8 font-black" placeholder="50" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Boletos</label>
+                            <input type="number" value={formData.totalTickets}
+                              onChange={e => set('totalTickets', e.target.value)}
+                              className="admin-input font-black" placeholder="1000" />
+                          </div>
+                        </div>
+
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtítulo</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha del Sorteo</label>
+                          <div className="relative">
+                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                            <input type="datetime-local" value={formData.drawDate}
+                              onChange={e => set('drawDate', e.target.value)}
+                              className="admin-input pl-11" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subtítulo (opcional)</label>
                           <input type="text" value={formData.subtitle}
                             onChange={e => set('subtitle', e.target.value)}
                             className="admin-input" placeholder="Ej. BILLETIZA EXPRESS" />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Descripción <span className="text-red-400">*</span>
-                          </label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción Breve</label>
                           <textarea value={formData.description}
                             onChange={e => set('description', e.target.value)}
-                            required rows={5} className="admin-input resize-none"
-                            placeholder="Describe el premio..." />
+                            required rows={4} className="admin-input resize-none text-xs font-medium leading-relaxed"
+                            placeholder="Describe los detalles del sorteo..." />
                         </div>
                       </div>
                     )}
 
-                    {/* Step 2: Medios */}
+                    {/* Step 2: Medios y Video */}
                     {wizardStep === 'media' && (
                       <div className="space-y-5">
                         <ImageField
-                          label="Imagen Principal"
+                          label="Imagen Principal (Requerida)"
                           value={formData.prizeImage}
                           onChange={url => set('prizeImage', url)}
                           onUpload={f => handleImageUpload('prize', f)}
@@ -750,11 +786,21 @@ const Raffles = () => {
                           required
                         />
 
-                        <div className="border-t border-slate-100 pt-4">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Galería (opcional)</p>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video de Facebook/YouTube (opcional)</label>
+                          <div className="relative">
+                            <Video size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                            <input type="text" value={formData.videoUrl}
+                              onChange={e => set('videoUrl', e.target.value)}
+                              className="admin-input pl-11" placeholder="https://facebook.com/watch/..." />
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-5">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Galería Auxiliar</p>
                           <div className="grid grid-cols-2 gap-3">
                             <ImageField
-                              label="Imagen 1"
+                              label="Foto 1"
                               value={formData.galleryImages.split('\n')[0] || ''}
                               onChange={url => {
                                 const lines = formData.galleryImages.split('\n');
@@ -765,7 +811,7 @@ const Raffles = () => {
                               uploading={uploadingImage === 'gallery0'}
                             />
                             <ImageField
-                              label="Imagen 2"
+                              label="Foto 2"
                               value={formData.galleryImages.split('\n')[1] || ''}
                               onChange={url => {
                                 const lines = formData.galleryImages.split('\n');
@@ -780,52 +826,62 @@ const Raffles = () => {
                       </div>
                     )}
 
-                    {/* Step 3: Configuración */}
+                    {/* Step 3: Estado y Finalizar */}
                     {wizardStep === 'config' && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Precio</label>
-                            <div className="relative">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                              <input type="number" value={formData.ticketPrice}
-                                onChange={e => set('ticketPrice', e.target.value)}
-                                className="admin-input pl-8 font-black text-lg" placeholder="50" />
-                            </div>
+                      <div className="space-y-6">
+                        <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50 flex gap-4">
+                          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center shrink-0">
+                            <AlertCircle className="text-blue-500" size={24} />
                           </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Boletos</label>
-                            <input type="number" value={formData.totalTickets}
-                              onChange={e => set('totalTickets', e.target.value)}
-                              className="admin-input font-black text-lg" placeholder="1000" />
+                          <div>
+                            <p className="text-sm font-black text-blue-900 leading-tight">Configuración final</p>
+                            <p className="text-xs text-blue-700/70 font-medium mt-1">Selecciona el estado inicial de tu rifa antes de guardarla.</p>
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Sorteo</label>
-                          <input type="datetime-local" value={formData.drawDate}
-                            onChange={e => set('drawDate', e.target.value)}
-                            className="admin-input" />
-                        </div>
-
-                        <div className="space-y-1.5 pt-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado de la Rifa</label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <button key="active" type="button"
-                              onClick={() => set('status', 'active')}
-                              className={`h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 flex items-center justify-center gap-2 ${formData.status === 'active'
-                                ? 'bg-blue-50 text-blue-600 border-blue-200'
-                                : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
-                              <div className={`w-2 h-2 rounded-full ${formData.status === 'active' ? 'bg-blue-500 animate-pulse' : 'bg-slate-300'}`} />
-                              Activa
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Define el Estado</label>
+                          <div className="grid grid-cols-1 gap-3">
+                            <button onClick={() => set('status', 'draft')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'draft' ? 'bg-slate-900 border-slate-800 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'draft' ? 'bg-white/10' : 'bg-slate-50'}`}>
+                                  <FileText size={18} />
+                                </div>
+                                <div className="text-left">
+                                  <p className="font-black text-sm">Borrador</p>
+                                  <p className="text-[10px] font-bold opacity-60">No visible para clientes</p>
+                                </div>
+                              </div>
+                              {formData.status === 'draft' && <CheckCircle2 size={20} className="text-blue-400" />}
                             </button>
-                            <button key="completed" type="button"
-                              onClick={() => set('status', 'completed')}
-                              className={`h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 flex items-center justify-center gap-2 ${formData.status === 'completed'
-                                ? 'bg-slate-900 text-white border-slate-800 shadow-lg shadow-slate-200'
-                                : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
-                              <CheckCircle2 size={16} className={formData.status === 'completed' ? 'text-emerald-400' : 'text-slate-300'} />
-                              Finalizada
+
+                            <button onClick={() => set('status', 'active')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'active' ? 'bg-blue-600 border-blue-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'active' ? 'bg-white/10' : 'bg-blue-50'}`}>
+                                  <Play size={18} />
+                                </div>
+                                <div className="text-left">
+                                  <p className="font-black text-sm">Activa</p>
+                                  <p className="text-[10px] font-bold opacity-80">Visible y lista para vender</p>
+                                </div>
+                              </div>
+                              {formData.status === 'active' && <CheckCircle2 size={20} className="text-white" />}
+                            </button>
+
+                            <button onClick={() => set('status', 'completed')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'completed' ? 'bg-emerald-600 border-emerald-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'completed' ? 'bg-white/10' : 'bg-emerald-50'}`}>
+                                  <Trophy size={18} />
+                                </div>
+                                <div className="text-left">
+                                  <p className="font-black text-sm">Finalizada</p>
+                                  <p className="text-[10px] font-bold opacity-80">Sorteo cerrado</p>
+                                </div>
+                              </div>
+                              {formData.status === 'completed' && <CheckCircle2 size={20} className="text-white" />}
                             </button>
                           </div>
                         </div>

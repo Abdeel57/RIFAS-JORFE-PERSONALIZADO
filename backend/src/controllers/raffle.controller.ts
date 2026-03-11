@@ -7,8 +7,11 @@ export const getRaffles = async (req: Request, res: Response, next: NextFunction
     const { status } = req.query;
 
     const where: any = {};
-    if (status === 'active') {
-      where.status = 'active';
+    if (status) {
+      where.status = status;
+    } else {
+      // Por defecto no mostrar borradores en el frontend público
+      where.status = { not: 'draft' };
     }
 
     const raffles = await prisma.raffle.findMany({

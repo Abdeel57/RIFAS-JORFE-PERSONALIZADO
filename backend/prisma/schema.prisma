@@ -141,6 +141,7 @@ model SystemSettings {
 enum RaffleStatus {
   active
   completed
+  draft
 }
 
 enum TicketStatus {
