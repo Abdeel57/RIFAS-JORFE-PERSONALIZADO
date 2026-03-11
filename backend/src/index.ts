@@ -144,8 +144,8 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 console.log('✅ CORS configurado correctamente');
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // (Middleware de logging movido arriba)
 
