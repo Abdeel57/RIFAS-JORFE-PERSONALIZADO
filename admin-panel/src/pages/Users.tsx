@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/admin.service';
 import Skeleton from '../components/Skeleton';
-import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X, ChevronRight } from 'lucide-react';
+import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X, ChevronRight, FileSpreadsheet, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const Users = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -41,6 +43,27 @@ const Users = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!users.length) {
+      toast.error('No hay usuarios para exportar');
+      return;
+    }
+
+    const data = users.map(u => ({
+      'Nombre': u.name,
+      'Teléfono': u.phone,
+      'Email': u.email || '—',
+      'Estado/Ciudad': u.state || '—',
+      'Total Compras': u._count?.purchases || 0,
+      'Fecha Registro': new Date(u.createdAt).toLocaleDateString('es-MX')
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    XLSX.writeFile(wb, `Base_de_Datos_Clientes_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   const getInitials = (name: string) => {
     return (name || '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
   };
@@ -62,9 +85,19 @@ const Users = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h2 className="section-title">Usuarios</h2>
-        <p className="section-sub">Gestiona tu base de clientes</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="section-title">Usuarios</h2>
+          <p className="section-sub">Gestiona tu base de clientes</p>
+        </div>
+        <button
+          onClick={handleExportExcel}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-100/50 shadow-sm"
+          title="Exportar a Excel"
+        >
+          <FileSpreadsheet size={18} />
+          <span className="hidden sm:inline">Exportar Excel</span>
+        </button>
       </div>
 
       {/* Searchbar */}
