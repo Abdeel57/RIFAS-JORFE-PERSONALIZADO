@@ -125,6 +125,21 @@ const App: React.FC = () => {
           applyBrandCssVars(b);
           // Guardamos rawSettings para pasarlos al CheckoutModal (evita doble fetch)
           setRawSettings(data);
+
+          // ACTUALIZAR METADATOS DEL NAVEGADOR
+          // 1. Título de la pestaña
+          document.title = b.siteName;
+
+          // 2. Favicon (Ícono de la pestaña)
+          if (b.logoUrl) {
+            let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = 'icon';
+              document.head.appendChild(link);
+            }
+            link.href = b.logoUrl;
+          }
         }
       })
       .catch(() => {/* fallback to defaults silently */ });
