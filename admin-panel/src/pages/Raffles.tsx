@@ -10,7 +10,8 @@ import Skeleton from '../components/Skeleton';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
-  MoreVertical, Trophy, Sliders, FileSpreadsheet, Download
+  MoreVertical, Trophy, Sliders, FileSpreadsheet, Download,
+  Dice5, UserCheck, Play, RotateCcw, AlertCircle, Sparkles
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -169,20 +170,81 @@ const Raffles = () => {
   const [ticketSearch, setTicketSearch] = useState('');
   const [winnerTarget, setWinnerTarget] = useState<any>(null);
   const [visibleCount, setVisibleCount] = useState(1000);
+  const [winnerModalRaffle, setWinnerModalRaffle] = useState<any>(null);
+  const [winnerMethod, setWinnerMethod] = useState<'manual' | 'random' | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
+  const [rouletteWinner, setRouletteWinner] = useState<any>(null);
 
   // Reiniciar contador al buscar para mantener fluidez
   useEffect(() => {
     setVisibleCount(1000);
   }, [ticketSearch]);
 
+  const handleStartRoulette = async () => {
+    if (!winnerModalRaffle) return;
+    const soldTickets = ticketsList.filter(t => t.status === 'sold');
+
+    if (soldTickets.length === 0) {
+      toast.error('No hay boletos pagados');
+      return;
+    }
+
+    setIsRolling(true);
+    setRouletteWinner(null);
+
+    let iterations = 0;
+    const maxIterations = 30;
+    let delay = 60;
+
+    const roll = () => {
+      const randomIdx = Math.floor(Math.random() * soldTickets.length);
+      setRouletteWinner(soldTickets[randomIdx]);
+      iterations++;
+
+      if (iterations < maxIterations) {
+        // Efecto de frenado (Easing)
+        if (iterations > 20) delay += 60;
+        else if (iterations > 12) delay += 20;
+
+        setTimeout(roll, delay);
+      } else {
+        setIsRolling(false);
+        toast.success('¡Tenemos un ganador!', { icon: '🏆' });
+      }
+    };
+
+    roll();
+  };
+
+  const confirmWinnerFinal = async (ticket: any) => {
+    showConfirm({
+      message: `¿DECLARAR OFICIALMENTE al boleto #${ticket.number} (${ticket.purchase?.user?.name}) como GANADOR? Esta acción cerrará la rifa permanentemente.`,
+      onConfirm: async () => {
+        try {
+          await adminService.updateRaffle(ticket.raffleId, {
+            status: 'completed',
+            description: `${formData.description}\n\n🏆 GANADOR OFICIAL: ${ticket.purchase.user.name} (Boleto #${ticket.number})\nFecha del sorteo: ${new Date().toLocaleDateString()}`
+          });
+          toast.success('¡Rifa finalizada y ganador registrado!');
+          setWinnerModalRaffle(null);
+          setRouletteWinner(null);
+          setWinnerMethod(null);
+          loadRaffles();
+        } catch (e) {
+          toast.error('Error al finalizar la rifa');
+        }
+      }
+    });
+  };
+
   // Lock scroll when modal is open
   useEffect(() => {
-    if (isModalOpen || viewingTicketsRaffle || winnerTarget) {
+    if (isModalOpen || viewingTicketsRaffle || winnerTarget || winnerModalRaffle) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
-  }, [isModalOpen, viewingTicketsRaffle, winnerTarget]);
+  }, [isModalOpen, viewingTicketsRaffle, winnerTarget, winnerModalRaffle]);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -541,9 +603,8 @@ const Raffles = () => {
                                   </button>
                                   <button
                                     onClick={() => {
-                                      setViewingTicketsRaffle(raffle);
+                                      setWinnerModalRaffle(raffle);
                                       loadTickets(raffle.id);
-                                      // El usuario elegirá desde la lista
                                     }}
                                     className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                                   >
@@ -868,13 +929,6 @@ const Raffles = () => {
                               <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-emerald-100/50">
                                 PAGADO
                               </div>
-                              <button
-                                onClick={() => handleSetWinner(ticket)}
-                                className="flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-90 border border-amber-100/50"
-                              >
-                                <Trophy size={10} />
-                                Ganador
-                              </button>
                             </div>
                           )}
                           {ticket.status === 'available' && (
@@ -917,6 +971,216 @@ const Raffles = () => {
                   Cerrar
                 </button>
               </div>
+            </motion.div>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* ── WINNER SELECTION MODAL ─────────────────────────── */}
+      {winnerModalRaffle && createPortal(
+        <AnimatePresence mode="wait">
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { if (!isRolling) setWinnerModalRaffle(null); }}
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-8 pb-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Trophy className="text-amber-500" size={20} />
+                    <h3 className="font-extrabold text-slate-800 text-xl tracking-tight">Sorteo de Ganador</h3>
+                  </div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{winnerModalRaffle.title}</p>
+                </div>
+                {!isRolling && (
+                  <button
+                    onClick={() => setWinnerModalRaffle(null)}
+                    className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-200 transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+
+              <div className="p-8 pt-4">
+                {/* Step 1: Choose Method */}
+                {!winnerMethod && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-8">
+                    <button
+                      onClick={() => setWinnerMethod('random')}
+                      className="group p-6 bg-blue-50 hover:bg-[#2563EB] rounded-[2.5rem] border border-blue-100 transition-all text-left flex flex-col gap-4 active:scale-95"
+                    >
+                      <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <Dice5 size={28} className="text-[#2563EB]" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800 group-hover:text-white text-lg">Ruletazo</p>
+                        <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-100 uppercase mt-1">Azar transparente</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setWinnerMethod('manual');
+                        setTicketSearch('');
+                      }}
+                      className="group p-6 bg-emerald-50 hover:bg-emerald-600 rounded-[2.5rem] border border-emerald-100 transition-all text-left flex flex-col gap-4 active:scale-95"
+                    >
+                      <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <UserCheck size={28} className="text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800 group-hover:text-white text-lg">Manual</p>
+                        <p className="text-[10px] font-bold text-slate-400 group-hover:text-emerald-100 uppercase mt-1">Elegir un boleto</p>
+                      </div>
+                    </button>
+                  </div>
+                )}
+
+                {/* Step 2: Random Roulette */}
+                {winnerMethod === 'random' && (
+                  <div className="py-6 flex flex-col items-center text-center">
+                    <div className="relative mb-8 pt-4">
+                      <AnimatePresence mode="wait">
+                        {rouletteWinner ? (
+                          <motion.div
+                            key={rouletteWinner.id}
+                            initial={{ scale: 0.8, opacity: 0, y: 10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 1.2, opacity: 0, y: -10 }}
+                            className="w-48 h-48 bg-[#2563EB] rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-white border-8 border-white group relative"
+                          >
+                            <div className="absolute -top-4 bg-amber-400 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Ganador</div>
+                            <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Boleto</p>
+                            <h4 className="text-5xl font-black">#{rouletteWinner.number}</h4>
+                            <p className="text-xs font-bold text-blue-100 mt-2 truncate max-w-[140px]">{rouletteWinner.purchase?.user?.name || 'Varios'}</p>
+                          </motion.div>
+                        ) : (
+                          <div className="w-48 h-48 bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] flex items-center justify-center text-slate-300">
+                            <Sparkles size={48} className="animate-pulse" />
+                          </div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {!isRolling && !rouletteWinner && (
+                      <button
+                        onClick={handleStartRoulette}
+                        className="btn-primary w-full max-w-xs h-14 flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest"
+                      >
+                        <Play size={18} /> Iniciar Ruletazo
+                      </button>
+                    )}
+
+                    {!isRolling && rouletteWinner && (
+                      <div className="flex flex-col gap-3 w-full max-w-xs">
+                        <button
+                          onClick={() => confirmWinnerFinal(rouletteWinner)}
+                          className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle2 size={18} /> Confirmar Ganador
+                        </button>
+                        <button
+                          onClick={handleStartRoulette}
+                          className="w-full h-12 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                          <RotateCcw size={16} /> Reintentar
+                        </button>
+                      </div>
+                    )}
+
+                    {isRolling && (
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.1s]" />
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.2s]" />
+                        </div>
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Girando la suerte...</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Step 2: Manual Selection */}
+                {winnerMethod === 'manual' && (
+                  <div className="py-4 space-y-6">
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por # o por nombre..."
+                        className="w-full pl-11 pr-4 h-14 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-emerald-400 transition-all"
+                        value={ticketSearch}
+                        onChange={(e) => setTicketSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                      {ticketsList.filter(t => t.status === 'sold' && (t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase()))).length === 0 ? (
+                        <div className="py-10 text-center text-slate-300">
+                          <AlertCircle size={32} className="mx-auto mb-2 opacity-20" />
+                          <p className="text-xs font-bold uppercase">No se encontraron boletos pagados</p>
+                        </div>
+                      ) : (
+                        ticketsList
+                          .filter(t => t.status === 'sold' && (t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase())))
+                          .slice(0, 50)
+                          .map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => confirmWinnerFinal(t)}
+                              className="w-full p-4 bg-white hover:bg-emerald-50 border border-slate-100 rounded-[1.5rem] flex items-center justify-between transition-all group active:scale-[0.98]"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-xs text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                                  #{t.number}
+                                </div>
+                                <div className="text-left">
+                                  <p className="font-black text-slate-800 text-sm group-hover:text-emerald-700">{t.purchase.user.name}</p>
+                                  <p className="text-[10px] font-bold text-slate-400">{t.purchase.user.phone}</p>
+                                </div>
+                              </div>
+                              <ChevronRight size={18} className="text-slate-300 group-hover:text-emerald-500 translate-x-0 group-hover:translate-x-1 transition-all" />
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {!isRolling && (
+                <div className="p-8 pt-0 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-amber-400" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {ticketsList.filter(t => t.status === 'sold').length} Boletos pagados participan
+                    </span>
+                  </div>
+                  {winnerMethod && (
+                    <button
+                      onClick={() => setWinnerMethod(null)}
+                      className="text-[10px] font-black text-[#2563EB] uppercase tracking-widest hover:underline"
+                    >
+                      Cambiar método
+                    </button>
+                  )}
+                </div>
+              )}
             </motion.div>
           </div>
         </AnimatePresence>,
