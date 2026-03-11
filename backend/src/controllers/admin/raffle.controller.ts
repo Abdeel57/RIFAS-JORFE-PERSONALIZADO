@@ -18,7 +18,8 @@ const createRaffleSchema = z.object({
   ticketPrice: z.number().positive(),
   totalTickets: z.number().int().positive(),
   drawDate: z.string().datetime(),
-  status: z.enum(['active', 'completed']).default('active'),
+  status: z.enum(['active', 'completed', 'draft']).default('active'),
+  isVirtual: z.boolean().default(false),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();
@@ -34,16 +35,18 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
       },
     });
 
-    // Crear boletos para la rifa
-    const tickets = Array.from({ length: data.totalTickets }, (_, i) => ({
-      raffleId: raffle.id,
-      number: i + 1,
-      status: 'available' as const,
-    }));
+    // Crear boletos solo si NO es virtual
+    if (!data.isVirtual) {
+      const tickets = Array.from({ length: data.totalTickets }, (_, i) => ({
+        raffleId: raffle.id,
+        number: i + 1,
+        status: 'available' as const,
+      }));
 
-    await prisma.ticket.createMany({
-      data: tickets,
-    });
+      await prisma.ticket.createMany({
+        data: tickets,
+      });
+    }
 
     const raffleWithTickets = await prisma.raffle.findUnique({
       where: { id: raffle.id },
@@ -88,8 +91,8 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
       updateData.drawDate = new Date(data.drawDate);
     }
 
-    // Si se cambia el total de boletos, ajustar
-    if (data.totalTickets && data.totalTickets !== existingRaffle.totalTickets) {
+    // Si se cambia el total de boletos y NO es virtual, ajustar
+    if (data.totalTickets && data.totalTickets !== existingRaffle.totalTickets && !existingRaffle.isVirtual) {
       const currentTicketCount = await prisma.ticket.count({
         where: { raffleId: id },
       });

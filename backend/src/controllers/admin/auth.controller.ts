@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
+import env from '../../config/env';
 import { generateToken } from '../../services/jwt.service';
 import { AppError } from '../../utils/errors';
 import { z } from 'zod';
@@ -14,6 +15,14 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   try {
     console.log('🔐 [LOGIN] Intento de login iniciado', { email: req.body?.email });
 
+    if (!env.JWT_SECRET || env.JWT_SECRET.length < 32) {
+      console.error('❌ [LOGIN] JWT_SECRET no configurado o muy corto');
+      return res.status(503).json({
+        success: false,
+        error: 'Servidor mal configurado: JWT_SECRET debe tener al menos 32 caracteres. Revisa las variables de entorno en Railway.',
+      });
+    }
+
     const { email, password } = loginSchema.parse(req.body);
 
     console.log('📧 [LOGIN] Email parseado', { email, passwordLength: password.length });
@@ -26,7 +35,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     if (!admin) {
       console.log('❌ [LOGIN] Admin no encontrado', { email });
-      throw new AppError(401, 'Invalid credentials');
+      throw new AppError(401, 'Credenciales incorrectas');
     }
 
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
@@ -35,7 +44,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     if (!isValidPassword) {
       console.log('❌ [LOGIN] Contraseña inválida', { email });
-      throw new AppError(401, 'Invalid credentials');
+      throw new AppError(401, 'Credenciales incorrectas');
     }
 
     console.log('🎫 [LOGIN] Generando token', { adminId: admin.id, email: admin.email, role: admin.role });
@@ -64,11 +73,17 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     console.error('❌ [LOGIN] Error en login', {
       errorType: error?.constructor?.name,
       errorMessage: error instanceof Error ? error.message : 'unknown',
-      isZodError: error instanceof z.ZodError
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     if (error instanceof z.ZodError) {
-      return next(error);
+      return res.status(400).json({
+        success: false,
+        error: 'Usuario y contraseña son obligatorios (mín. 6 caracteres).',
+      });
+    }
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
     }
     next(error);
   }

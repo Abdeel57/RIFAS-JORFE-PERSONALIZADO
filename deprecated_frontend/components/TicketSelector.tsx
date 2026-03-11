@@ -31,7 +31,7 @@ function computeLayout(
 
   // Ajustamos el tamaño mínimo recomendado según los dígitos para legibilidad,
   // pero manteniendo el mismo rango de columnas preferido.
-  const minBtnSize = digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
+  const minBtnSize = digits >= 7 ? 54 : digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
 
   const preferred =
     containerWidth < 380 ? [5, 4, 3, 2] :
@@ -46,9 +46,11 @@ function computeLayout(
 
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Fuente adaptativa: un poco más pequeña si hay 5 dígitos para que quepa en el cuadrado
+  // Fuente adaptativa: un poco más pequeña si hay muchos dígitos para que quepa en el cuadrado
   let fontSize = '9px';
-  if (digits >= 5) {
+  if (digits >= 7) {
+    fontSize = btnW >= 80 ? '10px' : btnW >= 58 ? '9px' : '8px';
+  } else if (digits >= 5) {
     fontSize = btnW >= 80 ? '11px' : btnW >= 54 ? '10px' : '9px';
   } else {
     fontSize = btnW >= 68 ? '11px' : btnW >= 48 ? '10px' : '9px';
@@ -115,6 +117,7 @@ interface TicketSelectorProps {
   pricePerTicket: number;
   onCheckout: (tickets: number[]) => void;
   refreshTrigger?: number;
+  isVirtual?: boolean;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -124,6 +127,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   pricePerTicket,
   onCheckout,
   refreshTrigger,
+  isVirtual = false,
 }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +135,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState(false);
   const [lastLuckyNumbers, setLastLuckyNumbers] = useState<number[]>([]);
-  const [allTickets, setAllTickets] = useState<Array<{ number: number; status: string }>>([]);
+  const [statusMap, setStatusMap] = useState<Map<number, string>>(new Map());
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
 
   // ── Layout measurement (columns + font size + aspect ratio adapt to width) ─
@@ -168,20 +172,10 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     const load = async () => {
       try {
         const tickets = await apiService.getRaffleTickets(raffleId);
-        const statusMap = new Map(tickets.map((t: any) => [t.number, t.status]));
-        setAllTickets(
-          Array.from({ length: totalTickets }, (_, i) => ({
-            number: i + 1,
-            status: statusMap.get(i + 1) ?? 'available',
-          }))
-        );
+        const map = new Map<number, string>(tickets.map((t: any) => [t.number, t.status]));
+        setStatusMap(map);
       } catch {
-        setAllTickets(
-          Array.from({ length: totalTickets }, (_, i) => ({
-            number: i + 1,
-            status: 'available',
-          }))
-        );
+        setStatusMap(new Map());
       } finally {
         setIsLoadingTickets(false);
       }
@@ -189,18 +183,10 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     load();
   }, [raffleId, totalTickets, refreshTrigger]);
 
-  // ── Group tickets into rows for virtualizer ───────────────────────────────
-  const rows = useMemo(() => {
-    const result: Array<Array<{ number: number; status: string }>> = [];
-    for (let i = 0; i < allTickets.length; i += columnsCount) {
-      result.push(allTickets.slice(i, i + columnsCount));
-    }
-    return result;
-  }, [allTickets, columnsCount]);
-
   // ── Virtualizer setup ─────────────────────────────────────────────────────
+  const totalRows = Math.ceil(totalTickets / columnsCount);
   const virtualizer = useVirtualizer({
-    count: rows.length,
+    count: totalRows,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => rowHeight,
     overscan: OVERSCAN,
@@ -235,16 +221,22 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     soundService.playMachineRoll();
 
     setTimeout(() => {
-      const available = allTickets.filter(
-        t => t.status === 'available' && !selectedSet.has(t.number)
-      );
-      const selected = [...available]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, count)
-        .map(t => t.number);
+      // Para optimizar en 1M, no filtramos TODO el array. 
+      // Buscamos números al azar hasta encontrar 'count' disponibles.
+      const lucky: number[] = [];
+      let attempts = 0;
+      const maxAttempts = 1000; // seguridad
 
-      setLastLuckyNumbers(selected);
-      setSelectedTickets(prev => [...prev, ...selected]);
+      while (lucky.length < count && attempts < maxAttempts) {
+        attempts++;
+        const num = Math.floor(Math.random() * totalTickets) + 1;
+        if (!selectedSet.has(num) && (statusMap.get(num) || 'available') === 'available') {
+          if (!lucky.includes(num)) lucky.push(num);
+        }
+      }
+
+      setLastLuckyNumbers(lucky);
+      setSelectedTickets(prev => [...prev, ...lucky]);
       setIsAnimating(false);
       soundService.playJackpot();
       setTimeout(() => setLastLuckyNumbers([]), 3000);
@@ -259,10 +251,10 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
 
   // Scroll virtualizer to the searched ticket's row instantly
   useEffect(() => {
-    if (!highlightedTicket || !rows.length) return;
+    if (!highlightedTicket) return;
     const rowIndex = Math.floor((highlightedTicket - 1) / columnsCount);
     virtualizer.scrollToIndex(rowIndex, { align: 'center', behavior: 'smooth' });
-  }, [highlightedTicket, columnsCount, rows.length]);
+  }, [highlightedTicket, columnsCount]);
 
   useEffect(() => {
     if (selectedTickets.length === 0) setIsTrayExpanded(false);
@@ -285,7 +277,15 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
 
       <div className="text-center">
         <h2 className="text-xl font-black text-slate-800 tracking-tight">Elige tus Boletos</h2>
-        <p className="text-slate-400 text-xs font-medium mt-0.5">Pulsa los números para elegir</p>
+        <div className="flex items-center justify-center gap-2 mt-0.5">
+          <p className="text-slate-400 text-xs font-medium">Pulsa los números para elegir</p>
+          {isVirtual && (
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100 animate-pulse">
+              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-3H8v-3h3V7.5L16.5 12 11 16.5z" /></svg>
+              Optimizado
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Search + Lucky machine */}
@@ -341,11 +341,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       {isLoadingTickets ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
-          {totalTickets > 5000 && (
-            <p className="text-slate-400 text-xs font-bold animate-pulse">
-              Preparando {totalTickets.toLocaleString()} boletos...
-            </p>
-          )}
+          <p className="text-slate-400 text-xs font-bold animate-pulse">
+            Preparando {totalTickets.toLocaleString()} boletos...
+          </p>
         </div>
       ) : (
         /* Scroll container — this is what the virtualizer watches */
@@ -363,39 +361,57 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             }}
           >
             {/* Only the visible rows are rendered */}
-            {virtualizer.getVirtualItems().map(virtualRow => (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
-                  paddingBottom: `${GAP}px`,
-                }}
-              >
-                {/* Row: flex with equal-width items */}
-                <div style={{ display: 'flex', gap: `${GAP}px` }}>
-                  {rows[virtualRow.index]?.map(ticket => (
-                    <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
-                      <TicketItem
-                        number={ticket.number}
-                        status={ticket.status}
-                        isSelected={selectedSet.has(ticket.number)}
-                        isHighlighted={highlightedTicket === ticket.number}
-                        isLucky={lastLuckyNumbers.includes(ticket.number)}
-                        fontSize={ticketFontSize}
-                        aspectRatio={ticketAspectRatio}
-                        onClick={toggleTicket}
-                      />
-                    </div>
-                  ))}
+            {virtualizer.getVirtualItems().map(virtualRow => {
+              const startNum = virtualRow.index * columnsCount + 1;
+              const rowItems: Array<{ number: number; status: string }> = [];
+              for (let i = 0; i < columnsCount; i++) {
+                const num = startNum + i;
+                if (num <= totalTickets) {
+                  rowItems.push({
+                    number: num,
+                    status: statusMap.get(num) || 'available'
+                  });
+                }
+              }
+
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    paddingBottom: `${GAP}px`,
+                  }}
+                >
+                  {/* Row: flex with equal-width items */}
+                  <div style={{ display: 'flex', gap: `${GAP}px` }}>
+                    {rowItems.map(ticket => (
+                      <div key={ticket.number} style={{ flex: 1, minWidth: 0 }}>
+                        <TicketItem
+                          number={ticket.number}
+                          status={ticket.status}
+                          isSelected={selectedSet.has(ticket.number)}
+                          isHighlighted={highlightedTicket === ticket.number}
+                          isLucky={lastLuckyNumbers.includes(ticket.number)}
+                          fontSize={ticketFontSize}
+                          aspectRatio={ticketAspectRatio}
+                          onClick={toggleTicket}
+                        />
+                      </div>
+                    ))}
+                    {/* Fill gap for incomplete rows */}
+                    {rowItems.length < columnsCount && Array.from({ length: columnsCount - rowItems.length }).map((_, i) => (
+                      <div key={`empty-${i}`} style={{ flex: 1, minWidth: 0 }} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

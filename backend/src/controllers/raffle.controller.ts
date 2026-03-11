@@ -70,9 +70,17 @@ export const getRaffleTickets = async (req: Request, res: Response, next: NextFu
     const { id } = req.params;
     const { status } = req.query;
 
+    const raffle = await prisma.raffle.findUnique({
+      where: { id: id as string },
+      select: { isVirtual: true },
+    });
+
     const where: any = { raffleId: id };
     if (status) {
       where.status = status;
+    } else if ((raffle as any)?.isVirtual) {
+      // En rifas virtuales, solo devolver boletos ocupados para ahorrar ancho de banda
+      where.status = { in: ['sold', 'reserved'] };
     }
 
     const tickets = await prisma.ticket.findMany({

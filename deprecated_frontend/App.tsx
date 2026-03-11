@@ -472,6 +472,7 @@ const App: React.FC = () => {
                           pricePerTicket={featuredRaffle.ticketPrice}
                           onCheckout={handleCheckout}
                           refreshTrigger={refreshTicketsAt}
+                          isVirtual={featuredRaffle.isVirtual}
                         />
                       ) : (
                         <div className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center p-20 text-center animate-pulse">

@@ -48,7 +48,7 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
       throw new AppError(400, 'Raffle is not active');
     }
 
-    // Verificar que los boletos existen y están disponibles
+    // Verificar que los boletos están disponibles
     const tickets = await prisma.ticket.findMany({
       where: {
         raffleId,
@@ -56,13 +56,24 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
       },
     });
 
-    if (tickets.length !== ticketNumbers.length) {
-      throw new AppError(400, 'Some tickets do not exist');
+    // En modo virtual, solo los boletos vendidos/apartados están en la BD.
+    // En modo normal, TODOS los boletos deben existir en la BD.
+    if (!(raffle as any).isVirtual && tickets.length !== ticketNumbers.length) {
+      throw new AppError(400, 'Algunos boletos no existen');
+    }
+
+    if ((raffle as any).isVirtual) {
+      // Validar rango
+      for (const n of ticketNumbers) {
+        if (n < 1 || n > raffle.totalTickets) {
+          throw new AppError(400, `Boleto #${n} fuera de rango (1-${raffle.totalTickets})`);
+        }
+      }
     }
 
     const unavailableTickets = tickets.filter(t => t.status !== 'available');
     if (unavailableTickets.length > 0) {
-      throw new AppError(400, `Tickets ${unavailableTickets.map(t => t.number).join(', ')} are not available`);
+      throw new AppError(400, `Los boletos ${unavailableTickets.map(t => t.number).join(', ')} ya no están disponibles`);
     }
 
     // Crear o obtener usuario (identificado por teléfono)
@@ -104,16 +115,48 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
         },
       });
 
-      await tx.ticket.updateMany({
-        where: {
-          raffleId,
-          number: { in: ticketNumbers },
-        },
-        data: {
-          status: 'reserved',
-          purchaseId: purchase.id,
-        },
-      });
+      if ((raffle as any).isVirtual) {
+        // En modo virtual, crear los que no existen y actualizar los que sí
+        const existingNumbers = tickets.map((t) => t.number);
+        const numbersToCreate = ticketNumbers.filter((n) => !existingNumbers.includes(n));
+        const numbersToUpdate = ticketNumbers.filter((n) => existingNumbers.includes(n));
+
+        if (numbersToCreate.length > 0) {
+          await tx.ticket.createMany({
+            data: numbersToCreate.map((n) => ({
+              raffleId,
+              number: n,
+              status: 'reserved',
+              purchaseId: purchase.id,
+            })),
+          });
+        }
+
+        if (numbersToUpdate.length > 0) {
+          await tx.ticket.updateMany({
+            where: {
+              raffleId,
+              number: { in: numbersToUpdate },
+            },
+            data: {
+              status: 'reserved',
+              purchaseId: purchase.id,
+            },
+          });
+        }
+      } else {
+        // Modo normal: solo actualizar
+        await tx.ticket.updateMany({
+          where: {
+            raffleId,
+            number: { in: ticketNumbers },
+          },
+          data: {
+            status: 'reserved',
+            purchaseId: purchase.id,
+          },
+        });
+      }
 
       return purchase;
     });

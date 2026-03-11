@@ -12,6 +12,7 @@ export interface Raffle {
   totalTickets: number;
   drawDate: string;
   status: 'active' | 'completed';
+  isVirtual: boolean;
 }
 
 export interface Ticket {

@@ -27,6 +27,7 @@ interface FormData {
   totalTickets: string;
   drawDate: string;
   status: 'active' | 'completed' | 'draft';
+  isVirtual: boolean;
 }
 
 type WizardStep = 'info' | 'media' | 'config';
@@ -36,6 +37,7 @@ const EMPTY_FORM: FormData = {
   prizeImage: '', galleryImages: '', videoUrl: '',
   ticketPrice: '', totalTickets: '',
   drawDate: '', status: 'draft',
+  isVirtual: false,
 };
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
@@ -307,6 +309,7 @@ const Raffles = () => {
         totalTickets: raffle.totalTickets != null ? String(raffle.totalTickets) : '',
         drawDate: formatDateForInput(raffle.drawDate),
         status: raffle.status || 'draft',
+        isVirtual: !!raffle.isVirtual,
       });
     } else {
       setEditingRaffle(null);
@@ -788,6 +791,30 @@ const Raffles = () => {
                             onChange={e => set('description', e.target.value)}
                             required rows={4} className="admin-input resize-none font-medium leading-relaxed"
                             placeholder="Describe los detalles del sorteo..." />
+                        </div>
+
+                        {/* Modo Optimizado Toggle */}
+                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <Sparkles size={14} className="text-blue-500 fill-blue-500" />
+                              <span className="text-[11px] font-black text-blue-600 uppercase tracking-wider">Modo Optimizado (1M Boletos)</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 leading-tight">
+                              Recomendado para rifas de más de 50,000 boletos. No genera boletos vacíos en la base de datos, garantizando fluidez total.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={editingRaffle}
+                            onClick={() => setFormData(prev => ({ ...prev, isVirtual: !prev.isVirtual }))}
+                            className={`w-12 h-6 rounded-full relative transition-all active:scale-95 flex-shrink-0 ${formData.isVirtual ? 'bg-blue-500' : 'bg-slate-200'} ${editingRaffle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <motion.div
+                              animate={{ x: formData.isVirtual ? 24 : 0 }}
+                              className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                            />
+                          </button>
                         </div>
                       </div>
                     )}

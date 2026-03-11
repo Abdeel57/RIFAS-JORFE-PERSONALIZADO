@@ -9,12 +9,28 @@ const updateTicketSchema = z.object({
 
 export const getTickets = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { raffleId, status, purchaseId } = req.query;
+    const { raffleId, status, purchaseId, search } = req.query;
 
     const where: any = {};
     if (raffleId) where.raffleId = raffleId as string;
     if (status) where.status = status as string;
     if (purchaseId) where.purchaseId = purchaseId as string;
+
+    // Si hay búsqueda por número exacto, priorizarla
+    const searchNumber = search && !isNaN(Number(search)) ? Number(search) : null;
+    if (searchNumber) {
+      where.number = searchNumber;
+    } else if (search) {
+      // Búsqueda por nombre de usuario o teléfono (vía purchase)
+      where.OR = [
+        { purchase: { user: { name: { contains: search as string, mode: 'insensitive' } } } },
+        { purchase: { user: { phone: { contains: search as string } } } },
+      ];
+    }
+
+    // Si es una rifa virtual y NO se está filtrando por algo específico,
+    // por defecto no devolvemos los "disponibles" porque no existen en la BD.
+    // Pero si se busca un número específico, lo manejamos después.
 
     const tickets = await prisma.ticket.findMany({
       where,
@@ -23,6 +39,8 @@ export const getTickets = async (req: Request, res: Response, next: NextFunction
           select: {
             id: true,
             title: true,
+            isVirtual: true,
+            totalTickets: true,
           },
         },
         purchase: {
@@ -41,7 +59,30 @@ export const getTickets = async (req: Request, res: Response, next: NextFunction
         { raffleId: 'asc' },
         { number: 'asc' },
       ],
+      take: 500, // Límite de seguridad
     });
+
+    // Si se buscó un número específico en una rifa virtual y no se encontró, "sintetizar" uno disponible
+    if (searchNumber && tickets.length === 0 && raffleId) {
+      const raffle = await prisma.raffle.findUnique({
+        where: { id: raffleId as string },
+        select: { id: true, title: true, isVirtual: true, totalTickets: true },
+      });
+
+      if (raffle?.isVirtual && searchNumber >= 1 && searchNumber <= raffle.totalTickets) {
+        tickets.push({
+          id: `virtual-${raffle.id}-${searchNumber}`,
+          raffleId: raffle.id,
+          number: searchNumber,
+          status: 'available',
+          purchaseId: null,
+          raffle: { id: raffle.id, title: raffle.title },
+          purchase: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any);
+      }
+    }
 
     res.json({
       success: true,
@@ -57,37 +98,75 @@ export const updateTicket = async (req: Request, res: Response, next: NextFuncti
     const { id } = req.params;
     const { status } = updateTicketSchema.parse(req.body);
 
-    const ticket = await prisma.ticket.findUnique({
-      where: { id },
-    });
+    let updatedTicket;
 
-    if (!ticket) {
-      throw new AppError(404, 'Ticket not found');
-    }
+    if (id.startsWith('virtual-')) {
+      const parts = id.split('-');
+      // id format: virtual-{raffleId}-{number}
+      // parts[1] is raffleId, parts[2...n] might be number if raffleId has hyphens.
+      // Safer: parts is ['virtual', raffleId, number]
+      const raffleId = parts[1];
+      const number = Number(parts[parts.length - 1]);
 
-    const updatedTicket = await prisma.ticket.update({
-      where: { id },
-      data: { status },
-      include: {
-        raffle: {
-          select: {
-            id: true,
-            title: true,
-          },
+      updatedTicket = await prisma.ticket.create({
+        data: {
+          raffleId,
+          number,
+          status,
         },
-        purchase: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                phone: true,
-                email: true,
+        include: {
+          raffle: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          purchase: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  phone: true,
+                  email: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
+    } else {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id },
+      });
+
+      if (!ticket) {
+        throw new AppError(404, 'Boleto no encontrado');
+      }
+
+      updatedTicket = await prisma.ticket.update({
+        where: { id },
+        data: { status },
+        include: {
+          raffle: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          purchase: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
 
     res.json({
       success: true,
