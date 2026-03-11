@@ -28,8 +28,6 @@ const Layout = () => {
   const navItems = [
     { path: '/', label: 'Órdenes', icon: Home },
     { path: '/raffles', label: 'Rifas', icon: Ticket },
-    { path: '/purchases', label: 'Historial', icon: ShoppingBag },
-    { path: '/users', label: 'Usuarios', icon: Users },
     { path: '/settings', label: 'Ajustes', icon: SettingsIcon },
   ];
 

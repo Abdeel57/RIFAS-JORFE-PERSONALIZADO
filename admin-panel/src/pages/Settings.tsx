@@ -6,8 +6,8 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/Skeleton';
 import {
-    ChevronRight, Palette, CreditCard, Phone, Settings as SettingsIcon,
-    Image, Sliders, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, Lock, User, Loader2
+    ChevronRight, Palette, CreditCard, Phone,
+    Image, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, User, Loader2, Facebook
 } from 'lucide-react';
 
 // ─── Color utilities ──────────────────────────────────────────────────────────
@@ -61,13 +61,6 @@ function autoSecondary(primaryHex: string): string {
 
 function isValidHex(hex: string): boolean {
     return /^#[0-9a-fA-F]{6}$/.test(hex);
-}
-
-function isValidUrl(url: string): boolean {
-    try {
-        const u = new URL(url);
-        return ['http:', 'https:'].includes(u.protocol);
-    } catch { return false; }
 }
 
 // ─── Image compression ────────────────────────────────────────────────────────
@@ -492,6 +485,50 @@ const Settings: React.FC = () => {
                             <div className="p-6 bg-slate-50/50">
                                 <FieldLabel hint="Mensaje que verá el cliente al terminar su pedido.">Instrucciones Especiales</FieldLabel>
                                 <textarea className="admin-input resize-none h-32" value={settings.paymentInstructions} onChange={e => set('paymentInstructions', e.target.value)} placeholder="Ej: Favor de enviar comprobante por WhatsApp con su número de orden." />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'contacto' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Contacto y Soporte" icon={<Phone size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 space-y-4">
+                            <div className="space-y-1">
+                                <FieldLabel hint="Número para recibir comprobantes y dudas.">WhatsApp Business</FieldLabel>
+                                <div className="relative">
+                                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input className="admin-input pl-11" placeholder="Ej: 521..." value={settings.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <FieldLabel hint="Email de contacto oficial.">Correo Electrónico</FieldLabel>
+                                <div className="relative">
+                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input className="admin-input pl-11" placeholder="hola@tusitio.com" value={settings.contactEmail} onChange={e => set('contactEmail', e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'redes' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Redes Sociales" icon={<Globe size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 space-y-4">
+                            <div className="space-y-1">
+                                <FieldLabel hint="Solo el usuario (sin @).">Instagram</FieldLabel>
+                                <div className="relative">
+                                    <Instagram size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-400" />
+                                    <input className="admin-input pl-11" placeholder="TuUsuario" value={settings.instagram} onChange={e => set('instagram', e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <FieldLabel hint="URL completa de tu página de Facebook.">Facebook Page</FieldLabel>
+                                <div className="relative">
+                                    <Facebook size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600" />
+                                    <input className="admin-input pl-11" placeholder="https://facebook.com/..." value={settings.facebookUrl} onChange={e => set('facebookUrl', e.target.value)} />
+                                </div>
                             </div>
                         </div>
                     </div>

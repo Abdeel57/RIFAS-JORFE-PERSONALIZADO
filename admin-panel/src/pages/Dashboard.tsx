@@ -6,29 +6,25 @@ import { adminService } from '../services/admin.service';
 import Skeleton from '../components/Skeleton';
 import {
   CheckCircle2, XCircle, Clock, MoreHorizontal, MessageSquare,
-  ExternalLink, Eye, ChevronRight, Hash, DollarSign, User, Phone,
-  AlertCircle, Loader2, Pencil, X, Search, Calendar, Mail, MapPin
+  Eye, ChevronRight, DollarSign, User, AlertCircle, Loader2, Pencil, X, Search, ShoppingBag, RefreshCw
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) => n.toString().padStart(3, '0');
 const fmtTime = (d: string) => {
-  const dt = new Date(d);
-  const now = new Date();
-  const diffMs = now.getTime() - dt.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Ahora';
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h`;
-  return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
-};
-
-const getFrontendBaseUrl = (): string => {
-  const env = (import.meta as any).env?.VITE_FRONTEND_URL;
-  if (env && typeof env === 'string' && env.trim()) return env.replace(/\/$/, '');
-  return 'https://naorifas.netlify.app';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '—';
+    const now = new Date();
+    const diffMs = now.getTime() - dt.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Ahora';
+    if (diffMin < 60) return `${diffMin}m`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH}h`;
+    return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  } catch { return '—'; }
 };
 
 const phoneToWA = (phone: string): string => {
@@ -79,12 +75,8 @@ const OrderCard = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const frontendBase = getFrontendBaseUrl();
-  const comprobanteLink = `${frontendBase}/#comprobante?purchase=${purchase.id}`;
-
   const waMessage = encodeURIComponent(
     `✅ ¡Hola ${purchase.user?.name ?? ''}! Tu pago fue confirmado correctamente.\n\n` +
-    `*Descarga tu boleto digital aquí:*\n${comprobanteLink}\n\n` +
     `¡Gracias por participar! Mucha suerte 🍀`
   );
   const waLink = `https://wa.me/${phoneToWA(purchase.user?.phone ?? '')}?text=${waMessage}`;
@@ -96,8 +88,8 @@ const OrderCard = ({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={`list-card relative border-l-4 transition-colors ${isPaid ? 'border-emerald-500 bg-white' :
-        isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
-          'border-amber-400 bg-white shadow-md'
+          isCancelled ? 'border-slate-300 opacity-50 bg-slate-50' :
+            'border-amber-400 bg-white shadow-md'
         }`}
     >
       <div className="flex flex-col gap-3">
@@ -238,8 +230,12 @@ const OrderCard = ({
                   <X size={18} />
                 </button>
               </div>
-              <div className="max-h-[70vh] overflow-auto bg-slate-50 p-2">
-                <img src={purchase.paymentProofUrl} alt="Comprobante" className="w-full h-auto rounded-xl" />
+              <div className="max-h-[70vh] overflow-auto bg-slate-50 p-2 text-center">
+                {purchase.paymentProofUrl ? (
+                  <img src={purchase.paymentProofUrl} alt="Comprobante" className="w-full h-auto rounded-xl inline-block" />
+                ) : (
+                  <div className="p-10 text-slate-300">Sin imagen</div>
+                )}
               </div>
               <div className="p-4 flex gap-2">
                 <button
@@ -264,19 +260,24 @@ const Dashboard = () => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [filter, setFilter] = useState<'pending' | 'all' | 'paid'>('pending');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<any>(null);
 
   const loadData = async (f: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       const params = f === 'all' ? {} : { status: f };
       const data = await adminService.getPurchases(params);
-      setPurchases((data ?? []).sort((a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
-    } catch (e) {
-      console.error(e);
+
+      const pList = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
+
+      setPurchases(pList);
+    } catch (e: any) {
+      console.error('Error loading dashboard data:', e);
+      setError(e.message || 'Error de conexión con el servidor');
+      toast.error('Error al cargar datos');
     } finally {
       setIsLoading(false);
     }
@@ -290,13 +291,11 @@ const Dashboard = () => {
       onConfirm: async () => {
         setPaying(id);
         const originalData = [...purchases];
-        // Optimistic update
         setPurchases(prev => prev.map(p => p.id === id ? { ...p, status: 'paid' } : p));
 
         try {
           await adminService.updatePurchaseStatus(id, 'paid');
           toast.success('¡Pago confirmado!');
-          // If in "pending" view, remove it smoothly
           if (filter === 'pending') {
             setTimeout(() => {
               setPurchases(prev => prev.filter(p => p.id !== id));
@@ -343,7 +342,7 @@ const Dashboard = () => {
     });
   };
 
-  const pendingCount = purchases.filter(p => p.status === 'pending').length;
+  const pendingCount = Array.isArray(purchases) ? purchases.filter(p => p?.status === 'pending').length : 0;
 
   const filters = [
     { id: 'pending', label: 'Pendientes', color: 'bg-amber-500' },
@@ -386,12 +385,26 @@ const Dashboard = () => {
       </div>
 
       {/* Main List */}
-      <div className="space-y-3">
+      <div className="space-y-3 min-h-[200px]">
         {isLoading ? (
           <Skeleton count={5} className="h-44 w-full" />
+        ) : error ? (
+          <div className="admin-card p-10 text-center border-red-100 bg-red-50/30">
+            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="font-bold text-slate-800">No se pudieron cargar los datos</h3>
+            <p className="text-xs text-slate-500 mt-2 mb-6 max-w-xs mx-auto">{error}</p>
+            <button
+              onClick={() => loadData(filter)}
+              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all"
+            >
+              <RefreshCw size={14} /> Reintentar
+            </button>
+          </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {purchases.length === 0 ? (
+            {(!purchases || purchases.length === 0) ? (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0, y: 20 }}
@@ -452,12 +465,12 @@ const Dashboard = () => {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</label>
                   <div className="relative">
                     <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                    <input className="admin-input pl-11" defaultValue={editTarget.user.name} readOnly />
+                    <input className="admin-input pl-11" defaultValue={editTarget.user?.name || ''} readOnly />
                   </div>
                 </div>
 
                 <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
-                  <AlertCircle className="text-amber-500 flex-shrink-0" />
+                  <AlertCircle className="text-amber-500 flex-shrink-0" size={18} />
                   <p className="text-[11px] text-amber-700 font-medium">Solo los administradores pueden modificar datos de contacto. Por favor verifique antes de cambiar el estado.</p>
                 </div>
 
