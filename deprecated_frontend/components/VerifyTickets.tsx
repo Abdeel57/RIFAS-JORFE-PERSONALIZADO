@@ -9,7 +9,7 @@ const VerifyTickets: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<{ number: number; status: string; raffle?: any }[] | null>(null);
-  const [userInfo, setUserInfo] = useState<{ name: string; phone: string; email: string } | null>(null);
+  const [userInfo, setUserInfo] = useState<{ name: string; phone: string } | null>(null);
   const [pendingPurchase, setPendingPurchase] = useState<any>(null);
 
   // Efecto proactivo: Se ejecuta al montar para ver si el dispositivo tiene algo pendiente
@@ -24,7 +24,7 @@ const VerifyTickets: React.FC = () => {
         }
       }
     };
-    
+
     checkPending();
     // Escuchar cambios en otras pestañas por si el usuario paga en otro lado
     window.addEventListener('storage', checkPending);
@@ -34,13 +34,13 @@ const VerifyTickets: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length < 10) return alert("Ingresa un número de 10 dígitos");
-    
+
     setIsSearching(true);
     soundService.playSelect();
-    
+
     try {
       const data = await apiService.verifyTickets(phone);
-      
+
       if (data.user) {
         setUserInfo(data.user);
         setResults(data.tickets.map(t => ({
@@ -103,26 +103,26 @@ const VerifyTickets: React.FC = () => {
 
           <div className="space-y-4">
             <div className="bg-white/70 backdrop-blur-sm p-5 rounded-3xl border border-amber-100">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pagar ahora por SPEI</h4>
-               <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-50">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">CLABE BBVA</span>
-                    <span className="text-sm font-black text-slate-800">012 180 0152 4895 2410</span>
-                  </div>
-                  <button onClick={() => { navigator.clipboard.writeText('012180015248952410'); soundService.playSelect(); }} className="p-2 bg-blue-50 text-blue-600 rounded-lg active:scale-90 transition-transform">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                  </button>
-               </div>
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pagar ahora por SPEI</h4>
+              <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-50">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">CLABE BBVA</span>
+                  <span className="text-sm font-black text-slate-800">012 180 0152 4895 2410</span>
+                </div>
+                <button onClick={() => { navigator.clipboard.writeText('012180015248952410'); soundService.playSelect(); }} className="p-2 bg-blue-50 text-blue-600 rounded-lg active:scale-90 transition-transform">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button 
+              <button
                 onClick={() => { localStorage.removeItem(STORAGE_KEY_PENDING); setPendingPurchase(null); soundService.playDeselect(); }}
                 className="py-4 bg-white border border-amber-200 text-amber-600 font-black rounded-2xl text-[10px] uppercase tracking-widest active:bg-amber-100 transition-colors"
               >
                 Cancelar Apartado
               </button>
-              <button 
+              <button
                 onClick={clearPending}
                 className="py-4 bg-slate-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all"
               >
@@ -139,7 +139,7 @@ const VerifyTickets: React.FC = () => {
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Número registrado</label>
             <div className="relative">
-              <input 
+              <input
                 type="tel"
                 required
                 placeholder="10 dígitos de tu WhatsApp"
@@ -151,7 +151,7 @@ const VerifyTickets: React.FC = () => {
             </div>
           </div>
 
-          <button 
+          <button
             disabled={isSearching}
             className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3
               ${isSearching ? 'bg-slate-100 text-slate-400' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'}`}
@@ -165,8 +165,7 @@ const VerifyTickets: React.FC = () => {
             {userInfo && (
               <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4">
                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Usuario</p>
-                <p className="text-sm font-bold text-slate-800">{userInfo.name}</p>
-                <p className="text-xs text-slate-600">{userInfo.email}</p>
+                <p className="text-sm font-bold text-slate-800 leading-none">{userInfo.name}</p>
               </div>
             )}
             {results.length > 0 ? (
@@ -180,9 +179,8 @@ const VerifyTickets: React.FC = () => {
                       )}
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Boleto</p>
                       <p className="text-xl font-black text-slate-800">#{res.number.toString().padStart(3, '0')}</p>
-                      <span className={`inline-block mt-2 px-3 py-1 text-[8px] font-black rounded-full uppercase ${
-                        res.status === 'Pagado' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
-                      }`}>{res.status}</span>
+                      <span className={`inline-block mt-2 px-3 py-1 text-[8px] font-black rounded-full uppercase ${res.status === 'Pagado' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
+                        }`}>{res.status}</span>
                     </div>
                   ))}
                 </div>
