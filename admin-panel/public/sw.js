@@ -1,4 +1,4 @@
-// Service Worker — Rifas NAO Admin Push Notifications
+// Service Worker — Bismark Admin Push Notifications
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
     if (!event.data) return;
 
     let data = {};
-    try { data = event.data.json(); } catch { data = { title: 'Rifas NAO', body: event.data.text() }; }
+    try { data = event.data.json(); } catch { data = { title: 'Bismark', body: event.data.text() }; }
 
     const options = {
         body: data.body || '',
@@ -22,7 +22,7 @@ self.addEventListener('push', (event) => {
         ],
     };
 
-    event.waitUntil(self.registration.showNotification(data.title || 'Rifas NAO', options));
+    event.waitUntil(self.registration.showNotification(data.title || 'Bismark', options));
 });
 
 self.addEventListener('notificationclick', (event) => {

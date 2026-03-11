@@ -250,7 +250,7 @@ const Settings: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Panel>(null);
 
     const [settings, setSettings] = useState<SettingsData>({
-        siteName: 'RIFAS NAO', bankName: '', clabe: '', beneficiary: '',
+        siteName: 'Bismark', bankName: '', clabe: '', beneficiary: '',
         accountNumber: '', paymentInstructions: '', whatsapp: '',
         contactEmail: '', instagram: '', facebookUrl: '',
         autoVerificationEnabled: true, logoUrl: '', logoSize: 44,
@@ -293,7 +293,7 @@ const Settings: React.FC = () => {
                     const secondary = data.secondaryColor || '#6366f1';
                     const savedLogo = data.logoUrl || '';
                     setSettings({
-                        siteName: data.siteName || 'RIFAS NAO',
+                        siteName: data.siteName || 'Bismark',
                         bankName: data.bankName || '', clabe: data.clabe || '',
                         beneficiary: data.beneficiary || '', accountNumber: data.accountNumber || '',
                         paymentInstructions: data.paymentInstructions || '',

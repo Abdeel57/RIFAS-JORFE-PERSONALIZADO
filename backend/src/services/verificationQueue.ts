@@ -71,7 +71,7 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
 
         // Obtener configuración del sistema (beneficiario y CLABE)
         const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const beneficiaryName = settings?.beneficiary || 'RIFAS NAO';
+        const beneficiaryName = settings?.beneficiary || 'Bismark';
         const clabe = settings?.clabe || undefined;
         // Extraer últimos 4 dígitos de la CLABE (ignorar espacios)
         const accountLastDigits = clabe ? clabe.replace(/\s/g, '').slice(-4) : undefined;

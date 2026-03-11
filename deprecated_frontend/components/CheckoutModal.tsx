@@ -229,7 +229,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
   const bankData = useMemo(() => ({
     bank: dynamicSettings?.bankName || 'BBVA México',
     clabe: dynamicSettings?.clabe || '012 180 0152 4895 2410',
-    beneficiary: dynamicSettings?.beneficiary || 'RIFAS NAO MÉXICO S.A.',
+    beneficiary: dynamicSettings?.beneficiary || 'Bismark México S.A.',
     concept: `Rifa NAO - ${selectedTickets.length} boleto(s)`,
   }), [selectedTickets.length, dynamicSettings]);
 

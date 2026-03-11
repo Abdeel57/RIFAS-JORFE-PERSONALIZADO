@@ -30,6 +30,6 @@ export const FEATURED_RAFFLE: Raffle = {
 
 export const CONTACT_INFO = {
   whatsapp: '+521234567890',
-  email: 'contacto@rifasnao.com',
-  instagram: '@rifasnao_oficial'
+  email: 'contacto@bismark.com',
+  instagram: '@bismark_oficial'
 };

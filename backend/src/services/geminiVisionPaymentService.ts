@@ -31,7 +31,7 @@ export interface PaymentAnalysisResult {
 export interface AnalysisOptions {
     expectedAmount: number;
     customerName: string;
-    beneficiaryName: string;   // nombre del beneficiario de la cuenta (ej. "RIFAS NAO MÉXICO")
+    beneficiaryName: string;   // nombre del beneficiario de la cuenta (ej. "Bismark México")
     clabe?: string;            // CLABE completa para extraer últimos 4 dígitos
     accountLastDigits?: string; // últimos 4 dígitos de la CLABE destino (calculados en el backend)
 }

@@ -61,7 +61,7 @@ Tras el despliegue, una sola URL sirve todo:
 
 1. **Acceder al admin**: `https://[tu-url].up.railway.app/admin`
 2. **Login por defecto** (creado por el seed):
-   - Email: `admin@rifasnao.com`
+   - Email: `admin@bismark.com`
    - Password: `admin123456`
 3. **Cambiar la contraseña** en la primera sesión (si hay opción).
 4. **Configurar SystemSettings** (Admin → Configuración):

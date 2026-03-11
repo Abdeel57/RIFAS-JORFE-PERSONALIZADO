@@ -6,7 +6,7 @@ interface TermsAndConditionsProps {
   siteName?: string;
 }
 
-const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack, siteName = 'RIFAS NAO' }) => {
+const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ onBack, siteName = 'Bismark' }) => {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden mb-20">
       {/* Hero Términos */}

@@ -9,7 +9,7 @@ interface ComprobanteDigitalProps {
 const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onClose }) => {
   const [data, setData] = useState<any>(null);
   const [brand, setBrand] = useState<{ siteName: string; logoUrl: string, primaryColor: string, secondaryColor: string }>({
-    siteName: 'RIFAS NAO',
+    siteName: 'Bismark',
     logoUrl: '',
     primaryColor: '#3b82f6',
     secondaryColor: '#6366f1'
@@ -30,7 +30,7 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
         setData(compData);
         if (settings) {
           setBrand({
-            siteName: settings.siteName || 'RIFAS NAO',
+            siteName: settings.siteName || 'Bismark',
             logoUrl: settings.logoUrl || '',
             primaryColor: settings.primaryColor || '#3b82f6',
             secondaryColor: settings.secondaryColor || '#6366f1',

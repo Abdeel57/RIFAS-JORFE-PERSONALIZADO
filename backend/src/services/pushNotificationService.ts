@@ -11,7 +11,7 @@ function init() {
         console.warn('⚠️  VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY no configuradas — notificaciones push desactivadas');
         return;
     }
-    webpush.setVapidDetails('mailto:admin@rifasnao.com', publicKey, privateKey);
+    webpush.setVapidDetails('mailto:admin@bismark.com', publicKey, privateKey);
     initialized = true;
 }
 

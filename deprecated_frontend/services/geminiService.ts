@@ -14,7 +14,7 @@ export const startSupportChat = () => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: `Eres "Nao Assist", el asistente oficial de Rifas Nao. 
+      systemInstruction: `Eres "Bismark Assist", el asistente oficial de Bismark. 
       Tu objetivo es ayudar a los clientes con:
       1. Información del sorteo: ${FEATURED_RAFFLE.title} por $${FEATURED_RAFFLE.ticketPrice}.
       2. Pagos: Explicar transferencia BBVA o pago en OXXO. Recuérdales que es OBLIGATORIO enviar el comprobante a WhatsApp (${CONTACT_INFO.whatsapp}).

@@ -225,7 +225,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
   raffle,
   onOpenSupport,
   facebookUrl = '',
-  siteName = 'RIFAS NAO',
+  siteName = 'Bismark',
   logoUrl = '',
 }) => {
   // Sin delay artificial — el componente renderiza inmediatamente

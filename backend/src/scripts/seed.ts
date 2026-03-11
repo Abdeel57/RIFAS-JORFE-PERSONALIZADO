@@ -7,7 +7,7 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // ── 1. Admin por defecto ──────────────────────────────────────────────────
-  const adminEmail = 'admin@rifasnao.com';
+  const adminEmail = 'admin@bismark.com';
   const adminPassword = 'admin123456';
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
@@ -99,12 +99,13 @@ async function main() {
     update: {},
     create: {
       id: 'default',
+      siteName: 'Bismark',
       bankName: 'BBVA México',
       clabe: '012 180 0152 4895 2410',
-      beneficiary: 'RIFAS NAO MÉXICO S.A.',
+      beneficiary: 'Bismark México S.A.',
       whatsapp: '+521234567890',
-      contactEmail: 'contacto@rifasnao.com',
-      instagram: '@rifasnao_oficial',
+      contactEmail: 'contacto@bismark.com',
+      instagram: '@bismark_oficial',
     },
   });
   console.log('✅ Configuración del sistema inicializada');

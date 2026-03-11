@@ -12,7 +12,7 @@ export const startSupportChat = (raffleInfo?: { title: string; ticketPrice: numb
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash',
-    systemInstruction: `Eres "Nao Assist", el asistente oficial de Rifas Nao. 
+    systemInstruction: `Eres "Bismark Assist", el asistente oficial de Bismark. 
       Tu objetivo es ayudar a los clientes con:
       1. Información del sorteo${raffleInfo ? `: ${raffleInfo.title} por $${raffleInfo.ticketPrice}` : ''}.
       2. Pagos: Explicar transferencia BBVA o pago en OXXO. Recuérdales que es OBLIGATORIO enviar el comprobante a WhatsApp${raffleInfo ? ` (${raffleInfo.whatsapp})` : ''}.
