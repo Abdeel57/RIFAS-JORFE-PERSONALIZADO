@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import env from './config/env';
 import { errorHandler, AppError } from './utils/errors';
 import settingsRoutes from './routes/settings.routes';
 import supportRoutes from './routes/support.routes';
+import prisma from './config/database';
 
 console.log('🔍 Iniciando servidor Express...');
 console.log('PORT:', process.env.PORT);
@@ -157,8 +159,29 @@ try {
   app.use('/api/comprobante', comprobanteRoutes);
   app.use('/api/images', imagesRoutes);
   app.use('/api/admin', adminRoutes);
-
   app.use('/api/settings', settingsRoutes);
+
+  // GET /api/logo — Sirve el logo del cliente para og:image (WhatsApp, Facebook). Público.
+  app.get('/api/logo', async (req, res) => {
+    try {
+      const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+      const logoUrl = settings?.logoUrl;
+      if (!logoUrl) return res.redirect(302, '/bismark.png');
+      if (logoUrl.startsWith('data:')) {
+        const match = logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          const buf = Buffer.from(match[2], 'base64');
+          res.set('Cache-Control', 'public, max-age=86400');
+          res.set('Content-Type', match[1]);
+          return res.send(buf);
+        }
+      }
+      if (logoUrl.startsWith('http')) return res.redirect(302, logoUrl);
+      res.redirect(302, `${req.protocol}://${req.get('host')}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`);
+    } catch {
+      res.redirect(302, '/bismark.png');
+    }
+  });
 
   // Cargar rutas de soporte solo si Gemini está configurado
   try {
@@ -199,7 +222,6 @@ const adminPath = path.join(__dirname, 'admin');
 console.log('📁 Ruta del admin panel:', adminPath);
 
 // Verificar existencia del directorio al arrancar
-import fs from 'fs';
 if (fs.existsSync(adminPath)) {
   console.log('✅ Directorio admin encontrado');
   if (fs.existsSync(path.join(adminPath, 'index.html'))) {
@@ -246,17 +268,40 @@ if (fs.existsSync(frontendPath)) {
     maxAge: '1y',
     etag: true,
   }));
-  // Catch-all para SPA: rutas que no sean /api, /admin, /health sirven index.html
-  app.get('*', (req, res, next) => {
+  // Catch-all para SPA: sirve index.html con meta tags OG dinámicos (logo y nombre del cliente)
+  app.get('*', async (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path === '/health' || req.path === '/test-logging') {
       return next();
     }
     const indexPath = path.join(frontendPath, 'index.html');
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        next(err);
-      }
-    });
+    try {
+      let html = fs.readFileSync(indexPath, 'utf-8');
+      const baseUrl = `${req.protocol}://${req.get('host') || req.hostname}`;
+      const pageUrl = baseUrl + (req.originalUrl || '/');
+      let ogTitle = 'Bismark';
+      let ogDescription = 'Participa en nuestras rifas. ¡Compra tus boletos y gana increíbles premios! Entra y participa.';
+      let ogImage = `${baseUrl}/bismark.png`;
+      try {
+        const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        if (settings?.siteName) ogTitle = settings.siteName;
+        ogDescription = `Participa en las rifas de ${ogTitle}. ¡Compra tus boletos y gana increíbles premios! Entra y participa.`;
+        if (settings?.logoUrl && settings.logoUrl.startsWith('http')) {
+          ogImage = settings.logoUrl;
+        } else if (settings?.logoUrl && settings.logoUrl.startsWith('data:')) {
+          ogImage = `${baseUrl}/api/logo`;
+        } else if (settings?.logoUrl) {
+          ogImage = `${baseUrl}${settings.logoUrl.startsWith('/') ? '' : '/'}${settings.logoUrl}`;
+        }
+      } catch (_) { /* fallback a valores por defecto */ }
+      html = html
+        .replace(/__OG_TITLE__/g, ogTitle.replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+        .replace(/__OG_DESCRIPTION__/g, ogDescription.replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+        .replace(/__OG_IMAGE__/g, ogImage)
+        .replace(/__OG_URL__/g, pageUrl);
+      res.type('html').send(html);
+    } catch (err: any) {
+      next(err);
+    }
   });
 } else {
   console.warn('❌ Directorio frontend NO encontrado en:', frontendPath);
