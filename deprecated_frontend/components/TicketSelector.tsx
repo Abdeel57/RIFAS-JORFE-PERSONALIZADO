@@ -14,9 +14,22 @@ const OVERSCAN = 3;
 function computeLayout(
   containerWidth: number,
   maxTickets: number,
+  isDiscovery: boolean,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
   const aspectRatio = 1;
+
+  // Lógica especial para Modo Inteligente (>100k boletos)
+  // Forzamos menos columnas para que los números de 6 dígitos quepan bien
+  if (isDiscovery) {
+    const cols = containerWidth < 400 ? 4 : 6; // 4 en móvil, 6 en desktop (según pidió el usuario)
+    const btnW = (containerWidth - (cols - 1) * GAP) / cols;
+
+    // Fuente un poco más grande ya que hay más espacio
+    const fontSize = btnW >= 60 ? '12px' : btnW >= 50 ? '10px' : '9px';
+    return { cols, fontSize, aspectRatio };
+  }
+
   const minBtnSize = digits >= 7 ? 54 : digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
 
   const preferred =
@@ -138,7 +151,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     if (!container) return;
 
     const recalculate = (width: number) => {
-      const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets);
+      const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets, isDiscoveryMode);
       const itemW = (width - (cols - 1) * GAP) / cols;
       const itemH = itemW / aspectRatio;
       setColumnsCount(cols);
