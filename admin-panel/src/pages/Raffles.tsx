@@ -49,12 +49,12 @@ const steps: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
 const StepBar: React.FC<{ current: WizardStep }> = ({ current }) => {
   const idx = steps.findIndex(s => s.id === current);
   return (
-    <div className="px-10 py-6 border-b border-slate-50 bg-slate-50/10 relative">
-      <div className="absolute top-[44px] left-10 right-10 h-0.5 bg-slate-100 -z-0" />
+    <div className="px-4 sm:px-10 py-4 sm:py-6 border-b border-slate-50 bg-slate-50/10 relative shrink-0">
+      <div className="absolute top-[44px] left-4 right-4 sm:left-10 sm:right-10 h-0.5 bg-slate-100 -z-0" />
       <motion.div
         initial={false}
         animate={{ width: `calc(${idx} * 50%)` }}
-        className="absolute top-[44px] left-10 h-0.5 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] z-0"
+        className="absolute top-[44px] left-4 sm:left-10 h-0.5 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] z-0"
       />
 
       <div className="flex justify-between items-center relative z-10">
@@ -283,20 +283,32 @@ const Raffles = () => {
     finally { setIsLoading(false); }
   };
 
+  const formatDateForInput = (dateStr: string | Date | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch {
+      return '';
+    }
+  };
+
   const handleOpenModal = (raffle?: any) => {
     if (raffle) {
       setEditingRaffle(raffle);
       setFormData({
-        title: raffle.title,
+        title: raffle.title || '',
         subtitle: raffle.subtitle || '',
-        description: raffle.description,
-        prizeImage: raffle.prizeImage,
-        galleryImages: Array.isArray(raffle.galleryImages) ? raffle.galleryImages.join('\n') : '',
+        description: raffle.description || '',
+        prizeImage: raffle.prizeImage || '',
+        galleryImages: Array.isArray(raffle.galleryImages) ? raffle.galleryImages.join('\n') : (raffle.galleryImages || ''),
         videoUrl: raffle.videoUrl || '',
-        ticketPrice: raffle.ticketPrice.toString(),
-        totalTickets: raffle.totalTickets.toString(),
-        drawDate: raffle.drawDate ? new Date(raffle.drawDate).toISOString().slice(0, 16) : '',
-        status: raffle.status,
+        ticketPrice: raffle.ticketPrice != null ? String(raffle.ticketPrice) : '',
+        totalTickets: raffle.totalTickets != null ? String(raffle.totalTickets) : '',
+        drawDate: formatDateForInput(raffle.drawDate),
+        status: raffle.status || 'draft',
       });
     } else {
       setEditingRaffle(null);
@@ -374,8 +386,8 @@ const Raffles = () => {
   };
 
   const canGoNext = () => {
-    if (wizardStep === 'info') return formData.title.trim() && formData.description.trim();
-    if (wizardStep === 'media') return !!formData.prizeImage.trim();
+    if (wizardStep === 'info') return (formData.title?.trim() || '').length >= 1 && (formData.description?.trim() || '').length >= 1;
+    if (wizardStep === 'media') return !!(formData.prizeImage?.trim() || '');
     return true;
   };
 
@@ -389,7 +401,15 @@ const Raffles = () => {
     else if (wizardStep === 'media') setWizardStep('info');
   };
 
-  const canSubmit = () => formData.title && formData.description && formData.prizeImage && formData.ticketPrice && formData.totalTickets && formData.drawDate;
+  const canSubmit = () => {
+    const t = formData.title?.trim();
+    const d = formData.description?.trim();
+    const p = formData.prizeImage?.trim();
+    const price = formData.ticketPrice?.trim();
+    const total = formData.totalTickets?.trim();
+    const date = formData.drawDate?.trim();
+    return !!(t && d && p && price && total && date);
+  };
 
   // ─── Tickets Logic ────────────────────────────────────────────────────────
   const loadTickets = async (raffleId: string) => {
@@ -670,10 +690,10 @@ const Raffles = () => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: '100%', opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', damping: 30, stiffness: 400, mass: 0.8 }}
-              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10 border border-white/20"
+              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10 border border-white/20"
             >
               {/* Modal Header */}
-              <div className="flex items-center gap-4 px-6 pt-6 pb-2 shrink-0">
+              <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 shrink-0">
                 {wizardStep !== 'info' ? (
                   <button onClick={prevStep}
                     className="w-11 h-11 bg-slate-50 hover:bg-slate-100 active:scale-90 rounded-2xl flex items-center justify-center text-slate-400 transition-all flex-shrink-0 group">
@@ -706,7 +726,7 @@ const Raffles = () => {
 
               <StepBar current={wizardStep} />
 
-              <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={wizardStep}
@@ -714,7 +734,7 @@ const Raffles = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.2 }}
-                    className="p-5"
+                    className="p-4 sm:p-5 pb-6"
                   >
                     {/* Step 1: Información General y Configuración Base */}
                     {wizardStep === 'info' && (
@@ -734,14 +754,14 @@ const Raffles = () => {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Boleto</label>
                             <div className="relative">
                               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                              <input type="number" value={formData.ticketPrice}
+                              <input type="number" inputMode="decimal" value={formData.ticketPrice}
                                 onChange={e => set('ticketPrice', e.target.value)}
                                 className="admin-input pl-8 font-black" placeholder="50" />
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Boletos</label>
-                            <input type="number" value={formData.totalTickets}
+                            <input type="number" inputMode="numeric" value={formData.totalTickets}
                               onChange={e => set('totalTickets', e.target.value)}
                               className="admin-input font-black" placeholder="1000" />
                           </div>
@@ -768,7 +788,7 @@ const Raffles = () => {
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción Breve</label>
                           <textarea value={formData.description}
                             onChange={e => set('description', e.target.value)}
-                            required rows={4} className="admin-input resize-none text-xs font-medium leading-relaxed"
+                            required rows={4} className="admin-input resize-none font-medium leading-relaxed"
                             placeholder="Describe los detalles del sorteo..." />
                         </div>
                       </div>
@@ -891,8 +911,8 @@ const Raffles = () => {
                 </AnimatePresence>
               </div>
 
-              <div className="p-6 border-t border-slate-50 bg-white shrink-0">
-                <div className="flex gap-3">
+              <div className="p-4 sm:p-6 border-t border-slate-50 bg-white shrink-0">
+                <div className="flex gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={prevStep}

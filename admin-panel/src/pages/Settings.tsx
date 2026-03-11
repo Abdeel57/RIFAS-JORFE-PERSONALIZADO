@@ -547,17 +547,10 @@ const Settings: React.FC = () => {
                         <PanelHeader title="Contacto y Soporte" icon={<Phone size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
                         <div className="admin-card p-6 space-y-4">
                             <div className="space-y-1">
-                                <FieldLabel hint="Número para recibir comprobantes y dudas.">WhatsApp Business</FieldLabel>
+                                <FieldLabel hint="Número para WhatsApp, comprobantes y dudas. Ej: 5215512345678">Número de Teléfono</FieldLabel>
                                 <div className="relative">
                                     <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                    <input className="admin-input pl-11" placeholder="Ej: 521..." value={settings.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <FieldLabel hint="Email de contacto oficial.">Correo Electrónico</FieldLabel>
-                                <div className="relative">
-                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                                    <input className="admin-input pl-11" placeholder="hola@tusitio.com" value={settings.contactEmail} onChange={e => set('contactEmail', e.target.value)} />
+                                    <input type="tel" inputMode="numeric" className="admin-input pl-11" placeholder="Ej: 5215512345678" value={settings.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
                                 </div>
                             </div>
                         </div>
