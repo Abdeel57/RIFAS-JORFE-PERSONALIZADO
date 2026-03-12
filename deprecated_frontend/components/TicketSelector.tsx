@@ -138,12 +138,14 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(false);
 
   // Modo Descubrimiento si > 100,000 boletos
-  const isDiscoveryMode = totalTickets > 100000;
+  const isDiscoveryMode = useMemo(() => totalTickets > 100000, [totalTickets]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [columnsCount, setColumnsCount] = useState(10);
+
+  // Estado inicial inteligente: Si es masiva, empezamos en 6 columnas directamente
+  const [columnsCount, setColumnsCount] = useState(totalTickets > 100000 ? 6 : 10);
   const [rowHeight, setRowHeight] = useState(52);
-  const [ticketFontSize, setTicketFontSize] = useState('10px');
+  const [ticketFontSize, setTicketFontSize] = useState(totalTickets > 100000 ? '12px' : '10px');
   const [ticketAspectRatio, setTicketAspectRatio] = useState(1);
 
   useEffect(() => {
@@ -151,6 +153,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     if (!container) return;
 
     const recalculate = (width: number) => {
+      // Forzamos el paso de isDiscoveryMode para que el cálculo sea correcto
       const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets, isDiscoveryMode);
       const itemW = (width - (cols - 1) * GAP) / cols;
       const itemH = itemW / aspectRatio;
@@ -164,7 +167,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     observer.observe(container);
     recalculate(container.clientWidth || 300);
     return () => observer.disconnect();
-  }, [totalTickets]);
+  }, [totalTickets, isDiscoveryMode]); // Añadido isDiscoveryMode a las dependencias
 
   // ── Generador de boletos al azar 100% disponibles ────────────────────────
   const generateRandomDiscovery = useCallback((currentMap: Map<number, string>) => {
