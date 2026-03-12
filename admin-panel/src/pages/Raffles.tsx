@@ -1484,12 +1484,13 @@ const getCol = (row: Record<string, any>, keys: string[]): string => {
   return '';
 };
 
-// Parsear números de boletos: "1,2,3" | "1 2 3" | "1-5" (rango) | "1;2;3"
+// Parsear números de boletos: "1,2,3" | "[1,2,3]" | "1 2 3" | "1-5" (rango) | "1;2;3"
 const parseTicketNumbers = (val: string): number[] => {
   const str = String(val || '').trim();
   if (!str) return [];
   const nums: number[] = [];
-  const parts = str.split(/[,;\s]+/);
+  const cleaned = str.replace(/^\[|\]$/g, '').replace(/\s/g, ',');
+  const parts = cleaned.split(/[,;]+/);
   for (const p of parts) {
     const trimmed = p.trim();
     if (trimmed.includes('-')) {
@@ -1538,7 +1539,7 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
           return;
         }
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
+        const data = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '', raw: false });
 
         if (!data || data.length === 0) {
           setParseError('El archivo está vacío');
@@ -1546,21 +1547,78 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
           return;
         }
 
-        const nameKeys = ['name', 'nombre', 'cliente', 'nombre completo', 'client'];
+        const nameKeys = ['name', 'nombre', 'cliente', 'nombre completo', 'client', 'customer'];
         const phoneKeys = ['phone', 'telefono', 'teléfono', 'tel', 'celular', 'cel', 'movil', 'móvil'];
-        const ticketKeys = ['boletos', 'tickets', 'ticket', 'boleto', 'numeros', 'números', 'numero', 'número', 'no', 'nos', 'nos.'];
-        const stateKeys = ['state', 'estado', 'provincia'];
+        const ticketKeys = ['boletos', 'tickets', 'ticket', 'boleto', 'numeros', 'números', 'numero', 'número', 'no', 'nos', 'nos.', 'numbers'];
+        const stateKeys = ['state', 'estado', 'provincia', 'location', 'ubicacion'];
 
-        const sanitized = data.map((row: any) => {
-          const name = getCol(row, nameKeys);
-          const phoneRaw = getCol(row, phoneKeys);
-          const phone = normalizePhone(phoneRaw);
-          const ticketStr = getCol(row, ticketKeys);
-          const ticketNumbers = parseTicketNumbers(ticketStr);
-          const state = getCol(row, stateKeys);
+        const parseRow = (row: Record<string, any>): { name: string; phone: string; ticketNumbers: number[]; state?: string } | null => {
+          let name = getCol(row, nameKeys);
+          let phoneRaw = getCol(row, phoneKeys);
+          let phone = normalizePhone(phoneRaw);
+          let ticketStr = getCol(row, ticketKeys);
+          let ticketNumbers = parseTicketNumbers(ticketStr);
+          let state = getCol(row, stateKeys);
 
-          return { name, phone, ticketNumbers, status: 'sold' as const, state: state || undefined };
-        }).filter(r => r.name && r.phone.length >= 10 && r.ticketNumbers.length > 0);
+          if (name && phone.length >= 10 && ticketNumbers.length > 0) {
+            return { name, phone, ticketNumbers, state: state || undefined };
+          }
+
+          const allKeys = Object.keys(row || {});
+          let foundName = name || '';
+          let foundPhone = phone || '';
+          let foundTickets = ticketNumbers.length > 0 ? ticketNumbers : [] as number[];
+          let foundState = state || '';
+
+          for (const key of allKeys) {
+            const val = String(row[key] ?? '').trim();
+            if (!val || key === 'id') continue;
+
+            const digits = val.replace(/\D/g, '');
+            if (digits.length >= 10 && /^\d+$/.test(digits)) {
+              if (!foundPhone) foundPhone = normalizePhone(val);
+            } else if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}/.test(val) && !val.match(/^[\d,\[\]\s\-;]+$/) && val.length <= 80) {
+              if (!foundName) foundName = val;
+            } else if (val.includes('[') || /[\d]+[,;\s][\d]+/.test(val) || (/^[\d,\s\-;\[\]]+$/.test(val) && val.length > 5)) {
+              const parsed = parseTicketNumbers(val);
+              if (parsed.length > foundTickets.length) foundTickets = parsed;
+            } else if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(val) && !foundState && val !== foundName) {
+              foundState = val;
+            }
+          }
+
+          if (foundName && foundPhone.length >= 10 && foundTickets.length > 0) {
+            return { name: foundName, phone: foundPhone, ticketNumbers: foundTickets, state: foundState || undefined };
+          }
+          return null;
+        };
+
+        let sanitized = data.map((row: any) => parseRow(row)).filter(Boolean) as { name: string; phone: string; ticketNumbers: number[]; state?: string }[];
+
+        if (sanitized.length === 0 && data.length > 0) {
+          const firstRow = data[0] as Record<string, any>;
+          const byId = new Map<string, { name: string; phone: string; ticketNumbers: number[]; state?: string }>();
+          const campoVal = String(firstRow?.campo ?? '').toLowerCase();
+          const valorVal = String(firstRow?.valor ?? '').trim();
+          if (campoVal && valorVal) {
+            for (const row of data as Record<string, any>[]) {
+              const id = String(row.id ?? row.ID ?? '');
+              const campo = String(row.campo ?? row.Campo ?? '').toLowerCase();
+              const valor = String(row.valor ?? row.Valor ?? '').trim();
+              if (!id) continue;
+              let rec = byId.get(id);
+              if (!rec) {
+                rec = { name: '', phone: '', ticketNumbers: [] };
+                byId.set(id, rec);
+              }
+              if (campo.includes('nombre') || campo.includes('name') || campo === 'cliente') rec.name = valor;
+              else if (campo.includes('telefono') || campo.includes('phone') || campo.includes('tel') || campo.includes('cel')) rec.phone = normalizePhone(valor);
+              else if (campo.includes('boleto') || campo.includes('ticket') || campo.includes('numero')) rec.ticketNumbers = parseTicketNumbers(valor);
+              else if (campo.includes('estado') || campo.includes('state')) rec.state = valor;
+            }
+            sanitized = Array.from(byId.values()).filter(r => r.name && r.phone.length >= 10 && r.ticketNumbers.length > 0);
+          }
+        }
 
         if (sanitized.length === 0) {
           const firstRow = data[0];
