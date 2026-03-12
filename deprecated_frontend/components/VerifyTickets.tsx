@@ -16,11 +16,25 @@ const VerifyTickets: React.FC = () => {
 
   // Efecto proactivo: Se ejecuta al montar para ver si el dispositivo tiene algo pendiente
   useEffect(() => {
-    const checkPending = () => {
+    const checkPending = async () => {
       const savedPending = localStorage.getItem(STORAGE_KEY_PENDING);
       if (savedPending) {
         try {
-          setPendingPurchase(JSON.parse(savedPending));
+          const parsed = JSON.parse(savedPending);
+          setPendingPurchase(parsed);
+
+          // Verificar contra el servidor si ya está pagada
+          if (parsed.purchaseId) {
+            try {
+              const latest = await apiService.getPurchase(parsed.purchaseId);
+              if (latest.status === 'paid') {
+                localStorage.removeItem(STORAGE_KEY_PENDING);
+                setPendingPurchase(null);
+              }
+            } catch (e) {
+              // Si falla el fetch (404 o red), no hacemos nada con la alerta local
+            }
+          }
         } catch (e) {
           console.error("Error al cargar snapshot de compra", e);
         }
