@@ -338,6 +338,14 @@ const server = app.listen(Number(finalPort), '0.0.0.0', () => {
   console.log(`🔍 Health check: /health`);
   console.log(`👨‍💼 Admin panel: /admin\n`);
 
+  // Inicializar workers de segundo plano
+  try {
+    const { initAutoReleaseWorker } = require('./services/autoReleaseService');
+    initAutoReleaseWorker();
+  } catch (err: any) {
+    console.error('❌ Error al iniciar AutoReleaseWorker:', err.message);
+  }
+
   if (process.env.RAILWAY_STATIC_URL) {
     console.log(`🌐 URL Pública: https://${process.env.RAILWAY_STATIC_URL}`);
   }

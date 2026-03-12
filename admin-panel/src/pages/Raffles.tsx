@@ -324,7 +324,7 @@ const Raffles = () => {
 
   const handleClose = () => { setIsModalOpen(false); setEditingRaffle(null); };
 
-  const set = (field: keyof FormData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
+  const set = (field: keyof FormData, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
     showConfirm({
@@ -334,6 +334,7 @@ const Raffles = () => {
         try {
           const submitData = {
             ...formData,
+            status: formData.status, // Asegurar que el estado se envíe explicitamente
             ticketPrice: parseFloat(formData.ticketPrice),
             totalTickets: parseInt(formData.totalTickets),
             galleryImages: formData.galleryImages.split('\n').filter(u => u.trim()),
@@ -899,8 +900,11 @@ const Raffles = () => {
                         <div className="space-y-3">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Define el Estado</label>
                           <div className="grid grid-cols-1 gap-3">
-                            <button onClick={() => set('status', 'draft')}
-                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'draft' ? 'bg-slate-900 border-slate-800 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                            <button
+                              type="button"
+                              onClick={() => set('status', 'draft')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'draft' ? 'bg-slate-900 border-slate-800 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}
+                            >
                               <div className="flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'draft' ? 'bg-white/10' : 'bg-slate-50'}`}>
                                   <FileText size={18} />
@@ -913,8 +917,11 @@ const Raffles = () => {
                               {formData.status === 'draft' && <CheckCircle2 size={20} className="text-blue-400" />}
                             </button>
 
-                            <button onClick={() => set('status', 'active')}
-                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'active' ? 'bg-blue-600 border-blue-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                            <button
+                              type="button"
+                              onClick={() => set('status', 'active')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'active' ? 'bg-blue-600 border-blue-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}
+                            >
                               <div className="flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'active' ? 'bg-white/10' : 'bg-blue-50'}`}>
                                   <Play size={18} />
@@ -927,8 +934,11 @@ const Raffles = () => {
                               {formData.status === 'active' && <CheckCircle2 size={20} className="text-white" />}
                             </button>
 
-                            <button onClick={() => set('status', 'completed')}
-                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'completed' ? 'bg-emerald-600 border-emerald-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}>
+                            <button
+                              type="button"
+                              onClick={() => set('status', 'completed')}
+                              className={`p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group ${formData.status === 'completed' ? 'bg-emerald-600 border-emerald-500 text-white shadow-xl translate-y-[-2px]' : 'bg-white border-slate-100 text-slate-500'}`}
+                            >
                               <div className="flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.status === 'completed' ? 'bg-white/10' : 'bg-emerald-50'}`}>
                                   <Trophy size={18} />
@@ -1592,7 +1602,7 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
             const digits = val.replace(/\D/g, '');
             if (digits.length >= 10 && /^\d+$/.test(digits)) {
               if (!foundPhone) foundPhone = normalizePhone(val);
-            } else             if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}/.test(val) && !val.match(/^[\d,\[\]\s\-;]+$/) && val.length <= 80) {
+            } else if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}/.test(val) && !val.match(/^[\d,\[\]\s\-;]+$/) && val.length <= 80) {
               if (!foundName) foundName = fixEncoding(val);
             } else if (val.includes('[') || /[\d]+[,;\s][\d]+/.test(val) || (/^[\d,\s\-;\[\]]+$/.test(val) && val.length > 5)) {
               const parsed = parseTicketNumbers(val);

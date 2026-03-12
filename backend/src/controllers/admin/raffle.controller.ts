@@ -18,8 +18,9 @@ const createRaffleSchema = z.object({
   ticketPrice: z.number().positive(),
   totalTickets: z.number().int().positive(),
   drawDate: z.string().datetime(),
-  status: z.enum(['active', 'completed', 'draft']).default('active'),
+  status: z.enum(['active', 'completed', 'draft']).optional(),
   isVirtual: z.boolean().default(false),
+  autoReleaseHours: z.number().int().min(0).default(0),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();
@@ -31,7 +32,9 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
     const raffle = await prisma.raffle.create({
       data: {
         ...data,
+        status: data.status || 'active',
         drawDate: new Date(data.drawDate),
+        autoReleaseHours: data.autoReleaseHours || 0,
       },
     });
 

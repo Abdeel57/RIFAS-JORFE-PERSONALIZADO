@@ -7,7 +7,8 @@ import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/Skeleton';
 import {
     ChevronRight, Palette, CreditCard, Phone,
-    Image, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, User, Loader2, Facebook
+    Image, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, User, Loader2, Facebook,
+    Wrench, Clock, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 
 // ─── Color utilities ──────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'marketing' | 'sistema' | 'usuarios' | null;
+type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'marketing' | 'sistema' | 'usuarios' | 'herramientas' | null;
 
 interface AdminUser {
     id: string;
@@ -284,7 +285,30 @@ const Settings: React.FC = () => {
 
     useEffect(() => {
         if (activePanel === 'usuarios') fetchAdmins();
+        if (activePanel === 'herramientas') fetchRaffles();
     }, [activePanel]);
+
+    const [raffles, setRaffles] = useState<any[]>([]);
+    const [isRafflesLoading, setIsRafflesLoading] = useState(false);
+
+    const fetchRaffles = async () => {
+        setIsRafflesLoading(true);
+        try {
+            const res = await api.get('/admin/raffles');
+            if (res.data?.success) setRaffles(res.data.data);
+        } catch { toast.error('Error al cargar rifas'); }
+        finally { setIsRafflesLoading(false); }
+    };
+
+    const handleUpdateRaffleHours = async (raffleId: string, hours: number) => {
+        try {
+            const res = await api.put(`/admin/raffles/${raffleId}`, { autoReleaseHours: hours });
+            if (res.data?.success) {
+                toast.success('Tiempo de liberación actualizado');
+                setRaffles(prev => prev.map(r => r.id === raffleId ? { ...r, autoReleaseHours: hours } : r));
+            }
+        } catch { toast.error('Error al actualizar el tiempo'); }
+    };
 
     const handleCreateAdmin = async () => {
         const { name, email, password, confirmPassword, role } = newUser;
@@ -447,6 +471,17 @@ const Settings: React.FC = () => {
 
                     <MenuSection title="Control de Acceso">
                         <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
+                    </MenuSection>
+
+                    <MenuSection title="Herramientas Avanzadas">
+                        <MenuRow
+                            icon={<Wrench size={18} />}
+                            iconBg="bg-orange-50 text-orange-500"
+                            label="Herramientas y funciones"
+                            subtitle="Configuración de automatización"
+                            onClick={() => setActivePanel('herramientas')}
+                            last
+                        />
                     </MenuSection>
 
                     <button
@@ -714,6 +749,87 @@ const Settings: React.FC = () => {
                                             </div>
                                         </div>
                                     ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'herramientas' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Herramientas y funciones" icon={<Wrench size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+
+                        <div className="admin-card p-6 space-y-4">
+                            <div className="flex items-start gap-4 p-4 bg-orange-50/50 rounded-2xl border border-orange-100 mb-2">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm flex-shrink-0">
+                                    <Clock size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Liberación Automática</p>
+                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Configura el tiempo máximo que un boleto puede estar apartado sin pago. Pasado este tiempo, el sistema lo liberará automáticamente.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {isRafflesLoading ? (
+                                    <div className="p-6 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
+                                ) : raffles.length === 0 ? (
+                                    <div className="p-8 text-center text-slate-400 text-sm">No hay rifas activas para configurar.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-50 border border-slate-100 rounded-2xl overflow-hidden">
+                                        {raffles.map(raffle => (
+                                            <div key={raffle.id} className="p-4 bg-white flex flex-col gap-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-800">{raffle.title}</p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${raffle.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+                                                                {raffle.status}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{raffle.totalTickets} Boletos</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                    <div className="flex-1">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tiempo de liberación (horas)</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                className="admin-input h-10 w-24 text-center font-black"
+                                                                value={raffle.autoReleaseHours || 0}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    setRaffles(prev => prev.map(r => r.id === raffle.id ? { ...r, autoReleaseHours: val } : r));
+                                                                }}
+                                                            />
+                                                            <button
+                                                                onClick={() => handleUpdateRaffleHours(raffle.id, raffle.autoReleaseHours || 0)}
+                                                                className="h-10 px-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                                                            >
+                                                                Actualizar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-center justify-center gap-1 px-3 border-l border-slate-200">
+                                                        {raffle.autoReleaseHours > 0 ? (
+                                                            <>
+                                                                <CheckCircle2 size={18} className="text-emerald-500" />
+                                                                <span className="text-[8px] font-black text-emerald-600 uppercase">Activo</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <AlertTriangle size={18} className="text-slate-300" />
+                                                                <span className="text-[8px] font-black text-slate-400 uppercase">Off</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>

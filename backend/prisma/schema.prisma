@@ -24,6 +24,7 @@ model Raffle {
   drawDate      DateTime
   status        RaffleStatus @default(active)
   isVirtual     Boolean      @default(false)
+  autoReleaseHours Int       @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
