@@ -21,6 +21,7 @@ const createRaffleSchema = z.object({
   status: z.enum(['active', 'completed', 'draft']).optional(),
   isVirtual: z.boolean().default(false),
   autoReleaseHours: z.number().int().min(0).default(0),
+  luckyMachineNumbers: z.array(z.number().int().positive()).default([5, 10, 20, 50]),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();
@@ -35,6 +36,7 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
         status: data.status || 'active',
         drawDate: new Date(data.drawDate),
         autoReleaseHours: data.autoReleaseHours || 0,
+        luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
       },
     });
 

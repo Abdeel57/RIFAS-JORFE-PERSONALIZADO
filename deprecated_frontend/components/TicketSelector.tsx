@@ -92,6 +92,7 @@ interface TicketSelectorProps {
   onCheckout: (tickets: number[]) => void;
   refreshTrigger?: number;
   isVirtual?: boolean;
+  luckyNumbers?: number[];
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -101,6 +102,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   pricePerTicket,
   onCheckout,
   refreshTrigger,
+  luckyNumbers = [5, 10, 20, 50],
 }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -353,7 +355,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             </button>
             {isMachineOpen && (
               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
-                {[5, 10, 20, 50].map(qty => (
+                {luckyNumbers.map(qty => (
                   <button key={qty} onClick={() => runLuckyMachine(qty)} className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all">+{qty}</button>
                 ))}
               </div>

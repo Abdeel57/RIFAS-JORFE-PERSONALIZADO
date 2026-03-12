@@ -13,6 +13,8 @@ export interface Raffle {
   drawDate: string;
   status: 'active' | 'completed';
   isVirtual: boolean;
+  autoReleaseHours: number;
+  luckyMachineNumbers: number[];
 }
 
 export interface Ticket {

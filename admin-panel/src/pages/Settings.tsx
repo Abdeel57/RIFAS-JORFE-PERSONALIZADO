@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -290,6 +290,11 @@ const Settings: React.FC = () => {
 
     const [raffles, setRaffles] = useState<any[]>([]);
     const [isRafflesLoading, setIsRafflesLoading] = useState(false);
+    const [selectedRaffleId, setSelectedRaffleId] = useState<string | null>(null);
+
+    const activeRaffleDetail = useMemo(() =>
+        raffles.find(r => r.id === selectedRaffleId),
+        [raffles, selectedRaffleId]);
 
     const fetchRaffles = async () => {
         setIsRafflesLoading(true);
@@ -308,6 +313,16 @@ const Settings: React.FC = () => {
                 setRaffles(prev => prev.map(r => r.id === raffleId ? { ...r, autoReleaseHours: hours } : r));
             }
         } catch { toast.error('Error al actualizar el tiempo'); }
+    };
+
+    const handleUpdateLuckyNumbers = async (raffleId: string, numbers: number[]) => {
+        try {
+            const res = await api.put(`/admin/raffles/${raffleId}`, { luckyMachineNumbers: numbers });
+            if (res.data?.success) {
+                toast.success('Números de la suerte actualizados');
+                setRaffles(prev => prev.map(r => r.id === raffleId ? { ...r, luckyMachineNumbers: numbers } : r));
+            }
+        } catch { toast.error('Error al actualizar los números'); }
     };
 
     const handleCreateAdmin = async () => {
@@ -757,82 +772,139 @@ const Settings: React.FC = () => {
 
                 {activePanel === 'herramientas' && (
                     <div className="space-y-5">
-                        <PanelHeader title="Herramientas y funciones" icon={<Wrench size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <PanelHeader
+                            title={selectedRaffleId ? "Personalizar Rifa" : "Herramientas y funciones"}
+                            icon={<Wrench size={16} />}
+                            onBack={() => selectedRaffleId ? setSelectedRaffleId(null) : setActivePanel(null)}
+                            onSave={handleSave}
+                            isSaving={isSaving}
+                        />
 
-                        <div className="admin-card p-6 space-y-4">
-                            <div className="flex items-start gap-4 p-4 bg-orange-50/50 rounded-2xl border border-orange-100 mb-2">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm flex-shrink-0">
-                                    <Clock size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Liberación Automática</p>
-                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Configura el tiempo máximo que un boleto puede estar apartado sin pago. Pasado este tiempo, el sistema lo liberará automáticamente.</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                {isRafflesLoading ? (
-                                    <div className="p-6 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
-                                ) : raffles.length === 0 ? (
-                                    <div className="p-8 text-center text-slate-400 text-sm">No hay rifas activas para configurar.</div>
-                                ) : (
-                                    <div className="divide-y divide-slate-50 border border-slate-100 rounded-2xl overflow-hidden">
-                                        {raffles.map(raffle => (
-                                            <div key={raffle.id} className="p-4 bg-white flex flex-col gap-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
+                        {!selectedRaffleId ? (
+                            <div className="admin-card p-6 space-y-4">
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Selecciona una rifa para configurar</p>
+                                    {isRafflesLoading ? (
+                                        <div className="p-6 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
+                                    ) : raffles.length === 0 ? (
+                                        <div className="p-8 text-center text-slate-400 text-sm">No hay rifas activas.</div>
+                                    ) : (
+                                        <div className="grid gap-3">
+                                            {raffles.map(raffle => (
+                                                <button
+                                                    key={raffle.id}
+                                                    onClick={() => setSelectedRaffleId(raffle.id)}
+                                                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between hover:border-blue-200 hover:shadow-md transition-all group"
+                                                >
+                                                    <div className="text-left">
                                                         <p className="text-sm font-black text-slate-800">{raffle.title}</p>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${raffle.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
-                                                                {raffle.status}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{raffle.totalTickets} Boletos</span>
-                                                        </div>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{raffle.status} • {raffle.totalTickets} boletos</p>
                                                     </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                    <div className="flex-1">
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tiempo de liberación (horas)</p>
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                className="admin-input h-10 w-24 text-center font-black"
-                                                                value={raffle.autoReleaseHours || 0}
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    setRaffles(prev => prev.map(r => r.id === raffle.id ? { ...r, autoReleaseHours: val } : r));
-                                                                }}
-                                                            />
-                                                            <button
-                                                                onClick={() => handleUpdateRaffleHours(raffle.id, raffle.autoReleaseHours || 0)}
-                                                                className="h-10 px-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
-                                                            >
-                                                                Actualizar
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-center justify-center gap-1 px-3 border-l border-slate-200">
-                                                        {raffle.autoReleaseHours > 0 ? (
-                                                            <>
-                                                                <CheckCircle2 size={18} className="text-emerald-500" />
-                                                                <span className="text-[8px] font-black text-emerald-600 uppercase">Activo</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <AlertTriangle size={18} className="text-slate-300" />
-                                                                <span className="text-[8px] font-black text-slate-400 uppercase">Off</span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                                    <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        ) : activeRaffleDetail && (
+                            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                                {/* Bloque 1: Liberación Automática */}
+                                <div className="admin-card p-6 space-y-4">
+                                    <div className="flex items-start gap-4 p-4 bg-orange-50/50 rounded-2xl border border-orange-100 mb-2">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm flex-shrink-0">
+                                            <Clock size={20} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Liberación Automática</p>
+                                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Libera boletos apartados sin pago después de X horas.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tiempo límite (horas)</p>
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    className="admin-input h-10 w-24 text-center font-black"
+                                                    value={activeRaffleDetail.autoReleaseHours || 0}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 0;
+                                                        setRaffles(prev => prev.map(r => r.id === activeRaffleDetail.id ? { ...r, autoReleaseHours: val } : r));
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={() => handleUpdateRaffleHours(activeRaffleDetail.id, activeRaffleDetail.autoReleaseHours || 0)}
+                                                    className="h-10 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                                                >
+                                                    Guardar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bloque 2: Máquina de la Suerte */}
+                                <div className="admin-card p-6 space-y-4">
+                                    <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-2">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
+                                            <Bot size={20} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Máquina de la Suerte</p>
+                                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Configura los números de boletos rápidos (crece automáticamente).</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Opciones configuradas</p>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            {(activeRaffleDetail.luckyMachineNumbers || []).map((num: number, idx: number) => (
+                                                <div key={idx} className="flex items-center gap-2 bg-white border border-slate-200 pl-4 pr-2 py-2 rounded-xl shadow-sm animate-in zoom-in-95 duration-200">
+                                                    <span className="text-sm font-black text-slate-700">+{num}</span>
+                                                    <button
+                                                        onClick={() => {
+                                                            const next = (activeRaffleDetail.luckyMachineNumbers || []).filter((_: any, i: number) => i !== idx);
+                                                            setRaffles(prev => prev.map(r => r.id === activeRaffleDetail.id ? { ...r, luckyMachineNumbers: next } : r));
+                                                        }}
+                                                        className="w-6 h-6 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button
+                                                onClick={() => {
+                                                    const val = prompt('¿Cuántos boletos quieres añadir?') || '';
+                                                    const num = parseInt(val);
+                                                    if (!isNaN(num) && num > 0) {
+                                                        const current = activeRaffleDetail.luckyMachineNumbers || [];
+                                                        if (!current.includes(num)) {
+                                                            const next = [...current, num].sort((a, b) => a - b);
+                                                            setRaffles(prev => prev.map(r => r.id === activeRaffleDetail.id ? { ...r, luckyMachineNumbers: next } : r));
+                                                        }
+                                                    }
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200 text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95 border-dashed"
+                                            >
+                                                <Plus size={14} />
+                                                Añadir
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleUpdateLuckyNumbers(activeRaffleDetail.id, activeRaffleDetail.luckyMachineNumbers || [])}
+                                            className="w-full h-12 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-blue-100 mt-2"
+                                        >
+                                            Actualizar Máquina de la Suerte
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </motion.div>
