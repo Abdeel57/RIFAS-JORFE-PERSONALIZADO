@@ -205,10 +205,100 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     next(error);
   }
+}; export const importTickets = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: raffleId } = req.params;
+    const { rows } = req.body; // Array<{ name, phone, ticketNumbers: number[], status: 'sold' | 'reserved', state?: string }>
+
+    const raffle = await prisma.raffle.findUnique({ where: { id: raffleId } });
+    if (!raffle) throw new AppError(404, 'Raffle not found');
+
+    const results = {
+      success: 0,
+      errors: [] as string[],
+    };
+
+    // Procesar en lote o secuencialmente. 
+    // Para simplificar y evitar colisiones de usuarios, lo haremos en un bucle con transacciones por fila o una grande.
+    // Usaremos una transacción por fila para que un error en una no detenga todo el proceso.
+
+    for (const row of rows) {
+      try {
+        const { name, phone, ticketNumbers, status, state } = row;
+
+        if (!name || !phone || !ticketNumbers || ticketNumbers.length === 0) {
+          results.errors.push(`Fila inválida: Faltan datos obligatorios`);
+          continue;
+        }
+
+        await prisma.$transaction(async (tx) => {
+          // 1. Upsert User
+          const user = await tx.user.upsert({
+            where: { phone },
+            update: { name, state: state || undefined },
+            create: { name, phone, state: state || undefined },
+          });
+
+          // 2. Create Purchase
+          const purchase = await tx.purchase.create({
+            data: {
+              userId: user.id,
+              raffleId,
+              status: status === 'sold' ? 'paid' : 'pending',
+              totalAmount: ticketNumbers.length * raffle.ticketPrice,
+              paymentMethod: 'Importación Manual',
+              paymentReference: 'IMPORTD',
+              verificationStatus: 'auto_verified',
+            },
+          });
+
+          // 3. Process Tickets
+          for (const num of ticketNumbers) {
+            if (num < 1 || num > raffle.totalTickets) {
+              throw new Error(`Número de boleto fuera de rango: ${num}`);
+            }
+
+            if (raffle.isVirtual) {
+              // En modo virtual, el boleto podría no existir aún en BD
+              await tx.ticket.upsert({
+                where: { raffleId_number: { raffleId, number: num } },
+                update: { status, purchaseId: purchase.id },
+                create: { raffleId, number: num, status, purchaseId: purchase.id },
+              });
+            } else {
+              // En modo tradicional, el boleto DEBE existir
+              const existingTicket = await tx.ticket.findUnique({
+                where: { raffleId_number: { raffleId, number: num } },
+              });
+
+              if (!existingTicket) {
+                throw new Error(`Boleto #${num} no existe en la base de datos de esta rifa tradicional`);
+              }
+
+              if (existingTicket.status !== 'available') {
+                throw new Error(`Boleto #${num} ya está ocupado (${existingTicket.status})`);
+              }
+
+              await tx.ticket.update({
+                where: { id: existingTicket.id },
+                data: { status, purchaseId: purchase.id },
+              });
+            }
+          }
+        });
+
+        results.success++;
+      } catch (err: any) {
+        results.errors.push(`Error en fila ${row.phone || row.name}: ${err.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
-
-
-
-
-
 

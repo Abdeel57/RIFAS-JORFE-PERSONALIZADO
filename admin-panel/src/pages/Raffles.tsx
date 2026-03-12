@@ -184,6 +184,9 @@ const Raffles = () => {
   const [winnerMethod, setWinnerMethod] = useState<'manual' | 'random' | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [rouletteWinner, setRouletteWinner] = useState<any>(null);
+  const [importingRaffle, setImportingRaffle] = useState<any>(null);
+  const [importTab, setImportTab] = useState<'manual' | 'auto'>('manual');
+  const [isImporting, setIsImporting] = useState(false);
 
   // Reiniciar contador al buscar para mantener fluidez
   useEffect(() => {
@@ -249,7 +252,7 @@ const Raffles = () => {
 
   // Lock scroll cuando cualquier modal está abierto — tarjeta estática, fondo fijo
   const scrollLockRef = useRef<number>(0);
-  const anyModalOpen = isModalOpen || !!viewingTicketsRaffle || !!winnerTarget || !!winnerModalRaffle;
+  const anyModalOpen = isModalOpen || !!viewingTicketsRaffle || !!winnerTarget || !!winnerModalRaffle || !!importingRaffle;
   useEffect(() => {
     if (anyModalOpen) {
       scrollLockRef.current = window.scrollY;
@@ -641,6 +644,15 @@ const Raffles = () => {
                                     className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                                   >
                                     <Ticket size={16} className="text-blue-500" /> Ver boletos
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setImportingRaffle(raffle);
+                                      setImportTab('manual');
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                                  >
+                                    <FileSpreadsheet size={16} className="text-emerald-500" /> Importar boletos
                                   </button>
                                   <button
                                     onClick={() => {
@@ -1316,6 +1328,222 @@ const Raffles = () => {
           </div>
         </AnimatePresence>,
         document.body
+      )}
+
+      {/* ── IMPORT TICKETS MODAL ─────────────────────────── */}
+      {importingRaffle && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !isImporting && setImportingRaffle(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
+              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden border border-white/20"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                    <Upload size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 tracking-tight leading-none text-lg">Importar Boletos</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{importingRaffle.title}</p>
+                  </div>
+                </div>
+                <button onClick={() => !isImporting && setImportingRaffle(null)}
+                  className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 active:scale-95 transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="px-6 py-2 bg-slate-50/50 border-b border-slate-100 shrink-0 flex gap-2">
+                <button onClick={() => setImportTab('manual')}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${importTab === 'manual' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-slate-400 hover:bg-slate-100'}`}>
+                  Manual (Uno por uno)
+                </button>
+                <button onClick={() => setImportTab('auto')}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${importTab === 'auto' ? 'bg-white text-emerald-600 shadow-sm border border-emerald-100' : 'text-slate-400 hover:bg-slate-100'}`}>
+                  Automático (Excel/DB)
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {importTab === 'manual' ? (
+                  <ImportManualView raffle={importingRaffle} onImport={async (rows: any[]) => {
+                    setIsImporting(true);
+                    try {
+                      const res = await adminService.importTickets(importingRaffle.id, rows);
+                      toast.success(`Importados exitosamente: ${res.success} registros`);
+                      if (res.errors.length > 0) toast.error(`Errores: ${res.errors.length}`);
+                      setImportingRaffle(null);
+                      loadRaffles();
+                    } catch (e: any) {
+                      toast.error(e.response?.data?.error || 'Error en la importación');
+                    } finally { setIsImporting(false); }
+                  }} isLoading={isImporting} />
+                ) : (
+                  <ImportAutoView raffle={importingRaffle} onImport={async (rows: any[]) => {
+                    setIsImporting(true);
+                    try {
+                      const res = await adminService.importTickets(importingRaffle.id, rows);
+                      toast.success(`Importados: ${res.success}. Errores: ${res.errors.length}`);
+                      setImportingRaffle(null);
+                      loadRaffles();
+                    } catch (e: any) {
+                      toast.error('Error masivo. Revisa el formato del archivo.');
+                    } finally { setIsImporting(false); }
+                  }} isLoading={isImporting} />
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+// ─── Sub-Components for Import ───────────────────────────────────────────────
+
+const ImportManualView = ({ raffle, onImport, isLoading }: any) => {
+  const [rows, setRows] = useState([{ name: '', phone: '', ticketNumbers: '', status: 'sold' as any, state: '' }]);
+
+  const addRow = () => setRows([...rows, { name: '', phone: '', ticketNumbers: '', status: 'sold', state: '' }]);
+  const removeRow = (idx: number) => setRows(rows.filter((_, i) => i !== idx));
+  const updateRow = (idx: number, field: string, val: any) => {
+    const newRows = [...rows];
+    (newRows[idx] as any)[field] = val;
+    setRows(newRows);
+  };
+
+  const handleImport = () => {
+    const formatted = rows.map(r => ({
+      ...r,
+      ticketNumbers: r.ticketNumbers.split(/[, ]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+    })).filter(r => r.name && r.phone && r.ticketNumbers.length > 0);
+
+    if (formatted.length === 0) return toast.error('Completa los datos de al menos un registro');
+    onImport(formatted);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {rows.map((row, idx) => (
+          <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 relative group">
+            {rows.length > 1 && (
+              <button onClick={() => removeRow(idx)} className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                <Trash2 size={14} />
+              </button>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre</label>
+                <input type="text" value={row.name} onChange={e => updateRow(idx, 'name', e.target.value)}
+                  className="admin-input-sm w-full" placeholder="Ej. Juan Pérez" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono</label>
+                <input type="text" value={row.phone} onChange={e => updateRow(idx, 'phone', e.target.value)}
+                  className="admin-input-sm w-full" placeholder="Ej. 551234..." />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Números de Boletos (separados por coma)</label>
+              <input type="text" value={row.ticketNumbers} onChange={e => updateRow(idx, 'ticketNumbers', e.target.value)}
+                className="admin-input-sm w-full font-black text-[#2563EB]" placeholder="Ej. 1, 150, 432" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={addRow} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-all">
+        + Agregar otro cliente
+      </button>
+      <div className="pt-4">
+        <button onClick={handleImport} disabled={isLoading} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+          {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          Procesar Importación Manual
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target?.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws);
+
+      // Mapeo inteligente inicial (nombre, telefono, boletos)
+      const sanitized = data.map((row: any) => ({
+        name: row.Cliente || row.Nombre || row.name || '',
+        phone: String(row.Telefono || row.Teléfono || row.Phone || row.phone || '').replace(/\D/g, ''),
+        ticketNumbers: String(row.Boletos || row.Tickets || row.tickets || '').split(/[, ]+/).map(n => parseInt(n)).filter(n => !isNaN(n)),
+        status: 'sold' as const
+      })).filter(r => r.name && r.phone && r.ticketNumbers.length > 0);
+
+      setPreviewData(sanitized);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50 flex flex-col items-center justify-center gap-4 text-center">
+        <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-sm text-emerald-500">
+          <FileSpreadsheet size={32} />
+        </div>
+        <div>
+          <p className="font-black text-slate-700 text-base">Sube tu archivo Excel o CSV</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Columnas sugeridas: Nombre, Teléfono, Boletos</p>
+        </div>
+        <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} />
+        <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm active:scale-95 transition-all">
+          Seleccionar Archivo
+        </button>
+      </div>
+
+      {previewData.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vista previa ({previewData.length} registros)</p>
+            <button onClick={() => setPreviewData([])} className="text-red-400 text-[10px] font-black uppercase">Limpiar</button>
+          </div>
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {previewData.slice(0, 10).map((r, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl text-[11px]">
+                <div className="min-w-0">
+                  <p className="font-black text-slate-800 truncate">{r.name}</p>
+                  <p className="font-bold text-slate-400">{r.phone}</p>
+                </div>
+                <div className="px-3 py-1 bg-blue-50 text-[#2563EB] rounded-lg font-black shrink-0">
+                  {r.ticketNumbers.length} boletos
+                </div>
+              </div>
+            ))}
+            {previewData.length > 10 && <p className="text-center text-[10px] text-slate-300 font-bold uppercase pt-2">... y {previewData.length - 10} más</p>}
+          </div>
+          <button onClick={() => onImport(previewData)} disabled={isLoading} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-100 flex items-center justify-center gap-2 transition-all">
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            Importar todo ahora
+          </button>
+        </div>
       )}
     </div>
   );

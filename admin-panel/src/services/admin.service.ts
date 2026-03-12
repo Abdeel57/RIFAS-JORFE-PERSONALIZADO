@@ -34,6 +34,11 @@ export const adminService = {
     return response.data;
   },
 
+  async importTickets(id: string, rows: any[]) {
+    const response = await api.post(`/admin/raffles/${id}/import-tickets`, { rows });
+    return response.data.data;
+  },
+
   /** Sube una imagen desde el dispositivo; devuelve { id, url } para usar en prizeImage o galleryImages. */
   async uploadImage(file: File): Promise<{ id: string; url: string }> {
     const form = new FormData();

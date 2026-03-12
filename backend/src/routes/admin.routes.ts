@@ -7,6 +7,7 @@ import {
     createRaffle,
     updateRaffle,
     deleteRaffle,
+    importTickets,
 } from '../controllers/admin/raffle.controller';
 import {
     getTickets,
@@ -40,19 +41,19 @@ router.post('/auth/login', login);
 
 // Diagnóstico de login (público, para depuración)
 router.get('/auth/check', async (_req, res) => {
-  try {
-    const jwtOk = !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32);
-    const adminCount = await prisma.admin.count();
-    const bismarkExists = await prisma.admin.findUnique({ where: { email: 'Bismark' } }).then(Boolean);
-    res.json({
-      jwtConfigured: jwtOk,
-      adminCount,
-      bismarkExists,
-      hint: !jwtOk ? 'Configura JWT_SECRET (mín. 32 caracteres) en Railway' : !bismarkExists ? 'Ejecuta el seed: railway run npx tsx src/scripts/seed.ts' : 'Todo OK',
-    });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message, hint: 'Revisa DATABASE_URL' });
-  }
+    try {
+        const jwtOk = !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 32);
+        const adminCount = await prisma.admin.count();
+        const bismarkExists = await prisma.admin.findUnique({ where: { email: 'Bismark' } }).then(Boolean);
+        res.json({
+            jwtConfigured: jwtOk,
+            adminCount,
+            bismarkExists,
+            hint: !jwtOk ? 'Configura JWT_SECRET (mín. 32 caracteres) en Railway' : !bismarkExists ? 'Ejecuta el seed: railway run npx tsx src/scripts/seed.ts' : 'Todo OK',
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message, hint: 'Revisa DATABASE_URL' });
+    }
 });
 
 // Todas las rutas siguientes requieren autenticación
@@ -69,6 +70,7 @@ router.get('/raffles', getAllRaffles);
 router.post('/raffles', createRaffle);
 router.put('/raffles/:id', updateRaffle);
 router.delete('/raffles/:id', isAdmin, deleteRaffle);
+router.post('/raffles/:id/import-tickets', importTickets);
 
 // Tickets
 router.get('/tickets', getTickets);
