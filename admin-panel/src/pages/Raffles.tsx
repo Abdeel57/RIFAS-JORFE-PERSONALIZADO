@@ -1513,16 +1513,28 @@ const normalizePhone = (phone: string): string => {
   return digits;
 };
 
+// Corregir mojibake: texto UTF-8 leído como Latin-1 (ej. PÃ©rez → Pérez)
+const fixEncoding = (str: string): string => {
+  if (!str || typeof str !== 'string') return str;
+  try {
+    return decodeURIComponent(escape(str));
+  } catch {
+    return str;
+  }
+};
+
 const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
     setParseError(null);
+    setIsAnalyzing(true);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -1530,12 +1542,14 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
         const bstr = evt.target?.result;
         if (!bstr) {
           setParseError('No se pudo leer el archivo');
+          setIsAnalyzing(false);
           return;
         }
         const wb = XLSX.read(bstr, { type: 'binary', raw: true });
         const wsname = wb.SheetNames[0];
         if (!wsname) {
           setParseError('El archivo no tiene hojas');
+          setIsAnalyzing(false);
           return;
         }
         const ws = wb.Sheets[wsname];
@@ -1544,6 +1558,7 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
         if (!data || data.length === 0) {
           setParseError('El archivo está vacío');
           setPreviewData([]);
+          setIsAnalyzing(false);
           return;
         }
 
@@ -1553,12 +1568,12 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
         const stateKeys = ['state', 'estado', 'provincia', 'location', 'ubicacion'];
 
         const parseRow = (row: Record<string, any>): { name: string; phone: string; ticketNumbers: number[]; state?: string } | null => {
-          let name = getCol(row, nameKeys);
+          let name = fixEncoding(getCol(row, nameKeys));
           let phoneRaw = getCol(row, phoneKeys);
           let phone = normalizePhone(phoneRaw);
           let ticketStr = getCol(row, ticketKeys);
           let ticketNumbers = parseTicketNumbers(ticketStr);
-          let state = getCol(row, stateKeys);
+          let state = fixEncoding(getCol(row, stateKeys));
 
           if (name && phone.length >= 10 && ticketNumbers.length > 0) {
             return { name, phone, ticketNumbers, state: state || undefined };
@@ -1577,13 +1592,13 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
             const digits = val.replace(/\D/g, '');
             if (digits.length >= 10 && /^\d+$/.test(digits)) {
               if (!foundPhone) foundPhone = normalizePhone(val);
-            } else if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}/.test(val) && !val.match(/^[\d,\[\]\s\-;]+$/) && val.length <= 80) {
-              if (!foundName) foundName = val;
+            } else             if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}/.test(val) && !val.match(/^[\d,\[\]\s\-;]+$/) && val.length <= 80) {
+              if (!foundName) foundName = fixEncoding(val);
             } else if (val.includes('[') || /[\d]+[,;\s][\d]+/.test(val) || (/^[\d,\s\-;\[\]]+$/.test(val) && val.length > 5)) {
               const parsed = parseTicketNumbers(val);
               if (parsed.length > foundTickets.length) foundTickets = parsed;
             } else if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(val) && !foundState && val !== foundName) {
-              foundState = val;
+              foundState = fixEncoding(val);
             }
           }
 
@@ -1611,10 +1626,10 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
                 rec = { name: '', phone: '', ticketNumbers: [] };
                 byId.set(id, rec);
               }
-              if (campo.includes('nombre') || campo.includes('name') || campo === 'cliente') rec.name = valor;
+              if (campo.includes('nombre') || campo.includes('name') || campo === 'cliente') rec.name = fixEncoding(valor);
               else if (campo.includes('telefono') || campo.includes('phone') || campo.includes('tel') || campo.includes('cel')) rec.phone = normalizePhone(valor);
               else if (campo.includes('boleto') || campo.includes('ticket') || campo.includes('numero')) rec.ticketNumbers = parseTicketNumbers(valor);
-              else if (campo.includes('estado') || campo.includes('state')) rec.state = valor;
+              else if (campo.includes('estado') || campo.includes('state')) rec.state = fixEncoding(valor);
             }
             sanitized = Array.from(byId.values()).filter(r => r.name && r.phone.length >= 10 && r.ticketNumbers.length > 0);
           }
@@ -1625,26 +1640,48 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
           const cols = firstRow ? Object.keys(firstRow).join(', ') : 'ninguna';
           setParseError(`No se encontraron registros válidos. Columnas detectadas: ${cols}. Usa nombres como: Nombre, Teléfono, Boletos`);
           setPreviewData([]);
+          setIsAnalyzing(false);
           return;
         }
 
         setPreviewData(sanitized);
         toast.success(`${sanitized.length} registros listos para importar`);
+        setIsAnalyzing(false);
       } catch (err: any) {
         setParseError(err?.message || 'Error al leer el archivo');
         setPreviewData([]);
         toast.error('Error al procesar el archivo');
+        setIsAnalyzing(false);
       }
     };
     reader.onerror = () => {
       setParseError('Error al leer el archivo');
       toast.error('No se pudo leer el archivo');
+      setIsAnalyzing(false);
     };
     reader.readAsBinaryString(file);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Overlay de análisis */}
+      {isAnalyzing && (
+        <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-sm rounded-[2rem] flex flex-col items-center justify-center gap-6 min-h-[280px]">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 flex items-center justify-center border-2 border-emerald-100">
+            <Loader2 size={32} className="animate-spin text-emerald-600" />
+          </div>
+          <div className="text-center px-4">
+            <p className="font-black text-slate-800 text-base">Analizando documento</p>
+            <p className="text-[11px] font-bold text-slate-400 mt-1">Leyendo filas y detectando columnas...</p>
+          </div>
+          <div className="flex gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.15s]" />
+            <div className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.3s]" />
+          </div>
+        </div>
+      )}
+
       <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50 flex flex-col items-center justify-center gap-4 text-center">
         <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-sm text-emerald-500">
           <FileSpreadsheet size={32} />
