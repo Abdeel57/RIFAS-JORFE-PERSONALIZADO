@@ -92,7 +92,7 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Si se cambia el total de boletos y NO es virtual, ajustar
-    if (data.totalTickets && data.totalTickets !== existingRaffle.totalTickets && !existingRaffle.isVirtual) {
+    if (data.totalTickets && data.totalTickets !== existingRaffle.totalTickets && !(existingRaffle as any).isVirtual) {
       const currentTicketCount = await prisma.ticket.count({
         where: { raffleId: id },
       });
@@ -205,10 +205,19 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     next(error);
   }
-}; export const importTickets = async (req: Request, res: Response, next: NextFunction) => {
+}; function normalizePhoneImport(phone: string): string {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+export const importTickets = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: raffleId } = req.params;
     const { rows } = req.body; // Array<{ name, phone, ticketNumbers: number[], status: 'sold' | 'reserved', state?: string }>
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new AppError(400, 'Se requiere un array de filas con name, phone y ticketNumbers');
+    }
 
     const raffle = await prisma.raffle.findUnique({ where: { id: raffleId } });
     if (!raffle) throw new AppError(404, 'Raffle not found');
@@ -218,15 +227,12 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
       errors: [] as string[],
     };
 
-    // Procesar en lote o secuencialmente. 
-    // Para simplificar y evitar colisiones de usuarios, lo haremos en un bucle con transacciones por fila o una grande.
-    // Usaremos una transacción por fila para que un error en una no detenga todo el proceso.
-
     for (const row of rows) {
       try {
-        const { name, phone, ticketNumbers, status, state } = row;
+        const { name, phone: rawPhone, ticketNumbers, status, state } = row;
+        const phone = normalizePhoneImport(rawPhone);
 
-        if (!name || !phone || !ticketNumbers || ticketNumbers.length === 0) {
+        if (!name || !phone || phone.length < 10 || !ticketNumbers || ticketNumbers.length === 0) {
           results.errors.push(`Fila inválida: Faltan datos obligatorios`);
           continue;
         }
@@ -258,7 +264,7 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
               throw new Error(`Número de boleto fuera de rango: ${num}`);
             }
 
-            if (raffle.isVirtual) {
+            if ((raffle as any).isVirtual) {
               // En modo virtual, el boleto podría no existir aún en BD
               await tx.ticket.upsert({
                 where: { raffleId_number: { raffleId, number: num } },

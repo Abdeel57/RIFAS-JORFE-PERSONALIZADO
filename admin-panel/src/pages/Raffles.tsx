@@ -1474,31 +1474,113 @@ const ImportManualView = ({ raffle, onImport, isLoading }: any) => {
   );
 };
 
+// Helper: obtener valor de fila por múltiples nombres de columna (case-insensitive)
+const getCol = (row: Record<string, any>, keys: string[]): string => {
+  const rowKeys = Object.keys(row || {});
+  for (const k of keys) {
+    const found = rowKeys.find(rk => rk.trim().toLowerCase() === k.toLowerCase());
+    if (found && row[found] != null) return String(row[found]).trim();
+  }
+  return '';
+};
+
+// Parsear números de boletos: "1,2,3" | "1 2 3" | "1-5" (rango) | "1;2;3"
+const parseTicketNumbers = (val: string): number[] => {
+  const str = String(val || '').trim();
+  if (!str) return [];
+  const nums: number[] = [];
+  const parts = str.split(/[,;\s]+/);
+  for (const p of parts) {
+    const trimmed = p.trim();
+    if (trimmed.includes('-')) {
+      const [a, b] = trimmed.split('-').map(n => parseInt(n.trim()));
+      if (!isNaN(a) && !isNaN(b) && a <= b) {
+        for (let i = a; i <= b; i++) nums.push(i);
+      }
+    } else {
+      const n = parseInt(trimmed);
+      if (!isNaN(n)) nums.push(n);
+    }
+  }
+  return [...new Set(nums)].filter(n => n > 0).sort((a, b) => a - b);
+};
+
+// Normalizar teléfono a 10 dígitos (México)
+const normalizePhone = (phone: string): string => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length >= 10) return digits.slice(-10);
+  return digits;
+};
+
 const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
+    setParseError(null);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws);
+      try {
+        const bstr = evt.target?.result;
+        if (!bstr) {
+          setParseError('No se pudo leer el archivo');
+          return;
+        }
+        const wb = XLSX.read(bstr, { type: 'binary', raw: true });
+        const wsname = wb.SheetNames[0];
+        if (!wsname) {
+          setParseError('El archivo no tiene hojas');
+          return;
+        }
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
 
-      // Mapeo inteligente inicial (nombre, telefono, boletos)
-      const sanitized = data.map((row: any) => ({
-        name: row.Cliente || row.Nombre || row.name || '',
-        phone: String(row.Telefono || row.Teléfono || row.Phone || row.phone || '').replace(/\D/g, ''),
-        ticketNumbers: String(row.Boletos || row.Tickets || row.tickets || '').split(/[, ]+/).map(n => parseInt(n)).filter(n => !isNaN(n)),
-        status: 'sold' as const
-      })).filter(r => r.name && r.phone && r.ticketNumbers.length > 0);
+        if (!data || data.length === 0) {
+          setParseError('El archivo está vacío');
+          setPreviewData([]);
+          return;
+        }
 
-      setPreviewData(sanitized);
+        const nameKeys = ['name', 'nombre', 'cliente', 'nombre completo', 'client'];
+        const phoneKeys = ['phone', 'telefono', 'teléfono', 'tel', 'celular', 'cel', 'movil', 'móvil'];
+        const ticketKeys = ['boletos', 'tickets', 'ticket', 'boleto', 'numeros', 'números', 'numero', 'número', 'no', 'nos', 'nos.'];
+        const stateKeys = ['state', 'estado', 'provincia'];
+
+        const sanitized = data.map((row: any) => {
+          const name = getCol(row, nameKeys);
+          const phoneRaw = getCol(row, phoneKeys);
+          const phone = normalizePhone(phoneRaw);
+          const ticketStr = getCol(row, ticketKeys);
+          const ticketNumbers = parseTicketNumbers(ticketStr);
+          const state = getCol(row, stateKeys);
+
+          return { name, phone, ticketNumbers, status: 'sold' as const, state: state || undefined };
+        }).filter(r => r.name && r.phone.length >= 10 && r.ticketNumbers.length > 0);
+
+        if (sanitized.length === 0) {
+          const firstRow = data[0];
+          const cols = firstRow ? Object.keys(firstRow).join(', ') : 'ninguna';
+          setParseError(`No se encontraron registros válidos. Columnas detectadas: ${cols}. Usa nombres como: Nombre, Teléfono, Boletos`);
+          setPreviewData([]);
+          return;
+        }
+
+        setPreviewData(sanitized);
+        toast.success(`${sanitized.length} registros listos para importar`);
+      } catch (err: any) {
+        setParseError(err?.message || 'Error al leer el archivo');
+        setPreviewData([]);
+        toast.error('Error al procesar el archivo');
+      }
+    };
+    reader.onerror = () => {
+      setParseError('Error al leer el archivo');
+      toast.error('No se pudo leer el archivo');
     };
     reader.readAsBinaryString(file);
   };
@@ -1511,13 +1593,20 @@ const ImportAutoView = ({ raffle, onImport, isLoading }: any) => {
         </div>
         <div>
           <p className="font-black text-slate-700 text-base">Sube tu archivo Excel o CSV</p>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Columnas sugeridas: Nombre, Teléfono, Boletos</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Columnas: Nombre, Teléfono (10 dígitos), Boletos (ej: 1,2,3 o 1-5)</p>
         </div>
-        <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} />
-        <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm active:scale-95 transition-all">
+        <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv,application/vnd.ms-excel,text/csv" onChange={handleFileUpload} />
+        <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm active:scale-95 transition-all hover:bg-slate-50">
           Seleccionar Archivo
         </button>
       </div>
+
+      {parseError && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <p className="text-sm font-bold text-amber-800">{parseError}</p>
+          <button onClick={() => setParseError(null)} className="mt-2 text-[10px] font-black text-amber-600 uppercase">Cerrar</button>
+        </div>
+      )}
 
       {previewData.length > 0 && (
         <div className="space-y-4">
