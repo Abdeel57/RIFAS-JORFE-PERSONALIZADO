@@ -653,7 +653,7 @@ const App: React.FC = () => {
                 ¿Quieres una plataforma como ésta?
               </p>
               <a
-                href="https://wa.me/522312053120"
+                href="https://wa.me/526629480105?text=%C2%A1Hola!%20%F0%9F%91%8B%20Vi%20su%20plataforma%20de%20sorteos%20y%20me%20encant%C3%B3%20el%20sistema.%20%F0%9F%9A%80%20Me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20detallada%20para%20crear%20mi%20propia%20p%C3%A1gina%20de%20rifas%20personalizada.%20%C2%BFMe%20pueden%20asesorar%3F%20%F0%9F%98%8A"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full text-center py-3 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.02] transition-all active:scale-95"
