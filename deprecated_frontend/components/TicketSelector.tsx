@@ -14,44 +14,20 @@ const OVERSCAN = 3;
 function computeLayout(
   containerWidth: number,
   maxTickets: number,
-  isDiscovery: boolean,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
   const aspectRatio = 1;
 
-  // Lógica especial para Modo Inteligente (>100k boletos)
-  // Forzamos menos columnas para que los números de 6 dígitos quepan bien
-  if (isDiscovery) {
-    const cols = containerWidth < 400 ? 4 : 6; // 4 en móvil, 6 en desktop (según pidió el usuario)
-    const btnW = (containerWidth - (cols - 1) * GAP) / cols;
-
-    // Fuente un poco más grande ya que hay más espacio
-    const fontSize = btnW >= 60 ? '12px' : btnW >= 50 ? '10px' : '9px';
-    return { cols, fontSize, aspectRatio };
-  }
-
-  const minBtnSize = digits >= 7 ? 54 : digits >= 5 ? 46 : (digits <= 3 ? 34 : 42);
-
-  const preferred =
-    containerWidth < 380 ? [5, 4, 3, 2] :
-      containerWidth < 560 ? [8, 7, 6, 5, 4] :
-        [10, 9, 8, 7];
-
-  let cols = preferred[preferred.length - 1];
-  for (const c of preferred) {
-    const btnW = (containerWidth - (c - 1) * GAP) / c;
-    if (btnW >= minBtnSize) { cols = c; break; }
-  }
-
+  // Forzamos un diseño consistente de menos columnas para que quepan todos los dígitos (3 a 7)
+  // 6 columnas en escritorio, 4 en móviles pequeños
+  const cols = containerWidth < 400 ? 4 : 6;
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
-  let fontSize = '9px';
-  if (digits >= 7) {
-    fontSize = btnW >= 80 ? '10px' : btnW >= 58 ? '9px' : '8px';
-  } else if (digits >= 5) {
-    fontSize = btnW >= 80 ? '11px' : btnW >= 54 ? '10px' : '9px';
-  } else {
-    fontSize = btnW >= 68 ? '11px' : btnW >= 48 ? '10px' : '9px';
-  }
+
+  // Calculamos fuente dinámica para que quepa según el ancho de pantalla
+  let fontSize = '11px';
+  if (digits >= 7) fontSize = btnW >= 60 ? '11px' : '9px';
+  else if (digits >= 5) fontSize = btnW >= 60 ? '12px' : '10px';
+  else fontSize = btnW >= 60 ? '14px' : '12px';
 
   return { cols, fontSize, aspectRatio };
 }
@@ -65,6 +41,7 @@ const TicketItem = React.memo(({
   fontSize,
   aspectRatio,
   onClick,
+  totalTickets, // Añadido para cálculo dinámico de ceros
 }: {
   number: number;
   status: string;
@@ -73,16 +50,15 @@ const TicketItem = React.memo(({
   fontSize: string;
   aspectRatio: number;
   onClick: (num: number, status: string) => void;
+  totalTickets: number;
 }) => {
   const isUnavailable = status === 'sold' || status === 'reserved';
 
   const padded = useMemo(() => {
-    if (number <= 999) return number.toString().padStart(3, '0');
-    if (number <= 9999) return number.toString().padStart(4, '0');
-    if (number <= 99999) return number.toString().padStart(5, '0');
-    if (number <= 999999) return number.toString().padStart(6, '0');
-    return number.toString().padStart(7, '0');
-  }, [number]);
+    // Calculamos el largo total basado en la cantidad de boletos (ej. 1M = 7 dígitos si incluye el 1,000,000, o 6 si es 999,999)
+    const maxDigits = totalTickets.toString().length;
+    return number.toString().padStart(maxDigits, '0');
+  }, [number, totalTickets]);
 
   return (
     <button
@@ -142,10 +118,10 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Estado inicial inteligente: Si es masiva, empezamos en 6 columnas directamente
-  const [columnsCount, setColumnsCount] = useState(totalTickets > 100000 ? 6 : 10);
-  const [rowHeight, setRowHeight] = useState(52);
-  const [ticketFontSize, setTicketFontSize] = useState(totalTickets > 100000 ? '12px' : '10px');
+  // Estado inicial inteligente: Siempre 6 columnas para mejor legibilidad
+  const [columnsCount, setColumnsCount] = useState(6);
+  const [rowHeight, setRowHeight] = useState(60);
+  const [ticketFontSize, setTicketFontSize] = useState('12px');
   const [ticketAspectRatio, setTicketAspectRatio] = useState(1);
 
   useEffect(() => {
@@ -153,8 +129,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     if (!container) return;
 
     const recalculate = (width: number) => {
-      // Forzamos el paso de isDiscoveryMode para que el cálculo sea correcto
-      const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets, isDiscoveryMode);
+      const { cols, fontSize, aspectRatio } = computeLayout(width, totalTickets);
       const itemW = (width - (cols - 1) * GAP) / cols;
       const itemH = itemW / aspectRatio;
       setColumnsCount(cols);
@@ -433,6 +408,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                           fontSize={ticketFontSize}
                           aspectRatio={ticketAspectRatio}
                           onClick={toggleTicket}
+                          totalTickets={totalTickets}
                         />
                       </div>
                     ))}
@@ -480,7 +456,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                 {selectedTickets.sort((a, b) => a - b).map(num => (
                   <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-slate-50 border border-slate-100 rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90">
-                    <span className="text-slate-700 font-black text-[11px]">#{num.toString().padStart(3, '0')}</span>
+                    <span className="text-slate-700 font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
                     <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                   </div>
                 ))}
