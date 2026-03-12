@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
+import ComprobanteDigital from './ComprobanteDigital.tsx';
 
 const STORAGE_KEY_PENDING = 'nao_pending_purchase';
 
@@ -11,6 +12,7 @@ const VerifyTickets: React.FC = () => {
   const [results, setResults] = useState<{ number: number; status: string; raffle?: any }[] | null>(null);
   const [userInfo, setUserInfo] = useState<{ name: string; phone: string } | null>(null);
   const [pendingPurchase, setPendingPurchase] = useState<any>(null);
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
 
   // Efecto proactivo: Se ejecuta al montar para ver si el dispositivo tiene algo pendiente
   useEffect(() => {
@@ -46,8 +48,16 @@ const VerifyTickets: React.FC = () => {
         setResults(data.tickets.map(t => ({
           number: t.number,
           status: t.status,
+          purchaseId: t.purchaseId,
           raffle: t.raffle,
         })));
+
+        // Si encontramos que alguno de sus boletos ya está pagado en sistema, 
+        // limpiamos proactivamente la alerta de "Pago Pendiente" local.
+        if (data.tickets.some(t => t.status === 'Pagado')) {
+          localStorage.removeItem(STORAGE_KEY_PENDING);
+          setPendingPurchase(null);
+        }
       } else {
         setUserInfo(null);
         setResults([]);
@@ -181,6 +191,19 @@ const VerifyTickets: React.FC = () => {
                       <p className="text-xl font-black text-slate-800">#{res.number.toString().padStart(3, '0')}</p>
                       <span className={`inline-block mt-2 px-3 py-1 text-[8px] font-black rounded-full uppercase ${res.status === 'Pagado' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
                         }`}>{res.status}</span>
+
+                      {res.status === 'Pagado' && (
+                        <button
+                          onClick={() => {
+                            setSelectedPurchaseId((res as any).purchaseId);
+                            soundService.playCoins();
+                          }}
+                          className="mt-3 w-full py-2 bg-slate-900 text-white rounded-xl text-[8px] font-black uppercase tracking-widest shadow-md hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 5v2h3v11h-3v2h5V5h-5zm-3 7l-4-4v3H2v2h6v3l4-4z" /></svg>
+                          Ver Boleto
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -193,6 +216,16 @@ const VerifyTickets: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* MODAL DE COMPROBANTE DIGITAL */}
+      {selectedPurchaseId && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto pt-10">
+          <ComprobanteDigital
+            purchaseId={selectedPurchaseId}
+            onClose={() => setSelectedPurchaseId(null)}
+          />
+        </div>
+      )}
     </div>
   );
 };
