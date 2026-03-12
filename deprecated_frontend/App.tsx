@@ -11,6 +11,7 @@ import ComprobanteDigital from './components/ComprobanteDigital.tsx';
 import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
 import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
+import { pixelService } from './services/pixelService.ts';
 import { Raffle } from './types.ts';
 
 interface BrandSettings {
@@ -140,10 +141,26 @@ const App: React.FC = () => {
             }
             link.href = b.logoUrl;
           }
+          // Inicializar Pixel si está configurado
+          if (data.facebookPixelId) {
+            pixelService.init(data.facebookPixelId);
+          }
         }
       })
       .catch(() => {/* fallback to defaults silently */ });
   }, []);
+
+  // Rastrear PageView al cambiar de vista
+  useEffect(() => {
+    pixelService.track('PageView');
+  }, [activeView]);
+
+  // Rastrear ViewContent cuando se selecciona una rifa
+  useEffect(() => {
+    if (featuredRaffle && activeView === 'raffle') {
+      pixelService.trackViewContent(featuredRaffle);
+    }
+  }, [featuredRaffle, activeView]);
 
   // Carga ultra-rápida: Solo la rifa principal al inicio
   useEffect(() => {

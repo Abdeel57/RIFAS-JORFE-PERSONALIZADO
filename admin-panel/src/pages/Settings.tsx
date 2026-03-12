@@ -105,7 +105,7 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'sistema' | 'usuarios' | null;
+type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'marketing' | 'sistema' | 'usuarios' | null;
 
 interface AdminUser {
     id: string;
@@ -131,6 +131,7 @@ interface SettingsData {
     logoSize: number;
     primaryColor: string;
     secondaryColor: string;
+    facebookPixelId: string;
 }
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
@@ -255,6 +256,7 @@ const Settings: React.FC = () => {
         contactEmail: '', instagram: '', facebookUrl: '',
         autoVerificationEnabled: true, logoUrl: '', logoSize: 44,
         primaryColor: '#3b82f6', secondaryColor: '#6366f1',
+        facebookPixelId: '',
     });
 
     const [isLoading, setIsLoading] = useState(true);
@@ -355,6 +357,7 @@ const Settings: React.FC = () => {
                         logoUrl: savedLogo,
                         logoSize: typeof data.logoSize === 'number' ? data.logoSize : 44,
                         primaryColor: primary, secondaryColor: secondary,
+                        facebookPixelId: data.facebookPixelId || '',
                     });
                     if (savedLogo) setLogoSizeKb(Math.round((savedLogo.length * 3) / 4 / 1024));
                     setPrimaryHexInput(primary);
@@ -436,6 +439,10 @@ const Settings: React.FC = () => {
                     <MenuSection title="Comunicación">
                         <MenuRow icon={<Phone size={18} />} iconBg="bg-rose-50 text-rose-500" label="Contacto y Soporte" subtitle={settings.whatsapp} onClick={() => setActivePanel('contacto')} />
                         <MenuRow icon={<Globe size={18} />} iconBg="bg-sky-50 text-sky-500" label="Redes Sociales" value={`@${settings.instagram.replace(/^@/, '')}`} onClick={() => setActivePanel('redes')} last />
+                    </MenuSection>
+
+                    <MenuSection title="Marketing y Análisis">
+                        <MenuRow icon={<Facebook size={18} />} iconBg="bg-blue-50 text-blue-600" label="Meta Pixel" subtitle={settings.facebookPixelId || 'No configurado'} onClick={() => setActivePanel('marketing')} last />
                     </MenuSection>
 
                     <MenuSection title="Control de Acceso">
@@ -573,6 +580,54 @@ const Settings: React.FC = () => {
                                 <div className="relative">
                                     <Facebook size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600" />
                                     <input className="admin-input pl-11" placeholder="https://facebook.com/..." value={settings.facebookUrl} onChange={e => set('facebookUrl', e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activePanel === 'marketing' && (
+                    <div className="space-y-5">
+                        <PanelHeader title="Meta Pixel" icon={<Facebook size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+                        <div className="admin-card p-6 space-y-5">
+                            <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-2">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
+                                    <Facebook size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Rastreo de Conversiones</p>
+                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Configura tu Pixel ID para medir visitas, inicios de pago y compras. Esto te ayudará a optimizar tus anuncios en Facebook e Instagram.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <FieldLabel hint="Solo el número identificador de tu Pixel de Meta.">Pixel ID</FieldLabel>
+                                <input
+                                    type="text"
+                                    className="admin-input font-mono focus:shadow-xl"
+                                    placeholder="Ej: 123456789012345"
+                                    value={settings.facebookPixelId}
+                                    onChange={e => set('facebookPixelId', e.target.value.replace(/\D/g, ''))}
+                                />
+                            </div>
+
+                            <div className="pt-2">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Eventos Activos</p>
+                                <div className="space-y-2">
+                                    {[
+                                        { ev: 'PageView', desc: 'Vistas de cualquier página' },
+                                        { ev: 'ViewContent', desc: 'Ver detalles de una rifa' },
+                                        { ev: 'InitiateCheckout', desc: 'Abrir el modal de compra' },
+                                        { ev: 'Purchase', desc: 'Confirmación de envío de pago' }
+                                    ].map(item => (
+                                        <div key={item.ev} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                            <div>
+                                                <p className="text-[11px] font-black text-slate-700">{item.ev}</p>
+                                                <p className="text-[10px] text-slate-400">{item.desc}</p>
+                                            </div>
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

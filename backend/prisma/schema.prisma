@@ -136,6 +136,7 @@ model SystemSettings {
   logoSize                 Int      @default(44)
   primaryColor             String   @default("#3b82f6")
   secondaryColor           String   @default("#6366f1")
+  facebookPixelId          String?
   updatedAt                DateTime @updatedAt
 }
 

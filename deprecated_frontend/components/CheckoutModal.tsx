@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
+import { pixelService } from '../services/pixelService.ts';
 import { FALLBACK_RAFFLE_ID } from '../constants.ts';
 
 interface CheckoutModalProps {
@@ -88,6 +89,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
             }
           } catch (e) { }
         }
+
+        // Tracking: InitiateCheckout
+        pixelService.trackInitiateCheckout({ title: raffleTitle, id: raffleId, ticketPrice: pricePerTicket }, selectedTickets.length);
 
         // Si el App ya pasó los settings, usarlos directamente (evita fetch redundante)
         if (initialSettings) {
@@ -318,6 +322,15 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
       setIsUploadingProof(true);
       await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
       setIsUploadingProof(false);
+
+      // Tracking: Purchase (El usuario envió el comprobante)
+      pixelService.trackPurchase({
+        raffleTitle,
+        raffleId,
+        total,
+        tickets: selectedTickets,
+        purchaseId: newPurchaseId
+      });
 
       // 3. Decidir flujo: IA o Manual directo
       if (dynamicSettings?.autoVerificationEnabled === false) {
