@@ -2,12 +2,25 @@ import { execSync } from 'child_process';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Cargar variables de entorno
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+// Cargar variables de entorno desde múltiples posibles ubicaciones
+const envPaths = [
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../../../.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), 'backend/.env'),
+];
+
+for (const envPath of envPaths) {
+    console.log(`🔍 Buscando .env en: ${envPath}`);
+    dotenv.config({ path: envPath });
+}
 
 if (!process.env.DATABASE_URL) {
-    console.error('❌ Error: DATABASE_URL no encontrada en .env ni .env.local');
+    console.error('❌ Error: DATABASE_URL no encontrada en ninguna de las rutas probadas.');
+    console.log('Ambiente actual:', {
+        cwd: process.cwd(),
+        dirname: __dirname,
+    });
     process.exit(1);
 }
 
