@@ -316,12 +316,11 @@ const Settings: React.FC = () => {
     };
 
     const handleTogglePayment = async (id: string, currentStatus: boolean) => {
-        if (currentStatus) return; // Ya está activo
         try {
-            await api.put(`/settings/payment-methods/${id}`, { isActive: true });
-            toast.success('Método de pago activado');
+            await api.put(`/settings/payment-methods/${id}`, { isActive: !currentStatus });
+            toast.success(!currentStatus ? 'Método de pago activado' : 'Método de pago desactivado');
             fetchPaymentMethods();
-        } catch { toast.error('Error al activar'); }
+        } catch { toast.error('Error al actualizar estado'); }
     };
 
     const { admin } = useAuth();
@@ -680,7 +679,7 @@ const Settings: React.FC = () => {
                                                 </div>
 
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex items-center gap-1 opacity-100 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={() => {
                                                                 setPaymentForm({ ...method });
@@ -698,14 +697,15 @@ const Settings: React.FC = () => {
                                                         </button>
                                                     </div>
 
-                                                    {!method.isActive && (
-                                                        <button
-                                                            onClick={() => handleTogglePayment(method.id, method.isActive)}
-                                                            className="text-[9px] font-black uppercase tracking-widest text-[#2563EB] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 active:scale-95 transition-all"
-                                                        >
-                                                            Activar
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={() => handleTogglePayment(method.id, method.isActive)}
+                                                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border active:scale-95 transition-all ${method.isActive
+                                                                ? 'text-red-500 bg-red-50 border-red-100 hover:bg-red-100'
+                                                                : 'text-[#2563EB] bg-blue-50 border-blue-100 hover:bg-blue-100'
+                                                            }`}
+                                                    >
+                                                        {method.isActive ? 'Desactivar' : 'Activar'}
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))

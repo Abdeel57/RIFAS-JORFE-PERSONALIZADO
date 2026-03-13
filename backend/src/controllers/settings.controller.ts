@@ -117,15 +117,6 @@ export const getPaymentMethods = async (req: Request, res: Response, next: NextF
 export const createPaymentMethod = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = paymentMethodSchema.parse(req.body);
-
-        // Si es activa, las demás pasan a inactivas
-        if (validated.isActive) {
-            await prisma.paymentMethod.updateMany({
-                where: { isActive: true },
-                data: { isActive: false }
-            });
-        }
-
         const method = await prisma.paymentMethod.create({
             data: validated
         });
@@ -138,13 +129,6 @@ export const updatePaymentMethod = async (req: Request, res: Response, next: Nex
     try {
         const { id } = req.params;
         const validated = paymentMethodSchema.partial().parse(req.body);
-
-        if (validated.isActive) {
-            await prisma.paymentMethod.updateMany({
-                where: { id: { not: id }, isActive: true },
-                data: { isActive: false }
-            });
-        }
 
         const method = await prisma.paymentMethod.update({
             where: { id },
