@@ -155,10 +155,10 @@ export async function analyzePaymentProof(
 
 
     try {
-        console.log(`🤖 [GEMINI] Solicitando análisis a modelo estable: gemini-1.5-flash...`);
+        console.log(`🤖 [GEMINI] Solicitando análisis a modelo gemini-2.5-flash...`);
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        // Forzamos el uso del modelo estándar
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // gemini-1.5-flash está deprecado (404). Usamos gemini-2.5-flash (estable actual).
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 
         const base64Data = imageBase64.includes(',')
