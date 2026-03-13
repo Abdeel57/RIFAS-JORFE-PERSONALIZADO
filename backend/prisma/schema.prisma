@@ -144,6 +144,17 @@ model SystemSettings {
   updatedAt                DateTime @updatedAt
 }
 
+model PaymentMethod {
+  id            String   @id @default(cuid())
+  bankName      String
+  clabe         String
+  beneficiary   String
+  accountNumber String?
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 enum RaffleStatus {
   active
   completed

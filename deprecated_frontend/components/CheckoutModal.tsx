@@ -56,6 +56,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdPurchase, setCreatedPurchase] = useState<any>(null);
 
+  const [selectedPaymentIdx, setSelectedPaymentIdx] = useState(0);
+
   // Comprobante de pago
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
@@ -237,12 +239,15 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
 
   const total = selectedTickets.length * pricePerTicket;
 
-  const bankData = useMemo(() => ({
-    bank: dynamicSettings?.bankName || 'BBVA México',
-    clabe: dynamicSettings?.clabe || '012 180 0152 4895 2410',
-    beneficiary: dynamicSettings?.beneficiary || 'Bismark México S.A.',
-    concept: `Rifa NAO - ${selectedTickets.length} boleto(s)`,
-  }), [selectedTickets.length, dynamicSettings]);
+  const activePaymentMethod = useMemo(() => {
+    const methods = dynamicSettings?.activePaymentMethods || [];
+    if (methods.length > 0) return methods[selectedPaymentIdx] || methods[0];
+    return {
+      bankName: dynamicSettings?.bankName || 'BBVA México',
+      clabe: dynamicSettings?.clabe || '012 180 0152 4895 2410',
+      beneficiary: dynamicSettings?.beneficiary || 'Bismark México S.A.',
+    };
+  }, [dynamicSettings, selectedPaymentIdx]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -596,6 +601,24 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
           {step === 2 && (
             <div className="p-4 space-y-3 animate-in slide-in-from-right-8 duration-300">
 
+              {/* ── Selector de Métodos de Pago (Scalability: Múltiples tarjetas) ── */}
+              {dynamicSettings?.activePaymentMethods?.length > 1 && (
+                <div className="flex gap-2 px-1 mb-3 overflow-x-auto pb-1 custom-scrollbar-light">
+                  {dynamicSettings.activePaymentMethods.map((method: any, idx: number) => (
+                    <button
+                      key={method.id || idx}
+                      onClick={() => setSelectedPaymentIdx(idx)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${selectedPaymentIdx === idx
+                        ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                        : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                      {method.bankName}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* ── Tarjeta bancaria compacta ── */}
               <div
                 className="border rounded-2xl overflow-hidden"
@@ -625,16 +648,16 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   {/* Banco */}
                   <div className="flex justify-between items-center px-3 py-2">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Banco</span>
-                    <span className="text-xs text-slate-800 font-black">{bankData.bank}</span>
+                    <span className="text-xs text-slate-800 font-black">{activePaymentMethod.bankName}</span>
                   </div>
                   {/* CLABE */}
                   <div className="flex items-center justify-between px-3 py-2 gap-2">
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">CLABE</p>
-                      <p className="text-xs text-slate-800 font-black tracking-wider mt-0.5">{bankData.clabe}</p>
+                      <p className="text-xs text-slate-800 font-black tracking-wider mt-0.5">{activePaymentMethod.clabe}</p>
                     </div>
                     <button
-                      onClick={() => handleCopy(bankData.clabe.replace(/\s/g, ''))}
+                      onClick={() => handleCopy(activePaymentMethod.clabe.replace(/\s/g, ''))}
                       className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex-shrink-0 ${copied ? 'bg-green-100 text-green-700' : 'hover:opacity-80'}`}
                       style={!copied ? { backgroundColor: 'rgba(var(--brand-primary-rgb), 0.08)', color: 'var(--brand-primary)' } : {}}
                     >
@@ -649,7 +672,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   <div className="grid grid-cols-2 divide-x divide-slate-50">
                     <div className="px-3 py-2">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Beneficiario</p>
-                      <p className="text-[10px] text-slate-700 font-bold mt-0.5 truncate">{bankData.beneficiary}</p>
+                      <p className="text-[10px] text-slate-700 font-bold mt-0.5 truncate">{activePaymentMethod.beneficiary}</p>
                     </div>
                     <div className="px-3 py-2">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total</p>
@@ -658,6 +681,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   </div>
                 </div>
               </div>
+
 
               {/* ── Aviso compacto ── */}
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">

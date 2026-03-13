@@ -266,6 +266,63 @@ const Settings: React.FC = () => {
     const [logoSizeKb, setLogoSizeKb] = useState(0);
     const [primaryHexInput, setPrimaryHexInput] = useState('#3b82f6');
     const [secondaryHexInput, setSecondaryHexInput] = useState('#6366f1');
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+    const [isPaymentsLoading, setIsPaymentsLoading] = useState(false);
+    const [isEditingPayment, setIsEditingPayment] = useState<string | null>(null);
+    const [paymentForm, setPaymentForm] = useState({ bankName: '', clabe: '', beneficiary: '', accountNumber: '', isActive: false });
+
+    const fetchPaymentMethods = async () => {
+        setIsPaymentsLoading(true);
+        try {
+            const res = await api.get('/settings/payment-methods');
+            if (res.data?.success) setPaymentMethods(res.data.data);
+        } catch { toast.error('Error al cargar métodos de pago'); }
+        finally { setIsPaymentsLoading(false); }
+    };
+
+    useEffect(() => {
+        if (activePanel === 'banco') fetchPaymentMethods();
+    }, [activePanel]);
+
+    const handleSavePayment = async () => {
+        if (!paymentForm.bankName || !paymentForm.clabe || !paymentForm.beneficiary) {
+            toast.error('Completa los campos obligatorios');
+            return;
+        }
+        try {
+            if (isEditingPayment === 'new') {
+                await api.post('/settings/payment-methods', paymentForm);
+                toast.success('Método de pago agregado');
+            } else {
+                await api.put(`/settings/payment-methods/${isEditingPayment}`, paymentForm);
+                toast.success('Método de pago actualizado');
+            }
+            setIsEditingPayment(null);
+            fetchPaymentMethods();
+        } catch { toast.error('Error al guardar el método de pago'); }
+    };
+
+    const handleDeletePayment = (id: string) => {
+        showConfirm({
+            message: '¿Eliminar este método de pago?',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/settings/payment-methods/${id}`);
+                    toast.success('Método de pago eliminado');
+                    fetchPaymentMethods();
+                } catch { toast.error('Error al eliminar'); }
+            }
+        });
+    };
+
+    const handleTogglePayment = async (id: string, currentStatus: boolean) => {
+        if (currentStatus) return; // Ya está activo
+        try {
+            await api.put(`/settings/payment-methods/${id}`, { isActive: true });
+            toast.success('Método de pago activado');
+            fetchPaymentMethods();
+        } catch { toast.error('Error al activar'); }
+    };
 
     const { admin } = useAuth();
     const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -578,26 +635,183 @@ const Settings: React.FC = () => {
 
                 {activePanel === 'banco' && (
                     <div className="space-y-5">
-                        <PanelHeader title="Ajustes de Pago" icon={<CreditCard size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-                        <div className="admin-card p-0 overflow-hidden divide-y divide-slate-100">
-                            {[
-                                { label: 'Nombre del Banco', field: 'bankName' as keyof SettingsData, placeholder: 'Ej: BBVA, Banamex...' },
-                                { label: 'Número CLABE', field: 'clabe' as keyof SettingsData, placeholder: '18 dígitos interbancaria' },
-                                { label: 'Nombre del Beneficiario', field: 'beneficiary' as keyof SettingsData, placeholder: 'Nombre a quien va el pago' },
-                                { label: 'Número de Cuenta', field: 'accountNumber' as keyof SettingsData, placeholder: 'Opcional' },
-                            ].map((item, i) => (
-                                <div key={i} className="p-6">
-                                    <FieldLabel>{item.label}</FieldLabel>
-                                    <input type="text" className="admin-input focus:bg-slate-50" value={(settings[item.field] as string) || ''} onChange={e => set(item.field, e.target.value)} placeholder={item.placeholder} />
+                        <PanelHeader title="Métodos de Pago" icon={<CreditCard size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
+
+                        {!isEditingPayment ? (
+                            <div className="space-y-4">
+                                <div className="admin-card p-0 overflow-hidden divide-y divide-slate-50">
+                                    <div className="p-4 bg-slate-50 flex items-center justify-between">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tus Cuentas Bancarias</span>
+                                        <button
+                                            onClick={() => {
+                                                setPaymentForm({ bankName: '', clabe: '', beneficiary: '', accountNumber: '', isActive: paymentMethods.length === 0 });
+                                                setIsEditingPayment('new');
+                                            }}
+                                            className="bg-[#2563EB] text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-100 transition-all"
+                                        >
+                                            Agregar Tarjeta
+                                        </button>
+                                    </div>
+
+                                    {isPaymentsLoading ? (
+                                        <div className="p-8 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-200" /></div>
+                                    ) : paymentMethods.length === 0 ? (
+                                        <div className="p-12 text-center space-y-3">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto text-slate-200">
+                                                <CreditCard size={32} />
+                                            </div>
+                                            <p className="text-sm text-slate-400 font-medium">No hay tarjetas registradas.</p>
+                                        </div>
+                                    ) : (
+                                        paymentMethods.map(method => (
+                                            <div key={method.id} className="p-5 flex items-start justify-between group">
+                                                <div className="flex gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border transition-all ${method.isActive ? 'bg-blue-50 border-blue-100 text-[#2563EB]' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                                                        <CreditCard size={20} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-black text-slate-800 text-sm truncate">{method.bankName}</p>
+                                                            {method.isActive && <span className="badge-blue !py-0.5 !px-2 scale-90">Activa</span>}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{method.beneficiary}</p>
+                                                        <p className="text-[11px] font-mono text-slate-500 mt-1">{method.clabe}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                setPaymentForm({ ...method });
+                                                                setIsEditingPayment(method.id);
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                                        >
+                                                            <Wrench size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeletePayment(method.id)}
+                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+
+                                                    {!method.isActive && (
+                                                        <button
+                                                            onClick={() => handleTogglePayment(method.id, method.isActive)}
+                                                            className="text-[9px] font-black uppercase tracking-widest text-[#2563EB] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 active:scale-95 transition-all"
+                                                        >
+                                                            Activar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                            ))}
-                            <div className="p-6 bg-slate-50/50">
-                                <FieldLabel hint="Mensaje que verá el cliente al terminar su pedido.">Instrucciones Especiales</FieldLabel>
-                                <textarea className="admin-input resize-none h-32" value={settings.paymentInstructions} onChange={e => set('paymentInstructions', e.target.value)} placeholder="Ej: Favor de enviar comprobante por WhatsApp con su número de orden." />
+
+                                <div className="admin-card p-6 bg-slate-50/50 border-dashed border-2">
+                                    <FieldLabel hint="Mensaje que verá el cliente al terminar su pedido.">Instrucciones de Pago Generales</FieldLabel>
+                                    <textarea
+                                        className="admin-input resize-none h-32 bg-white"
+                                        value={settings.paymentInstructions}
+                                        onChange={e => set('paymentInstructions', e.target.value)}
+                                        placeholder="Ej: Favor de enviar comprobante por WhatsApp con su número de orden."
+                                    />
+                                    <div className="flex justify-end mt-4">
+                                        <button onClick={handleSave} disabled={isSaving} className="btn-primary !py-2 !h-auto text-[10px] uppercase tracking-widest flex items-center gap-2">
+                                            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                            Guardar Instrucciones
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="admin-card p-6 space-y-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">
+                                        {isEditingPayment === 'new' ? 'Nueva Tarjeta' : 'Editar Tarjeta'}
+                                    </h3>
+                                    <button onClick={() => setIsEditingPayment(null)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-full">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-1.5">
+                                        <FieldLabel>Nombre del Banco *</FieldLabel>
+                                        <input
+                                            type="text"
+                                            className="admin-input"
+                                            placeholder="Ej: BBVA México"
+                                            value={paymentForm.bankName}
+                                            onChange={e => setPaymentForm(p => ({ ...p, bankName: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <FieldLabel>Beneficiario *</FieldLabel>
+                                        <input
+                                            type="text"
+                                            className="admin-input"
+                                            placeholder="Nombre completo"
+                                            value={paymentForm.beneficiary}
+                                            onChange={e => setPaymentForm(p => ({ ...p, beneficiary: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <FieldLabel>Número CLABE *</FieldLabel>
+                                        <input
+                                            type="text"
+                                            className="admin-input font-mono"
+                                            placeholder="18 dígitos"
+                                            value={paymentForm.clabe}
+                                            onChange={e => setPaymentForm(p => ({ ...p, clabe: e.target.value.replace(/\s/g, '') }))}
+                                            maxLength={18}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <FieldLabel>Número de Cuenta (Opcional)</FieldLabel>
+                                        <input
+                                            type="text"
+                                            className="admin-input font-mono"
+                                            placeholder="10 dígitos"
+                                            value={paymentForm.accountNumber || ''}
+                                            onChange={e => setPaymentForm(p => ({ ...p, accountNumber: e.target.value }))}
+                                            maxLength={11}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-2xl flex items-center justify-between border border-blue-100">
+                                    <div>
+                                        <p className="text-sm font-black text-blue-900">Activar automáticamente</p>
+                                        <p className="text-[10px] text-blue-600 font-medium">Esta tarjeta se mostrará en el flujo de pago.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={paymentForm.isActive}
+                                            onChange={e => setPaymentForm(p => ({ ...p, isActive: e.target.checked }))}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-[#2563EB] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                    </label>
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button onClick={() => setIsEditingPayment(null)} className="btn-secondary flex-1">Cancelar</button>
+                                    <button onClick={handleSavePayment} className="btn-primary flex-[2] flex items-center justify-center gap-2">
+                                        <Save size={18} />
+                                        Guardar Tarjeta
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
                 )}
+
 
                 {activePanel === 'contacto' && (
                     <div className="space-y-5">

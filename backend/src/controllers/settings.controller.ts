@@ -22,6 +22,14 @@ const updateSettingsSchema = z.object({
     facebookPixelId: z.string().optional().nullable().or(z.literal('')),
 });
 
+const paymentMethodSchema = z.object({
+    bankName: z.string().min(1),
+    clabe: z.string().min(1),
+    beneficiary: z.string().min(1),
+    accountNumber: z.string().optional().nullable(),
+    isActive: z.boolean().optional(),
+});
+
 export const getSettings = async (req: Request, res: Response, next: NextFunction) => {
     try {
         let settings = await prisma.systemSettings.findUnique({
@@ -29,15 +37,40 @@ export const getSettings = async (req: Request, res: Response, next: NextFunctio
         });
 
         if (!settings) {
-            // Create default settings if they don't exist
             settings = await prisma.systemSettings.create({
                 data: { id: 'default' },
             });
         }
 
+        // Obtener todos los métodos de pago activos
+        const activePayments = await prisma.paymentMethod.findMany({
+            where: { isActive: true },
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        // Para compatibilidad con el diseño actual, 'data' seguirá teniendo los campos de la primera tarjeta activa
+        // pero añadimos 'activePaymentMethods' para que el frontend pueda iterar si hay varios.
+        const firstActive = activePayments[0];
+
+        const data = {
+            ...settings,
+            bankName: firstActive?.bankName || settings.bankName,
+            clabe: firstActive?.clabe || settings.clabe,
+            beneficiary: firstActive?.beneficiary || settings.beneficiary,
+            accountNumber: firstActive?.accountNumber || settings.accountNumber,
+            activePaymentMethods: activePayments.length > 0 ? activePayments : [{
+                id: 'legacy',
+                bankName: settings.bankName,
+                clabe: settings.clabe,
+                beneficiary: settings.beneficiary,
+                accountNumber: settings.accountNumber,
+                isActive: true
+            }]
+        };
+
         res.json({
             success: true,
-            data: settings,
+            data,
         });
     } catch (error) {
         next(error);
@@ -47,7 +80,6 @@ export const getSettings = async (req: Request, res: Response, next: NextFunctio
 export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = updateSettingsSchema.parse(req.body);
-        // Convertir strings vacíos a null para campos opcionales
         const data: Record<string, any> = { ...validated };
         if (data.accountNumber === '') data.accountNumber = null;
         if (data.paymentInstructions === '') data.paymentInstructions = null;
@@ -66,9 +98,68 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
             data: settings,
         });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return next(error);
-        }
+        if (error instanceof z.ZodError) return next(error);
         next(error);
     }
 };
+
+// ─── Payment Methods CRUD ─────────────────────────────────────────────────────
+
+export const getPaymentMethods = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const methods = await prisma.paymentMethod.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: methods });
+    } catch (error) { next(error); }
+};
+
+export const createPaymentMethod = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const validated = paymentMethodSchema.parse(req.body);
+
+        // Si es activa, las demás pasan a inactivas
+        if (validated.isActive) {
+            await prisma.paymentMethod.updateMany({
+                where: { isActive: true },
+                data: { isActive: false }
+            });
+        }
+
+        const method = await prisma.paymentMethod.create({
+            data: validated
+        });
+
+        res.json({ success: true, data: method });
+    } catch (error) { next(error); }
+};
+
+export const updatePaymentMethod = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const validated = paymentMethodSchema.partial().parse(req.body);
+
+        if (validated.isActive) {
+            await prisma.paymentMethod.updateMany({
+                where: { id: { not: id }, isActive: true },
+                data: { isActive: false }
+            });
+        }
+
+        const method = await prisma.paymentMethod.update({
+            where: { id },
+            data: validated
+        });
+
+        res.json({ success: true, data: method });
+    } catch (error) { next(error); }
+};
+
+export const deletePaymentMethod = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        await prisma.paymentMethod.delete({ where: { id } });
+        res.json({ success: true, message: 'Método de pago eliminado' });
+    } catch (error) { next(error); }
+};
+

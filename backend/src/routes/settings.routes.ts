@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { getSettings, updateSettings } from '../controllers/settings.controller';
 import { authenticateAdmin, isAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -111,6 +110,14 @@ router.get('/og-preview', async (req: Request, res: Response) => {
 });
 
 // ─── Settings CRUD ────────────────────────────────────────────────────────────
+import {
+    getSettings,
+    updateSettings,
+    getPaymentMethods,
+    createPaymentMethod,
+    updatePaymentMethod,
+    deletePaymentMethod
+} from '../controllers/settings.controller';
 
 // Public route for frontend to fetch settings (bank details, etc)
 router.get('/', getSettings);
@@ -118,4 +125,11 @@ router.get('/', getSettings);
 // Admin only route to update settings
 router.put('/', authenticateAdmin, isAdmin, updateSettings);
 
+// Payment Methods
+router.get('/payment-methods', authenticateAdmin, isAdmin, getPaymentMethods);
+router.post('/payment-methods', authenticateAdmin, isAdmin, createPaymentMethod);
+router.put('/payment-methods/:id', authenticateAdmin, isAdmin, updatePaymentMethod);
+router.delete('/payment-methods/:id', authenticateAdmin, isAdmin, deletePaymentMethod);
+
 export default router;
+
