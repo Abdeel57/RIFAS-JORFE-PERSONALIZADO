@@ -26,54 +26,87 @@ const createRaffleSchema = z.object({
 
 const updateRaffleSchema = createRaffleSchema.partial();
 
+
+// Función auxiliar para crear boletos en bloques (evita errores de parámetros en la BD y timeouts)
+async function ensureTicketsExist(raffleId: string, totalTickets: number, tx: any) {
+  console.log(`🛠️ [TICKETS] Asegurando existencia de ${totalTickets} boletos para rifa ${raffleId}...`);
+
+  // 1. Obtener boletos existentes para no duplicar
+  const existingTickets = await tx.ticket.findMany({
+    where: { raffleId },
+    select: { number: true }
+  });
+
+  const existingNumbers = new Set(existingTickets.map((t: any) => t.number));
+  const ticketsToCreate = [];
+
+  for (let i = 1; i <= totalTickets; i++) {
+    if (!existingNumbers.has(i)) {
+      ticketsToCreate.push({
+        raffleId,
+        number: i,
+        status: 'available' as const,
+      });
+    }
+  }
+
+  if (ticketsToCreate.length === 0) {
+    console.log(`✅ [TICKETS] Todos los boletos ya existen.`);
+    return;
+  }
+
+  // 2. Insertar en bloques de 5000 para máxima estabilidad
+  const CHUNK_SIZE = 5000;
+  for (let i = 0; i < ticketsToCreate.length; i += CHUNK_SIZE) {
+    const chunk = ticketsToCreate.slice(i, i + CHUNK_SIZE);
+    await tx.ticket.createMany({
+      data: chunk,
+      skipDuplicates: true,
+    });
+    console.log(`⏳ [TICKETS] Insertados ${i + chunk.length}/${ticketsToCreate.length}...`);
+  }
+
+  console.log(`✅ [TICKETS] Creación completada.`);
+}
+
 export const createRaffle = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = createRaffleSchema.parse(req.body);
 
-    const raffle = await prisma.raffle.create({
-      data: {
-        ...data,
-        status: data.status || 'active',
-        drawDate: new Date(data.drawDate),
-        autoReleaseHours: data.autoReleaseHours || 0,
-        luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
-      },
-    });
-
-    // Crear boletos solo si NO es virtual
-    if (!data.isVirtual) {
-      const tickets = Array.from({ length: data.totalTickets }, (_, i) => ({
-        raffleId: raffle.id,
-        number: i + 1,
-        status: 'available' as const,
-      }));
-
-      await prisma.ticket.createMany({
-        data: tickets,
+    const raffle = await prisma.$transaction(async (tx) => {
+      const newRaffle = await tx.raffle.create({
+        data: {
+          ...data,
+          status: data.status || 'active',
+          drawDate: new Date(data.drawDate),
+          autoReleaseHours: data.autoReleaseHours || 0,
+          luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
+        },
       });
-    }
 
-    const raffleWithTickets = await prisma.raffle.findUnique({
+      // Crear boletos solo si NO es virtual
+      if (!data.isVirtual) {
+        await ensureTicketsExist(newRaffle.id, data.totalTickets, tx);
+      }
+
+      return newRaffle;
+    }, { timeout: 30000 }); // Aumentar timeout para rifas grandes
+
+    const raffleWithDetails = await prisma.raffle.findUnique({
       where: { id: raffle.id },
       include: {
         _count: {
-          select: {
-            tickets: {
-              where: { status: 'sold' },
-            },
-          },
+          select: { tickets: { where: { status: 'sold' } } },
         },
       },
     });
 
     res.status(201).json({
       success: true,
-      data: raffleWithTickets,
+      data: raffleWithDetails,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(error);
-    }
+    if (error instanceof z.ZodError) return next(error);
     next(error);
   }
 };
@@ -83,75 +116,60 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
     const { id } = req.params;
     const data = updateRaffleSchema.parse(req.body);
 
-    const existingRaffle = await prisma.raffle.findUnique({
-      where: { id },
-    });
+    const existingRaffle = await prisma.raffle.findUnique({ where: { id } });
+    if (!existingRaffle) throw new AppError(404, 'Raffle not found');
 
-    if (!existingRaffle) {
-      throw new AppError(404, 'Raffle not found');
-    }
+    const result = await prisma.$transaction(async (tx) => {
+      const updateData: any = { ...data };
+      if (data.drawDate) updateData.drawDate = new Date(data.drawDate);
 
-    const updateData: any = { ...data };
-    if (data.drawDate) {
-      updateData.drawDate = new Date(data.drawDate);
-    }
-
-    // Si se cambia el total de boletos y NO es virtual, ajustar
-    if (data.totalTickets && data.totalTickets !== existingRaffle.totalTickets && !(existingRaffle as any).isVirtual) {
-      const currentTicketCount = await prisma.ticket.count({
-        where: { raffleId: id },
+      const updatedRaffle = await tx.raffle.update({
+        where: { id },
+        data: updateData,
       });
 
-      if (data.totalTickets > currentTicketCount) {
-        // Agregar boletos
-        const newTickets = Array.from(
-          { length: data.totalTickets - currentTicketCount },
-          (_, i) => ({
-            raffleId: id,
-            number: currentTicketCount + i + 1,
-            status: 'available' as const,
-          })
-        );
-        await prisma.ticket.createMany({
-          data: newTickets,
-        });
-      } else if (data.totalTickets < currentTicketCount) {
-        // Eliminar boletos disponibles que excedan el nuevo total
-        await prisma.ticket.deleteMany({
-          where: {
-            raffleId: id,
-            status: 'available',
-            number: { gt: data.totalTickets },
-          },
-        });
-      }
-    }
+      // Determinar si ahora es tradicional y si necesitamos generar boletos
+      const isNowVirtual = data.isVirtual !== undefined ? data.isVirtual : existingRaffle.isVirtual;
+      const totalTickets = data.totalTickets !== undefined ? data.totalTickets : existingRaffle.totalTickets;
 
-    const raffle = await prisma.raffle.update({
-      where: { id },
-      data: updateData,
+      if (!isNowVirtual) {
+        // Si antes era virtual y ahora es tradicional, O si aumentó el número de boletos
+        await ensureTicketsExist(id, totalTickets, tx);
+
+        // Si se redujo el número de boletos, eliminar los sobrantes que estén disponibles
+        if (data.totalTickets && data.totalTickets < existingRaffle.totalTickets) {
+          await tx.ticket.deleteMany({
+            where: {
+              raffleId: id,
+              status: 'available',
+              number: { gt: data.totalTickets },
+            },
+          });
+        }
+      }
+
+      return updatedRaffle;
+    }, { timeout: 30000 });
+
+    const raffleWithDetails = await prisma.raffle.findUnique({
+      where: { id: result.id },
       include: {
         _count: {
-          select: {
-            tickets: {
-              where: { status: 'sold' },
-            },
-          },
+          select: { tickets: { where: { status: 'sold' } } },
         },
       },
     });
 
     res.json({
       success: true,
-      data: raffle,
+      data: raffleWithDetails,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(error);
-    }
+    if (error instanceof z.ZodError) return next(error);
     next(error);
   }
 };
+
 
 export const deleteRaffle = async (req: Request, res: Response, next: NextFunction) => {
   try {

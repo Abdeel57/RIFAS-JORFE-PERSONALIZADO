@@ -147,18 +147,21 @@ export async function analyzePaymentProof(
         verdictReason: 'No se pudo analizar el comprobante automáticamente.',
     };
 
+
     if (!env.GEMINI_API_KEY) {
-        console.warn('⚠️  GEMINI_API_KEY no configurada — revisión manual requerida');
+        console.warn('⚠️  [GEMINI] GEMINI_API_KEY no detectada en env. Revisión manual requerida.');
         return empty;
     }
 
     try {
+        console.log(`🤖 [GEMINI] Iniciando análisis con modelo gemini-1.5-flash...`);
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const base64Data = imageBase64.includes(',')
             ? imageBase64.split(',')[1]
             : imageBase64;
+
 
         const mimeType = imageBase64.startsWith('data:image/png') ? 'image/png'
             : imageBase64.startsWith('data:image/webp') ? 'image/webp'

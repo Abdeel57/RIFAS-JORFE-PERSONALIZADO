@@ -230,10 +230,12 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     if (isBase64) {
       try {
         const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+
         if (settings?.autoVerificationEnabled !== false) {
           schedulePaymentVerification(id, proofData);
-          console.log(`✅ [COMPROBANTE] Orden ${id.slice(-8)}: verificación automática programada en 2 min.`);
+          console.log(`✅ [COMPROBANTE] Orden ${id.slice(-8)}: verificación automática programada para ejecutarse en unos segundos.`);
         } else {
+
           await (prisma.purchase.update as any)({
             where: { id },
             data: {
