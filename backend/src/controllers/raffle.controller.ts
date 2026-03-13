@@ -75,7 +75,7 @@ export const getRaffleTickets = async (req: Request, res: Response, next: NextFu
       select: { isVirtual: true },
     });
 
-    const where: any = { raffleId: id };
+    const where: any = { raffleId: id, isGift: false };
     if (status) {
       where.status = status;
     } else if ((raffle as any)?.isVirtual) {
@@ -90,12 +90,16 @@ export const getRaffleTickets = async (req: Request, res: Response, next: NextFu
         id: true,
         number: true,
         status: true,
+        isGift: true,
       },
     });
 
     res.json({
       success: true,
-      data: tickets,
+      data: tickets.map(t => ({
+        ...t,
+        isGift: !!t.isGift
+      })),
     });
   } catch (error) {
     next(error);

@@ -30,6 +30,7 @@ export const verifyTickets = async (req: Request, res: Response, next: NextFunct
                 id: true,
                 number: true,
                 status: true,
+                isGift: true,
               },
               orderBy: { number: 'asc' },
             },
@@ -55,6 +56,7 @@ export const verifyTickets = async (req: Request, res: Response, next: NextFunct
         status: purchase.status === 'paid' ? 'Pagado' : 'Pendiente',
         purchaseId: purchase.id,
         raffle: purchase.raffle,
+        isGift: ticket.isGift,
       }))
     );
 

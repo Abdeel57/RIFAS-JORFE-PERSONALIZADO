@@ -54,6 +54,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [dynamicSettings, setDynamicSettings] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createdPurchase, setCreatedPurchase] = useState<any>(null);
 
   // Comprobante de pago
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -68,6 +69,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (isOpen) {
       setStep(1);
       setPurchaseId(null);
+      setCreatedPurchase(null);
       setProofFile(null);
       setProofPreview(null);
       setErrorMessage(null);
@@ -322,6 +324,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
         return;
       }
       setPurchaseId(newPurchaseId);
+      setCreatedPurchase(purchaseResult);
 
       // 2. Subir el comprobante 
       setIsUploadingProof(true);
@@ -797,6 +800,24 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   )}
                 </div>
               </div>
+
+              {createdPurchase?.tickets?.some((t: any) => t.isGift) && (
+                <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50 animate-in fade-in duration-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1 bg-blue-100 rounded-lg">
+                      <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18 18.247 18.477 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    </div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">¡Incluye Regalos Extras!</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {createdPurchase.tickets.filter((t: any) => t.isGift).map((t: any) => (
+                      <div key={t.number} className="bg-white px-2 py-1 rounded-lg border border-blue-50 text-[9px] font-black text-blue-500 shadow-sm">
+                        #{t.number.toString().padStart(3, '0')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

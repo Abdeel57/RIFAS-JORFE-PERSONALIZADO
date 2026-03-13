@@ -128,6 +128,7 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
               number: n,
               status: 'reserved',
               purchaseId: purchase.id,
+              isGift: false,
             })),
           });
         }
@@ -141,6 +142,7 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
             data: {
               status: 'reserved',
               purchaseId: purchase.id,
+              isGift: false,
             },
           });
         }
@@ -154,8 +156,80 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
           data: {
             status: 'reserved',
             purchaseId: purchase.id,
+            isGift: false,
           },
         });
+      }
+
+      // ASIGNAR BOLETOS DE REGALO
+      const opportunities = (raffle as any).opportunities || 1;
+      if (opportunities > 1) {
+        const giftCount = ticketNumbers.length * (opportunities - 1);
+
+        // Buscar boletos marcados como regalo que estén disponibles
+        // En modo virtual, podríamos tener que crearlos.
+        // Pero para simplificar y asegurar consistencia con el pool separado:
+
+        if ((raffle as any).isVirtual) {
+          // Generar números al azar en el rango de regalos (totalTickets + 1 en adelante)
+          const giftNumbers: number[] = [];
+          const usedGiftNumbers = new Set<number>();
+
+          // Obtener regalos ya ocupados para esta rifa
+          const existingGifts = await tx.ticket.findMany({
+            where: { raffleId, isGift: true },
+            select: { number: true }
+          });
+          existingGifts.forEach((g: any) => usedGiftNumbers.add(g.number));
+
+          const totalEmissions = raffle.totalTickets * opportunities;
+          const GIFT_START = raffle.totalTickets + 1;
+
+          while (giftNumbers.length < giftCount) {
+            const randomNum = Math.floor(Math.random() * (totalEmissions - GIFT_START + 1)) + GIFT_START;
+            if (!usedGiftNumbers.has(randomNum)) {
+              giftNumbers.push(randomNum);
+              usedGiftNumbers.add(randomNum);
+            }
+            // Si por alguna razón matemática extrema nos quedamos sin números, rompemos para evitar loop infinito
+            if (usedGiftNumbers.size >= (totalEmissions - GIFT_START + 1) && giftNumbers.length < giftCount) break;
+          }
+
+          if (giftNumbers.length > 0) {
+            await tx.ticket.createMany({
+              data: giftNumbers.map(n => ({
+                raffleId,
+                number: n,
+                status: 'reserved',
+                purchaseId: purchase.id,
+                isGift: true
+              }))
+            });
+          }
+        } else {
+          // Modo tradicional: buscar en la BD boletos con isGift: true y status: available
+          const availableGifts = await tx.ticket.findMany({
+            where: {
+              raffleId,
+              isGift: true,
+              status: 'available'
+            },
+            take: giftCount,
+            orderBy: { id: 'asc' } // O usar un orden aleatorio si la BD lo soporta bien
+          });
+
+          if (availableGifts.length > 0) {
+            await tx.ticket.updateMany({
+              where: {
+                id: { in: availableGifts.map((g: any) => g.id) }
+              },
+              data: {
+                status: 'reserved',
+                purchaseId: purchase.id
+              }
+            });
+          }
+        }
       }
 
       return purchase;
@@ -168,7 +242,7 @@ export const createPurchase = async (req: Request, res: Response, next: NextFunc
         user: true,
         raffle: true,
         tickets: {
-          select: { id: true, number: true, status: true },
+          select: { id: true, number: true, status: true, isGift: true },
         },
       },
     });
@@ -221,7 +295,7 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
         user: true,
         raffle: true,
         tickets: {
-          select: { id: true, number: true, status: true },
+          select: { id: true, number: true, status: true, isGift: true },
         },
       },
     });
@@ -279,7 +353,7 @@ export const getPurchase = async (req: Request, res: Response, next: NextFunctio
         user: true,
         raffle: true,
         tickets: {
-          select: { id: true, number: true, status: true },
+          select: { id: true, number: true, status: true, isGift: true },
           orderBy: { number: 'asc' }
         },
       },

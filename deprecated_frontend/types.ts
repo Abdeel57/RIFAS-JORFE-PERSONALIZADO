@@ -13,6 +13,7 @@ export interface Raffle {
   drawDate: string;
   status: 'active' | 'completed';
   isVirtual: boolean;
+  opportunities: number;
   autoReleaseHours: number;
   luckyMachineNumbers: number[];
 }
@@ -20,6 +21,7 @@ export interface Raffle {
 export interface Ticket {
   number: number;
   status: 'available' | 'reserved' | 'sold';
+  isGift?: boolean;
 }
 
 export type AiToolType = 'edit' | 'analyze';

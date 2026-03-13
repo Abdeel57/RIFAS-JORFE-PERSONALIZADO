@@ -64,6 +64,7 @@ const VerifyTickets: React.FC = () => {
           status: t.status,
           purchaseId: t.purchaseId,
           raffle: t.raffle,
+          isGift: t.isGift,
         })));
 
         // Si encontramos que alguno de sus boletos ya está pagado en sistema, 
@@ -203,8 +204,15 @@ const VerifyTickets: React.FC = () => {
                       )}
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Boleto</p>
                       <p className="text-xl font-black text-slate-800">#{res.number.toString().padStart(3, '0')}</p>
-                      <span className={`inline-block mt-2 px-3 py-1 text-[8px] font-black rounded-full uppercase ${res.status === 'Pagado' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
-                        }`}>{res.status}</span>
+
+                      <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                        <span className={`inline-block px-3 py-1 text-[8px] font-black rounded-full uppercase ${res.status === 'Pagado' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
+                          }`}>{res.status}</span>
+
+                        {(res as any).isGift && (
+                          <span className="inline-block px-3 py-1 text-[8px] font-black bg-blue-50 text-blue-600 rounded-full uppercase">Regalo</span>
+                        )}
+                      </div>
 
                       {res.status === 'Pagado' && (
                         <button

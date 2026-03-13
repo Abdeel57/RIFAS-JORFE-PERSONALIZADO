@@ -20,6 +20,7 @@ const createRaffleSchema = z.object({
   drawDate: z.string().datetime(),
   status: z.enum(['active', 'completed', 'draft']).optional(),
   isVirtual: z.boolean().default(false),
+  opportunities: z.number().int().min(1).default(1),
   autoReleaseHours: z.number().int().min(0).default(0),
   luckyMachineNumbers: z.array(z.number().int().positive()).default([5, 10, 20, 50]),
 });
@@ -28,8 +29,10 @@ const updateRaffleSchema = createRaffleSchema.partial();
 
 
 // Función auxiliar para crear boletos en bloques (evita errores de parámetros en la BD y timeouts)
-async function ensureTicketsExist(raffleId: string, totalTickets: number, tx: any) {
-  console.log(`🛠️ [TICKETS] Asegurando existencia de ${totalTickets} boletos para rifa ${raffleId}...`);
+// Función auxiliar para crear boletos en bloques
+async function ensureTicketsExist(raffleId: string, totalTickets: number, opportunities: number, tx: any) {
+  const totalEmissions = totalTickets * opportunities;
+  console.log(`🛠️ [TICKETS] Asegurando existencia de ${totalEmissions} boletos (${totalTickets} venta, ${totalEmissions - totalTickets} regalo) para rifa ${raffleId}...`);
 
   // 1. Obtener boletos existentes para no duplicar
   const existingTickets = await tx.ticket.findMany({
@@ -39,13 +42,15 @@ async function ensureTicketsExist(raffleId: string, totalTickets: number, tx: an
 
   const existingNumbers = new Set(existingTickets.map((t: any) => t.number));
   const ticketsToCreate = [];
+  const GIFT_START = totalTickets + 1;
 
-  for (let i = 1; i <= totalTickets; i++) {
+  for (let i = 1; i <= totalEmissions; i++) {
     if (!existingNumbers.has(i)) {
       ticketsToCreate.push({
         raffleId,
         number: i,
         status: 'available' as const,
+        isGift: i >= GIFT_START,
       });
     }
   }
@@ -86,7 +91,7 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
 
       // Crear boletos solo si NO es virtual
       if (!data.isVirtual) {
-        await ensureTicketsExist(newRaffle.id, data.totalTickets, tx);
+        await ensureTicketsExist(newRaffle.id, data.totalTickets, data.opportunities || 1, tx);
       }
 
       return newRaffle;
@@ -133,16 +138,19 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
       const totalTickets = data.totalTickets !== undefined ? data.totalTickets : existingRaffle.totalTickets;
 
       if (!isNowVirtual) {
-        // Si antes era virtual y ahora es tradicional, O si aumentó el número de boletos
-        await ensureTicketsExist(id, totalTickets, tx);
+        const opportunities = data.opportunities !== undefined ? data.opportunities : existingRaffle.opportunities;
+        await ensureTicketsExist(id, totalTickets, opportunities, tx);
 
-        // Si se redujo el número de boletos, eliminar los sobrantes que estén disponibles
-        if (data.totalTickets && data.totalTickets < existingRaffle.totalTickets) {
+        // Si se redujo el numero de boletos o ahora hay menos emisiones
+        const totalEmissions = totalTickets * opportunities;
+        const existingTotal = existingRaffle.totalTickets * (existingRaffle as any).opportunities;
+
+        if (totalEmissions < existingTotal) {
           await tx.ticket.deleteMany({
             where: {
               raffleId: id,
               status: 'available',
-              number: { gt: data.totalTickets },
+              number: { gt: totalEmissions },
             },
           });
         }

@@ -28,6 +28,7 @@ interface FormData {
   drawDate: string;
   status: 'active' | 'completed' | 'draft';
   isVirtual: boolean;
+  opportunities: string;
 }
 
 type WizardStep = 'info' | 'media' | 'config';
@@ -38,6 +39,7 @@ const EMPTY_FORM: FormData = {
   ticketPrice: '', totalTickets: '',
   drawDate: '', status: 'draft',
   isVirtual: false,
+  opportunities: '1',
 };
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
@@ -313,6 +315,7 @@ const Raffles = () => {
         drawDate: formatDateForInput(raffle.drawDate),
         status: raffle.status || 'draft',
         isVirtual: !!raffle.isVirtual,
+        opportunities: String(raffle.opportunities || '1'),
       });
     } else {
       setEditingRaffle(null);
@@ -337,6 +340,7 @@ const Raffles = () => {
             status: formData.status, // Asegurar que el estado se envíe explicitamente
             ticketPrice: parseFloat(formData.ticketPrice),
             totalTickets: parseInt(formData.totalTickets),
+            opportunities: parseInt(formData.opportunities) || 1,
             galleryImages: formData.galleryImages.split('\n').filter(u => u.trim()),
             drawDate: new Date(formData.drawDate).toISOString(),
           };
@@ -789,6 +793,27 @@ const Raffles = () => {
                               onChange={e => set('drawDate', e.target.value)}
                               className="admin-input pl-11 w-full min-w-0 max-w-full" style={{ minWidth: 0 }} />
                           </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between ml-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              Oportunidades por Boleto
+                            </label>
+                            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg">
+                              {(parseInt(formData.totalTickets) || 0) * (parseInt(formData.opportunities) || 1)} TOTAL EMISIONES
+                            </span>
+                          </div>
+                          <div className="relative">
+                            <Sparkles size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300 pointer-events-none" />
+                            <input type="number" inputMode="numeric" value={formData.opportunities}
+                              onChange={e => set('opportunities', e.target.value)}
+                              className="admin-input pl-11 font-black text-blue-600 border-blue-100 bg-blue-50/20"
+                              placeholder="Ej. 5 (1 boleto + 4 regalos)" />
+                          </div>
+                          <p className="text-[9px] text-slate-400 ml-1">
+                            Cada boleto manual dará {Math.max(0, (parseInt(formData.opportunities) || 1) - 1)} boletos extras al azar.
+                          </p>
                         </div>
 
                         <div className="space-y-1.5">

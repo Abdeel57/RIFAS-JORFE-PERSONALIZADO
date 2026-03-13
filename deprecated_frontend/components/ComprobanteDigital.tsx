@@ -178,10 +178,12 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
               {tickets?.map((t: any) => (
                 <div
                   key={t.number}
-                  className="min-w-[64px] h-[48px] flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-slate-100 shadow-sm transition-transform hover:scale-110"
+                  className="min-w-[64px] h-[48px] flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-slate-100 shadow-sm transition-transform hover:scale-110 relative"
                 >
-                  <span className="text-[8px] font-black text-slate-300 uppercase leading-none">Boleto</span>
-                  <span className="text-lg font-black text-slate-800 leading-none mt-0.5">
+                  <span className="text-[8px] font-black text-slate-300 uppercase leading-none">
+                    {t.isGift ? 'Regalo' : 'Boleto'}
+                  </span>
+                  <span className={`text-lg font-black leading-none mt-0.5 ${t.isGift ? 'text-blue-600' : 'text-slate-800'}`}>
                     #{t.number.toString().padStart(3, '0')}
                   </span>
                 </div>

@@ -173,7 +173,10 @@ const Tickets = () => {
                         )}
                       </div>
                     </div>
-                    {statusBadge(ticket.status)}
+                    <div className="flex items-center gap-2">
+                      {ticket.isGift && <span className="badge-blue">Regalo</span>}
+                      {statusBadge(ticket.status)}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-2 pt-2 border-t border-slate-50">
