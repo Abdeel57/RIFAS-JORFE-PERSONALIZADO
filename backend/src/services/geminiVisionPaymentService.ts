@@ -68,46 +68,34 @@ Extrae EXACTAMENTE los valores visibles en el comprobante:
 - beneficiario: nombre de quien RECIBE
 - cuentaDestino: número de cuenta, CLABE o CLABE parcial visible en el comprobante (ej. "****6010", "012180...2410")
 
-TAREA 2 — ANÁLISIS FORENSE DE AUTENTICIDAD:
-Eres un perito forense digital. Busca señales de que este comprobante fue modificado por IA o herramientas de edición:
-- MONTOS EDITADOS: Mira fijamente el MONTO. ¿El número se ve ligeramente desalineado, con una resolución diferente o con una caja de ruido distinta al texto de alrededor?
-- ARTEFACTOS DE COMPRESIÓN: ¿Hay "ruido" o manchas de colores alrededor de los números del monto pero no en el resto del texto? (Señal de edición).
-- COINCIDENCIA DE LUZ/SOMBRA: ¿Las sombras de los números editados son consistentes con el resto de la interfaz bancaria?
-- TIPOGRAFÍA: ¿La fuente de los números es EXACTAMENTE la misma que usa ese banco (BBVA, Banorte, Coppel, etc.)? La IA suele fallar en grosores de fuente y kerning.
-- BORDES: Busca bordes demasiado perfectos o "halos" alrededor del texto.
-- IA GENERATIVA: Busca texturas "lisas" irreales o letras que se deforman ligeramente al verlas de cerca.
+TAREA 2 — AUTENTICIDAD (solo señales obvias):
+Revisa si el comprobante parece falsificado. Solo marca "fake" o "suspicious" si hay señales MUY CLARAS:
+- Números del monto claramente recortados/pegados o con bordes irregulares
+- Ruido o artefactos evidentes solo alrededor del monto
+- Comprobante que claramente no es de un banco real
+Si el comprobante se ve coherente y legítimo, marca "authentic". No seas excesivamente estricto con la tipografía.
 
-TAREA 3 — VALIDACIÓN DE DATOS:
-1. ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? (tolerancia ±$5 pesos)
-2. REGLA DE NOMBRE — busca en CONCEPTO y en ORDENANTE (en ese orden de prioridad):
-   FUENTE PRINCIPAL: campo "Concepto" / "Descripción" / "Referencia" del comprobante.
-     Muchos bancos mexicanos no muestran el nombre del emisor, pero el cliente escribe
-     su nombre en el concepto de pago. Busca PRIMERO ahí.
-   FUENTE SECUNDARIA: campo "Ordenante" / "Nombre emisor" si es visible.
-   
-   PROCESO:
-   - Toma el texto del CONCEPTO (si existe) o del ORDENANTE (si existe). Si ambos existen, evalúa los dos.
-   - Divide el nombre del cliente registrado "${opts.customerName}" en palabras individuales.
-   - Ignora acentos, mayúsculas/minúsculas y partículas cortas ("de", "del", "la", "el", "los", "las", palabras de 1-2 letras).
-   - nameMatch = true  → si AL MENOS 2 palabras del cliente aparecen en el CONCEPTO o en el ORDENANTE.
-     Ejemplos válidos: concepto "Juan Pérez" con cliente "Juan Carlos Pérez García" ✓
-                       concepto "Pago rifa Juan Garcia" con cliente "Juan García López" ✓
-                       ordenante "GARCIA LOPEZ JUAN" con cliente "Juan García López" ✓
-   - nameMatch = false → si solo coincide 1 palabra o ninguna en NINGUNA de las dos fuentes.
-   - nameMatch = null  → si TANTO el concepto como el ordenante son null o están vacíos (no visibles).
-   - IMPORTANTE: NO se requiere el nombre completo. Con 2 coincidencias es suficiente.
-${last4 ? `3. ¿La cuenta destino visible en el comprobante termina en "${last4}"? 
-   Busca campos como CLABE, cuenta, número de cuenta, ****XXXX. Si no es visible → null.` : ''}
+TAREA 3 — VALIDACIÓN DE DATOS (CRITERIOS PRINCIPALES):
+1. MONTO: ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? Tolerancia ±$15 pesos (pequeñas diferencias por redondeo son aceptables).
+2. NOMBRE EN CONCEPTO: Busca en CONCEPTO primero, luego en ORDENANTE.
+   - Compara IGNORANDO mayúsculas/minúsculas y acentos. "JUAN" = "juan" = "Juan".
+   - nameMatch = true  → si AL MENOS 1 palabra del cliente "${opts.customerName}" aparece en el CONCEPTO o ORDENANTE.
+     Ejemplos válidos: concepto "juan perez" con cliente "Juan Carlos Pérez García" ✓
+                       concepto "PAGO RIFA MARIA" con cliente "María López" ✓
+                       concepto "Orlando Garcia" con cliente "ORLANDO GARCÍA" ✓
+   - nameMatch = false → si ninguna palabra del cliente aparece en concepto ni ordenante.
+   - nameMatch = null  → si concepto y ordenante son null o vacíos (no visibles en el comprobante).
+${last4 ? `3. CUENTA DESTINO: ¿Los últimos 4 dígitos visibles coinciden con "${last4}"?
+   Busca en CLABE, cuenta, ****XXXX. Si la cuenta NO es visible en el comprobante → accountMatch = null (no penalizar).` : ''}
 
-POLÍTICA DE CERO TOLERANCIA:
-- Si los datos (monto, nombre) coinciden PERFECTAMENTE pero tienes CUALQUIER duda sobre la autenticidad visual (edición por IA), pon verdict="review" o "reject" y authenticity="suspicious".
-- Es preferible mandar a revisión manual un comprobante real que aprobar uno falso.
-- Si ves que el "Monto" tiene una tipografía ligeramente más gruesa o distinta al "Concepto", es un REJECT inmediato.
+AUTENTICIDAD:
+- Solo marca "fake" o "suspicious" si hay señales OBVIAS de edición (números claramente pegados, recortes visibles).
+- Si el comprobante se ve natural y los datos (monto, nombre, cuenta) coinciden, favorece "authentic" y verdict="approve".
 
 CRITERIOS DE VEREDICTO:
-- "approve": autenticidad ALTA/INDUDABLE, todos los datos coinciden perfectamente. Confianza "high".
-- "review": duda mínima sobre autenticidad, o datos no legibles/incompletos. Confianza "medium" o "low".
-- "reject": signos claros de edición, Clave de Rastreo sospechosa, o cuenta destino claramente incorrecta.
+- "approve": monto coincide, nombre en concepto coincide (sin importar mayúsculas), cuenta coincide o no visible. Confianza "high" o "medium".
+- "review": datos incompletos o alguna duda menor. No rechaces por diferencias de mayúsculas o 1 palabra en el concepto.
+- "reject": SOLO si hay signos CLAROS de falsificación o la cuenta destino visible es INCORRECTA.
 
 RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
 {

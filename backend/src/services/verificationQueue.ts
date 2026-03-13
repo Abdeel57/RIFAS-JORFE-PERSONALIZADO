@@ -100,25 +100,23 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             razon: analysis.verdictReason,
         });
 
-        // Solo auto-aprobar si la confianza es ALTA. 
-        // Si es medium o low, forzamos revisión manual por seguridad (Cero Tolerancia).
-        if (analysis.verdict === 'approve' && analysis.confidence !== 'high') {
-            console.log(`⚠️  Confianza ${analysis.confidence} → forzando revisión manual por seguridad`);
+        // Aceptar approve con confianza 'high' o 'medium' cuando los datos coinciden
+        if (analysis.verdict === 'approve' && analysis.confidence === 'low') {
+            console.log(`⚠️  Confianza low → forzando revisión manual`);
             analysis.verdict = 'review';
-            analysis.verdictReason = `Confianza insuficiente (${analysis.confidence}). Se requiere validación visual por un humano.`;
+            analysis.verdictReason = `Confianza insuficiente. Se requiere validación manual.`;
         }
 
-        // Seguridad extra: override del veredicto en casos críticos
-        // (por si Gemini comete un error y dice "approve" cuando no debe)
+        // Override solo en casos críticos: fake, cuenta incorrecta, monto incorrecto
         let finalVerdict = analysis.verdict;
-
         if (analysis.authenticity === 'fake') {
-            finalVerdict = 'reject'; // comprobante claramente falso → siempre a revisión urgente
+            finalVerdict = 'reject';
         } else if (analysis.accountMatch === false) {
-            finalVerdict = 'review'; // cuenta destino incorrecta → nunca auto-aprobar
+            finalVerdict = 'review'; // cuenta destino visible e incorrecta
         } else if (analysis.amountMatch === false) {
-            finalVerdict = 'review'; // monto incorrecto → nunca auto-aprobar
+            finalVerdict = 'review'; // monto no coincide
         }
+        // accountMatch === null (no visible) → no penalizar, permitir approve
 
         if (finalVerdict !== analysis.verdict) {
             console.log(`⚠️  Veredicto Gemini "${analysis.verdict}" sobreescrito a "${finalVerdict}" por regla de seguridad`);
@@ -153,8 +151,10 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
                 console.log(`✅ [FECHA] Comprobante del ${analysis.fecha} (${diffDias === 0 ? 'hoy' : 'ayer'}) — fecha válida`);
             }
         } else if (analysis.fecha === null) {
-            // Gemini no pudo leer la fecha → no auto-aprobar si el veredicto era approve
-            if (finalVerdict === 'approve') {
+            // Fecha no legible: si monto, nombre y cuenta coinciden, permitir approve
+            if (finalVerdict === 'approve' && analysis.amountMatch === true && analysis.nameMatch === true && analysis.accountMatch !== false) {
+                console.log(`✅ [FECHA] No legible pero monto/nombre/cuenta OK → aprobando`);
+            } else if (finalVerdict === 'approve') {
                 finalVerdict = 'review';
                 analysis.verdictReason =
                     `Fecha no legible en el comprobante, se requiere revisión manual. ${analysis.verdictReason}`;
