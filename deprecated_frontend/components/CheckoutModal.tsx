@@ -173,6 +173,11 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const getHumanizedReason = (rawReason: string | null) => {
     if (!rawReason) return "El administrador validará tu pago en unos momentos.";
 
+    const low = rawReason.toLowerCase();
+    if (low.includes('error de análisis') || low.includes('error fetching') || low.includes('403') || low.includes('404')) {
+      return "No pudimos analizar tu comprobante automáticamente. Envía una aclaración por WhatsApp y el equipo revisará tu pago manualmente.";
+    }
+
     if (rawReason.includes('Razón:')) {
       const parts = rawReason.split('Razón:');
       const practicalReason = parts[1].split('\n')[0].trim();
@@ -876,9 +881,20 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                     </div>
 
                     <p className="text-slate-500 text-sm leading-relaxed px-6">
-                      Hemos recibido tu comprobante correctamente. Tu participación está <span className="text-blue-600 font-black italic">siendo procesada</span>.
+                      {verificationReason
+                        ? 'No pudimos validar tu comprobante automáticamente. Revisa el motivo abajo y envía una aclaración por WhatsApp si es necesario.'
+                        : 'Hemos recibido tu comprobante correctamente. Tu participación está '}
+                      {!verificationReason && <span className="text-blue-600 font-black italic">siendo procesada</span>}
+                      {!verificationReason && '.'}
                     </p>
                   </div>
+
+                  {verificationReason && (
+                    <div className="rounded-[2rem] p-5 text-left border border-amber-200 bg-amber-50/80">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2">Motivo de revisión</p>
+                      <p className="text-sm text-slate-700 leading-relaxed">{getHumanizedReason(verificationReason)}</p>
+                    </div>
+                  )}
 
                   {!verificationReason && (
                     <div
@@ -920,7 +936,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
 
                   <div className="flex flex-col gap-2.5 px-2">
                     {/* Botón de aclaración SOLO si hubo error real en validación automática (no en modo manual) */}
-                    {(verificationReason && verificationStatus !== 'manual') && (
+                    {verificationReason && (
                       <button
                         onClick={handleSupportWhatsApp}
                         className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-green-200 hover:brightness-105 active:scale-[0.98] transition-all"
