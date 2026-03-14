@@ -248,40 +248,57 @@ const AdminsPanel = () => {
               onClick={() => setShowCreate(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
             >
-              <h3 className="font-black text-slate-800 text-base">Nuevo administrador</h3>
-              <div className="space-y-3">
-                {[
-                  { label: 'Nombre', key: 'name', type: 'text', placeholder: 'Nombre del admin' },
-                  { label: 'Usuario / Email', key: 'email', type: 'text', placeholder: 'usuario o email' },
-                  { label: 'Contraseña', key: 'password', type: 'password', placeholder: 'Mínimo 6 caracteres' },
-                ].map(({ label, key, type, placeholder }) => (
-                  <div key={key}>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
-                    <input
-                      type={type}
-                      value={(createForm as any)[key]}
-                      onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
-                      placeholder={placeholder}
-                      className="admin-input mt-1"
-                    />
+              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <h3 className="font-black text-slate-800 text-base">Nuevo administrador</h3>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Nombre', key: 'name', type: 'text', placeholder: 'Nombre del admin' },
+                    { label: 'Usuario / Email', key: 'email', type: 'text', placeholder: 'usuario o email' },
+                    { label: 'Contraseña', key: 'password', type: 'password', placeholder: 'Mínimo 6 caracteres' },
+                  ].map(({ label, key, type, placeholder }) => (
+                    <div key={key}>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+                      <input
+                        type={type}
+                        value={(createForm as any)[key]}
+                        onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
+                        placeholder={placeholder}
+                        className="admin-input mt-1"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Selección de plan con tarjetas */}
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan de acceso</label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {[
+                        { value: '', label: 'Sin plan', desc: '—' },
+                        { value: 'mensual', label: 'Mensual', desc: '30 días' },
+                        { value: 'por_rifa', label: 'Por Rifa', desc: 'Sin crear rifas' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setCreateForm(f => ({ ...f, planType: opt.value }))}
+                          className={`p-2.5 rounded-xl border-2 text-center transition-all ${
+                            createForm.planType === opt.value
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-slate-100 bg-slate-50 hover:border-slate-200'
+                          }`}
+                        >
+                          <p className="font-black text-xs text-slate-800">{opt.label}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ))}
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan (opcional)</label>
-                  <select
-                    value={createForm.planType}
-                    onChange={e => setCreateForm(f => ({ ...f, planType: e.target.value }))}
-                    className="admin-input mt-1"
-                  >
-                    <option value="">Sin plan</option>
-                    <option value="mensual">Mensual (30 días)</option>
-                    <option value="por_rifa">Por Rifa</option>
-                  </select>
                 </div>
               </div>
-              <div className="flex gap-2">
+
+              <div className="p-4 border-t border-slate-100 flex gap-2 shrink-0">
                 <button onClick={handleCreate} disabled={creating}
                   className="flex-1 min-h-[44px] bg-[#2563EB] disabled:opacity-50 text-white font-black rounded-xl text-sm transition-all active:scale-95">
                   {creating ? 'Creando...' : 'Crear administrador'}
