@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateAdmin, isAdmin } from '../middleware/auth.middleware';
+import { authenticateAdmin, isAdmin, isSuperAdmin } from '../middleware/auth.middleware';
 import { login } from '../controllers/admin/auth.controller';
 import { getDashboardStats } from '../controllers/admin/dashboard.controller';
 import {
@@ -28,6 +28,7 @@ import {
     createAdmin,
     updateAdmin,
     deleteAdmin,
+    setAdminPlan,
 } from '../controllers/admin/admin.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
@@ -86,11 +87,12 @@ router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
 router.put('/users/:id', updateUserController);
 
-// Admin Users (Management) - SOLO ADMINS
-router.get('/admin-users', isAdmin, getAdmins);
-router.post('/admin-users', isAdmin, createAdmin);
-router.put('/admin-users/:id', isAdmin, updateAdmin);
-router.delete('/admin-users/:id', isAdmin, deleteAdmin);
+// Admin Users (Management) - SOLO SUPER ADMIN
+router.get('/admin-users', isSuperAdmin, getAdmins);
+router.post('/admin-users', isSuperAdmin, createAdmin);
+router.put('/admin-users/:id', isSuperAdmin, updateAdmin);
+router.delete('/admin-users/:id', isSuperAdmin, deleteAdmin);
+router.put('/admin-users/:id/plan', isSuperAdmin, setAdminPlan);
 
 // Push Notifications
 router.get('/push/vapid-key', (_req, res) => {

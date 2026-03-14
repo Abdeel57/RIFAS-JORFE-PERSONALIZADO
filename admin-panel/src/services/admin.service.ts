@@ -101,6 +101,32 @@ export const adminService = {
     return response.data.data;
   },
 
+  // Admin Users (solo super_admin)
+  async getAdminUsers() {
+    const response = await api.get('/admin/admin-users');
+    return response.data.data;
+  },
+
+  async createAdminUser(data: { name: string; email: string; password: string; role?: string; planType?: string }) {
+    const response = await api.post('/admin/admin-users', data);
+    return response.data.data;
+  },
+
+  async updateAdminUser(id: string, data: { name?: string; email?: string; password?: string; role?: string }) {
+    const response = await api.put(`/admin/admin-users/${id}`, data);
+    return response.data.data;
+  },
+
+  async deleteAdminUser(id: string) {
+    const response = await api.delete(`/admin/admin-users/${id}`);
+    return response.data;
+  },
+
+  async setAdminPlan(id: string, planType: 'mensual' | 'por_rifa' | null) {
+    const response = await api.put(`/admin/admin-users/${id}/plan`, { planType });
+    return response.data.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

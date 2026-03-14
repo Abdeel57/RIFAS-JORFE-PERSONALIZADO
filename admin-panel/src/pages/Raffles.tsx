@@ -502,12 +502,14 @@ const Raffles = () => {
             {isLoading ? 'Cargando...' : raffles.length === 0 ? 'Sin rifas aún' : `${raffles.length} rifa${raffles.length !== 1 ? 's' : ''} registrada${raffles.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-2xl text-sm transition-all shadow-md shadow-blue-200">
-          <Plus size={18} strokeWidth={2.5} />
-          <span className="hidden sm:inline">Nueva Rifa</span>
-          <span className="sm:hidden">Nueva</span>
-        </button>
+        {admin?.planType !== 'por_rifa' && (
+          <button onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-2xl text-sm transition-all shadow-md shadow-blue-200">
+            <Plus size={18} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nueva Rifa</span>
+            <span className="sm:hidden">Nueva</span>
+          </button>
+        )}
       </div>
 
       {/* Main content */}
@@ -530,10 +532,12 @@ const Raffles = () => {
                   <p className="font-black text-slate-700 text-lg">Sin rifas aún</p>
                   <p className="text-sm text-slate-400 mt-1">Crea tu primera rifa para comenzar</p>
                 </div>
-                <button onClick={() => handleOpenModal()}
-                  className="btn-primary flex items-center gap-2 px-6">
-                  <Plus size={16} /> Crear primera rifa
-                </button>
+                {admin?.planType !== 'por_rifa' && (
+                  <button onClick={() => handleOpenModal()}
+                    className="btn-primary flex items-center gap-2 px-6">
+                    <Plus size={16} /> Crear primera rifa
+                  </button>
+                )}
               </motion.div>
             ) : (
               <LayoutGroup>

@@ -13,7 +13,16 @@ async function main() {
 
   let admin = await prisma.admin.findUnique({ where: { email: adminUsuario } });
   if (admin) {
-    console.log('ℹ️  Admin ya existe');
+    // Asegurarse que Bismark siempre sea super_admin
+    if (admin.role !== 'super_admin') {
+      await prisma.admin.update({
+        where: { email: adminUsuario },
+        data: { role: 'super_admin' },
+      });
+      console.log('✅ Bismark actualizado a super_admin');
+    } else {
+      console.log('ℹ️  Admin ya existe con rol super_admin');
+    }
   } else {
     // Actualizar admins antiguos (admin@bismark.com, admin@rifasnao.com) a las nuevas credenciales
     const oldEmails = ['admin@bismark.com', 'admin@rifasnao.com'];
@@ -22,17 +31,17 @@ async function main() {
       if (oldAdmin) {
         await prisma.admin.update({
           where: { email: oldEmail },
-          data: { email: adminUsuario, passwordHash, name: 'Administrador' },
+          data: { email: adminUsuario, passwordHash, name: 'Administrador', role: 'super_admin' },
         });
-        console.log(`✅ Admin actualizado: ${oldEmail} → ${adminUsuario}`);
+        console.log(`✅ Admin actualizado: ${oldEmail} → ${adminUsuario} (super_admin)`);
         break;
       }
     }
     if (!admin && !(await prisma.admin.findUnique({ where: { email: adminUsuario } }))) {
       await prisma.admin.create({
-        data: { email: adminUsuario, passwordHash, name: 'Administrador', role: 'admin' },
+        data: { email: adminUsuario, passwordHash, name: 'Administrador', role: 'super_admin' },
       });
-      console.log('✅ Admin creado:');
+      console.log('✅ Admin creado como super_admin:');
     }
     console.log(`   Usuario: ${adminUsuario}`);
     console.log(`   Password: ${adminPassword}`);

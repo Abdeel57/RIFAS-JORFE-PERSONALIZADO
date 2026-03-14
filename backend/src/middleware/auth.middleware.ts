@@ -41,8 +41,15 @@ export const authenticateAdmin = (
 };
 
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.admin?.role !== 'admin') {
+  if (req.admin?.role !== 'admin' && req.admin?.role !== 'super_admin') {
     return next(new AppError(403, 'No tienes permisos suficientes para realizar esta acción. Solo administradores.'));
+  }
+  next();
+};
+
+export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.admin?.role !== 'super_admin') {
+    return next(new AppError(403, 'Solo el super administrador puede realizar esta acción.'));
   }
   next();
 };

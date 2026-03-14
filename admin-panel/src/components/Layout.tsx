@@ -6,12 +6,21 @@ import {
   Ticket,
   Settings as SettingsIcon,
   LogOut,
+  AlertTriangle,
 } from 'lucide-react';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, admin } = useAuth();
+
+  // Calcular días restantes del plan mensual
+  const planDaysLeft = (() => {
+    if (admin?.planType !== 'mensual' || !admin?.planExpiryDate) return null;
+    const diff = new Date(admin.planExpiryDate).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  })();
+  const showPlanWarning = planDaysLeft !== null && planDaysLeft <= 3 && planDaysLeft >= 0;
 
   const handleLogout = () => {
     logout();
@@ -60,6 +69,27 @@ const Layout = () => {
           </div>
         </div>
       </header>
+
+      {/* Banner de advertencia de plan próximo a vencer */}
+      <AnimatePresence>
+        {showPlanWarning && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-amber-50 border-b border-amber-200 overflow-hidden"
+          >
+            <div className="flex items-center gap-3 px-5 py-3 max-w-2xl mx-auto">
+              <AlertTriangle size={18} className="text-amber-500 shrink-0" />
+              <p className="text-sm font-bold text-amber-800">
+                {planDaysLeft === 0
+                  ? 'Tu plan mensual vence hoy. Contacta al administrador para renovarlo.'
+                  : `Tu plan mensual vence en ${planDaysLeft} día${planDaysLeft !== 1 ? 's' : ''}. Contacta al administrador para renovarlo.`}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content with Page Transitions */}
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 pb-32">

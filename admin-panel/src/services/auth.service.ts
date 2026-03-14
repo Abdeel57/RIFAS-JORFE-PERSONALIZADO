@@ -5,6 +5,8 @@ export interface Admin {
   email: string;
   name: string;
   role: string;
+  planType?: string | null;
+  planExpiryDate?: string | null;
 }
 
 export interface LoginResponse {

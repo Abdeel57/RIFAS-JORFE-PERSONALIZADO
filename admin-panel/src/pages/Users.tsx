@@ -2,11 +2,309 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '../services/admin.service';
+import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/Skeleton';
-import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X, ChevronRight, FileSpreadsheet, Download } from 'lucide-react';
+import { Search, User, Calendar, Phone, Mail, MapPin, ExternalLink, X, ChevronRight, FileSpreadsheet, Shield, Plus, Trash2, Crown, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+// ─── AdminPanel sub-component ──────────────────────────────────────────────────
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  planType: string | null;
+  planStartDate: string | null;
+  planExpiryDate: string | null;
+  createdAt: string;
+}
+
+const PLAN_LABELS: Record<string, string> = {
+  mensual: 'Mensual',
+  por_rifa: 'Por Rifa',
+};
+
+const PLAN_COLORS: Record<string, string> = {
+  mensual: 'bg-blue-50 text-blue-700 border-blue-100',
+  por_rifa: 'bg-violet-50 text-violet-700 border-violet-100',
+};
+
+const AdminsPanel = () => {
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [planModal, setPlanModal] = useState<AdminUser | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'por_rifa' | ''>('');
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', planType: '' });
+  const [creating, setCreating] = useState(false);
+
+  const loadAdmins = async () => {
+    setIsLoading(true);
+    try {
+      const data = await adminService.getAdminUsers();
+      setAdmins(data || []);
+    } catch {
+      toast.error('Error al cargar administradores');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { loadAdmins(); }, []);
+
+  const handleSetPlan = async () => {
+    if (!planModal) return;
+    setSavingPlan(true);
+    try {
+      await adminService.setAdminPlan(planModal.id, selectedPlan as 'mensual' | 'por_rifa' | null);
+      toast.success('Plan actualizado correctamente');
+      setPlanModal(null);
+      loadAdmins();
+    } catch {
+      toast.error('Error al actualizar el plan');
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.name || !createForm.email || !createForm.password) {
+      toast.error('Completa todos los campos obligatorios');
+      return;
+    }
+    setCreating(true);
+    try {
+      await adminService.createAdminUser({
+        name: createForm.name,
+        email: createForm.email,
+        password: createForm.password,
+        role: 'admin',
+        planType: createForm.planType || undefined,
+      });
+      toast.success('Administrador creado correctamente');
+      setShowCreate(false);
+      setCreateForm({ name: '', email: '', password: '', planType: '' });
+      loadAdmins();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Error al crear administrador');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Eliminar al administrador "${name}"?`)) return;
+    try {
+      await adminService.deleteAdminUser(id);
+      toast.success('Administrador eliminado');
+      loadAdmins();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Error al eliminar');
+    }
+  };
+
+  const getDaysLeft = (expiryDate: string | null) => {
+    if (!expiryDate) return null;
+    const diff = new Date(expiryDate).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Administradores del sistema</p>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-[#2563EB] text-white font-black rounded-xl text-xs transition-all active:scale-95 shadow-sm"
+        >
+          <Plus size={14} /> Nuevo admin
+        </button>
+      </div>
+
+      {isLoading ? (
+        <Skeleton count={3} className="h-20 w-full" />
+      ) : (
+        <div className="space-y-3">
+          {admins.filter(a => a.role !== 'super_admin').map((admin) => {
+            const daysLeft = getDaysLeft(admin.planExpiryDate);
+            const isExpired = daysLeft !== null && daysLeft < 0;
+            const isWarning = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
+            return (
+              <motion.div
+                key={admin.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Shield size={16} className="text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 text-sm">{admin.name}</p>
+                    <p className="text-xs text-slate-400">{admin.email}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {admin.planType ? (
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${PLAN_COLORS[admin.planType]}`}>
+                          {PLAN_LABELS[admin.planType]}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-400 border-slate-100">
+                          Sin plan
+                        </span>
+                      )}
+                      {admin.planType === 'mensual' && admin.planExpiryDate && (
+                        <span className={`text-[10px] font-bold ${isExpired ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-slate-400'}`}>
+                          {isExpired
+                            ? 'Plan expirado'
+                            : daysLeft === 0
+                            ? 'Vence hoy'
+                            : `Vence en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => { setPlanModal(admin); setSelectedPlan((admin.planType as any) || ''); }}
+                      className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-100 flex items-center justify-center transition-all"
+                      title="Gestionar plan"
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(admin.id, admin.name)}
+                      className="w-8 h-8 rounded-xl bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center transition-all"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+          {admins.filter(a => a.role !== 'super_admin').length === 0 && (
+            <div className="text-center py-10 text-slate-400 text-sm font-medium">
+              No hay administradores creados aún
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal: Asignar / Renovar Plan */}
+      <AnimatePresence>
+        {planModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setPlanModal(null)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+            >
+              <div>
+                <h3 className="font-black text-slate-800 text-base">Gestionar plan</h3>
+                <p className="text-sm text-slate-400 mt-0.5">{planModal.name}</p>
+              </div>
+              <div className="space-y-2">
+                {(['mensual', 'por_rifa'] as const).map((plan) => (
+                  <button
+                    key={plan}
+                    onClick={() => setSelectedPlan(plan)}
+                    className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedPlan === plan ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
+                  >
+                    <p className="font-black text-sm text-slate-800">{PLAN_LABELS[plan]}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {plan === 'mensual' ? 'Acceso por 30 días. Se puede renovar.' : 'Acceso por rifa. Sin botón de crear rifa.'}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {selectedPlan === 'mensual' ? 'Al guardar se establecerán 30 días de acceso desde hoy.' : selectedPlan === 'por_rifa' ? 'El usuario solo podrá editar rifas existentes.' : ''}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={handleSetPlan} disabled={!selectedPlan || savingPlan}
+                  className="flex-1 min-h-[44px] bg-[#2563EB] disabled:opacity-50 text-white font-black rounded-xl text-sm transition-all active:scale-95">
+                  {savingPlan ? 'Guardando...' : 'Guardar plan'}
+                </button>
+                <button onClick={() => setPlanModal(null)}
+                  className="px-4 min-h-[44px] bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Crear Admin */}
+      <AnimatePresence>
+        {showCreate && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowCreate(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+            >
+              <h3 className="font-black text-slate-800 text-base">Nuevo administrador</h3>
+              <div className="space-y-3">
+                {[
+                  { label: 'Nombre', key: 'name', type: 'text', placeholder: 'Nombre del admin' },
+                  { label: 'Usuario / Email', key: 'email', type: 'text', placeholder: 'usuario o email' },
+                  { label: 'Contraseña', key: 'password', type: 'password', placeholder: 'Mínimo 6 caracteres' },
+                ].map(({ label, key, type, placeholder }) => (
+                  <div key={key}>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+                    <input
+                      type={type}
+                      value={(createForm as any)[key]}
+                      onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="admin-input mt-1"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan (opcional)</label>
+                  <select
+                    value={createForm.planType}
+                    onChange={e => setCreateForm(f => ({ ...f, planType: e.target.value }))}
+                    className="admin-input mt-1"
+                  >
+                    <option value="">Sin plan</option>
+                    <option value="mensual">Mensual (30 días)</option>
+                    <option value="por_rifa">Por Rifa</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCreate} disabled={creating}
+                  className="flex-1 min-h-[44px] bg-[#2563EB] disabled:opacity-50 text-white font-black rounded-xl text-sm transition-all active:scale-95">
+                  {creating ? 'Creando...' : 'Crear administrador'}
+                </button>
+                <button onClick={() => setShowCreate(false)}
+                  className="px-4 min-h-[44px] bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Main Users component ──────────────────────────────────────────────────────
+
 const Users = () => {
+  const { admin } = useAuth();
+  const isSuperAdmin = admin?.role === 'super_admin';
+  const [activeTab, setActiveTab] = useState<'clientes' | 'admins'>('clientes');
   const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -90,15 +388,41 @@ const Users = () => {
           <h2 className="section-title">Usuarios</h2>
           <p className="section-sub">Gestiona tu base de clientes</p>
         </div>
-        <button
-          onClick={handleExportExcel}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-100/50 shadow-sm"
-          title="Exportar a Excel"
-        >
-          <FileSpreadsheet size={18} />
-          <span className="hidden sm:inline">Exportar Excel</span>
-        </button>
+        {activeTab === 'clientes' && (
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-100/50 shadow-sm"
+            title="Exportar a Excel"
+          >
+            <FileSpreadsheet size={18} />
+            <span className="hidden sm:inline">Exportar Excel</span>
+          </button>
+        )}
       </div>
+
+      {/* Tabs (solo super_admin ve la pestaña de admins) */}
+      {isSuperAdmin && (
+        <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl">
+          <button
+            onClick={() => setActiveTab('clientes')}
+            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${activeTab === 'clientes' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+          >
+            Clientes
+          </button>
+          <button
+            onClick={() => setActiveTab('admins')}
+            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${activeTab === 'admins' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+          >
+            <Crown size={12} /> Administradores
+          </button>
+        </div>
+      )}
+
+      {/* Panel de administradores */}
+      {activeTab === 'admins' && isSuperAdmin && <AdminsPanel />}
+
+      {/* Contenido de clientes (solo visible en pestaña clientes) */}
+      {activeTab === 'clientes' && <>
 
       {/* Searchbar */}
       <div className="relative group">
@@ -193,7 +517,7 @@ const Users = () => {
 
       {/* Detail Modal */}
       <AnimatePresence>
-        {selectedUser && (
+        {selectedUser && activeTab === 'clientes' && (
           <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
@@ -323,6 +647,7 @@ const Users = () => {
           </div>
         )}
       </AnimatePresence>
+      </>}
     </div>
   );
 };

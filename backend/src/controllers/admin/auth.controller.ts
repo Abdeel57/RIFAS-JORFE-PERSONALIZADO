@@ -47,6 +47,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       throw new AppError(401, 'Credenciales incorrectas');
     }
 
+    // Verificar expiración del plan (solo para admins con plan asignado, no super_admin)
+    if (admin.role !== 'super_admin' && admin.planExpiryDate && new Date() > admin.planExpiryDate) {
+      console.log('🚫 [LOGIN] Plan expirado', { email, planExpiryDate: admin.planExpiryDate });
+      throw new AppError(403, 'Tu plan ha expirado. Contacta al administrador para renovarlo.');
+    }
+
     console.log('🎫 [LOGIN] Generando token', { adminId: admin.id, email: admin.email, role: admin.role });
 
     const token = generateToken({
@@ -66,6 +72,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
           email: admin.email,
           name: admin.name,
           role: admin.role,
+          planType: admin.planType,
+          planExpiryDate: admin.planExpiryDate,
         },
       },
     });
