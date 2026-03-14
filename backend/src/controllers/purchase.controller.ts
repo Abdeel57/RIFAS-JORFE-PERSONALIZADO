@@ -16,7 +16,9 @@ const createPurchaseSchema = z.object({
 
 const uploadPaymentProofSchema = z.object({
   paymentProofUrl: z.string().min(1, 'Se requiere el comprobante de pago'),
+  paymentMethodId: z.string().optional(),
 });
+
 
 // Normalizar teléfono a 10 dígitos (México: quitar espacios, código país, etc.)
 function normalizePhone(phone: string): string {
@@ -283,22 +285,31 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     }
 
     // Guardar el comprobante y marcar como "en verificación"
+    let bankName = 'SPEI';
+    if (validated.paymentMethodId) {
+      const pm = await prisma.paymentMethod.findUnique({ where: { id: validated.paymentMethodId } });
+      if (pm) bankName = pm.bankName;
+    }
+
     const updatedPurchase = await (prisma.purchase.update as any)({
       where: { id },
       data: {
         paymentProofUrl: proofData,
-        paymentMethod: 'SPEI',
+        paymentMethod: bankName,
+        paymentMethodId: validated.paymentMethodId || null,
         verificationStatus: 'pending_verification',
-        verificationNote: 'Comprobante recibido. Verificación automática programada en 2 minutos.',
+        verificationNote: 'Comprobante recibido. Verificación automática programada.',
       },
       include: {
         user: true,
         raffle: true,
+        selectedMethod: true,
         tickets: {
-          select: { id: true, number: true, status: true, isGift: true },
+          select: { id: true, number: true, status: true },
         },
       },
     });
+
 
     // Verificación automática (solo si está habilitada en configuración): no bloquea la orden
     if (isBase64) {

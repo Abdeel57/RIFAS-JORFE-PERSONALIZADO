@@ -333,8 +333,9 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
 
       // 2. Subir el comprobante 
       setIsUploadingProof(true);
-      await apiService.uploadPaymentProof(newPurchaseId, proofPreview);
+      await apiService.uploadPaymentProof(newPurchaseId, proofPreview, activePaymentMethod.id);
       setIsUploadingProof(false);
+
 
       // Tracking: Purchase (El usuario envió el comprobante)
       pixelService.trackPurchase({

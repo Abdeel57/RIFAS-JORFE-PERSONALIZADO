@@ -54,10 +54,10 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
     console.log(`\n🔍 [VERIFICACIÓN] Iniciando para orden ${purchaseId.slice(-8)}...`);
 
     try {
-        // Obtener compra con datos del usuario
+        // Obtener compra con datos del usuario y el método de pago seleccionado
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId },
-            include: { user: true },
+            include: { user: true, selectedMethod: true },
         });
 
         if (!purchase) {
@@ -70,11 +70,20 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
         }
 
         // Obtener configuración del sistema (beneficiario y CLABE)
-        const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const beneficiaryName = settings?.beneficiary || 'Bismark';
-        const clabe = settings?.clabe || undefined;
+        // Priorizar los datos del método de pago seleccionado por el cliente
+        let beneficiaryName = purchase.selectedMethod?.beneficiary;
+        let clabe = purchase.selectedMethod?.clabe;
+
+        // Si no hay un método seleccionado o faltan datos, usar los ajustes por defecto
+        if (!beneficiaryName || !clabe) {
+            const settings = await prisma.systemSettings.findUnique({ where: { id: 'default' } });
+            beneficiaryName = beneficiaryName || settings?.beneficiary || 'Bismark';
+            clabe = clabe || settings?.clabe || undefined;
+        }
+
         // Extraer últimos 4 dígitos de la CLABE (ignorar espacios)
         const accountLastDigits = clabe ? clabe.replace(/\s/g, '').slice(-4) : undefined;
+
 
         // Analizar comprobante con Gemini (con reintentos ante fallos de red)
         console.log(`🤖 Analizando comprobante con Gemini Vision...`);

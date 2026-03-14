@@ -74,9 +74,10 @@ model Purchase {
   id               String          @id @default(cuid())
   userId           String
   raffleId         String
+  paymentMethodId  String?         // ID del método de pago seleccionado
   totalAmount      Float
   status           PurchaseStatus  @default(pending)
-  paymentMethod    String?
+  paymentMethod    String?         // Nombre del banco (para compatibilidad)
   paymentReference String?
   paymentProofUrl  String?         @db.Text
   verificationStatus String?       // 'auto_verified' | 'pending_manual' | 'rejected'
@@ -84,15 +85,18 @@ model Purchase {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  raffle  Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
-  tickets Ticket[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  raffle         Raffle         @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  selectedMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  tickets        Ticket[]
 
   @@index([userId])
   @@index([raffleId])
+  @@index([paymentMethodId])
   @@index([status])
   @@index([createdAt])
 }
+
 
 model Admin {
   id           String   @id @default(cuid())
@@ -153,7 +157,10 @@ model PaymentMethod {
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  purchases Purchase[]     // Compras que usaron este método
 }
+
 
 enum RaffleStatus {
   active

@@ -175,12 +175,13 @@ class ApiService {
     });
   }
 
-  async uploadPaymentProof(purchaseId: string, paymentProofUrl: string) {
+  async uploadPaymentProof(purchaseId: string, paymentProofUrl: string, paymentMethodId?: string) {
     return this.request<any>(`/purchases/${purchaseId}/payment-proof`, {
       method: 'POST',
-      body: JSON.stringify({ paymentProofUrl }),
+      body: JSON.stringify({ paymentProofUrl, paymentMethodId }),
     });
   }
+
 
   async getPurchase(id: string) {
     return this.request<any>(`/purchases/${id}`);
