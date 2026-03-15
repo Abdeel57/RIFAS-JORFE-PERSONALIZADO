@@ -635,15 +635,27 @@ const Settings: React.FC = () => {
                                     </div>
                                     {subscribed && (
                                         <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
-                                            <p className="text-[10px] text-slate-400 font-medium">Enviar notificación de prueba</p>
-                                            <button
-                                                onClick={() => sendTest().then(() => toast.success('Notificación de prueba enviada'))}
-                                                className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-wider"
-                                            >
-                                                Probar
-                                            </button>
+                                            <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Prueba de sistema:</p>
+                                            <div className="flex gap-4">
+                                                <button
+                                                    onClick={() => {
+                                                        const audio = new Audio('/admin/notification.mp3');
+                                                        audio.play().catch(() => toast.error('Archivo de sonido no encontrado en /admin/notification.mp3'));
+                                                    }}
+                                                    className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-wider"
+                                                >
+                                                    Probar Sonido
+                                                </button>
+                                                <button
+                                                    onClick={() => sendTest().then(() => toast.success('Notificación enviada'))}
+                                                    className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-wider"
+                                                >
+                                                    Enviar Push
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
+
                                 </div>
                             </div>
                         )

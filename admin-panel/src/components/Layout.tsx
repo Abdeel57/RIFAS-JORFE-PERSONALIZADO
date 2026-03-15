@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -25,6 +27,28 @@ const Layout = () => {
     logout();
     navigate('/login');
   };
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      const handler = (event: MessageEvent) => {
+        if (event.data && event.data.type === 'PUSH_RECEIVED') {
+          // Mostrar aviso visual inmediato
+          toast.success(event.data.title || 'Nueva Notificación', {
+            duration: 6000,
+            icon: '🔔'
+          });
+
+          // Intentar reproducir sonido (específico o default si fallara)
+          const audio = new Audio('/admin/notification.mp3');
+          audio.play().catch(() => {
+            console.log('🔊 El navegador requiere interacción previa para sonar o el archivo no existe.');
+          });
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', handler);
+      return () => navigator.serviceWorker.removeEventListener('message', handler);
+    }
+  }, []);
 
   const navItems = [
     { path: '/', label: 'Órdenes', icon: Home },

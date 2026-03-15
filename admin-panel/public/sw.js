@@ -46,16 +46,31 @@ self.addEventListener('push', (event) => {
         icon: data.icon || '/admin/icon-192.png',
         badge: data.badge || '/admin/icon-72.png',
         tag: data.tag || 'bismark-admin',
+        vibrate: [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500], // Patrón de vibración más intenso
+        sound: '/admin/notification.mp3',
         renotify: true,
-        requireInteraction: data.tag === 'alerta',
+        silent: false, // Forzar a que no sea silenciosa
+        requireInteraction: true, // Mantener visible hasta que el usuario actúe
         data: { url: data.url || '/admin' },
         actions: [
-            { action: 'open', title: 'Abrir panel' },
-            { action: 'dismiss', title: 'Descartar' },
+            { action: 'open', title: 'Ver Pedido' },
+            { action: 'dismiss', title: 'Ignorar' },
         ],
     };
 
-    event.waitUntil(self.registration.showNotification(data.title || 'Bismark', options));
+    event.waitUntil(
+        Promise.all([
+            self.registration.showNotification(data.title || 'Bismark', options),
+            self.clients.matchAll({ type: 'window' }).then(clients => {
+                clients.forEach(client => client.postMessage({
+                    type: 'PUSH_RECEIVED',
+                    title: data.title,
+                    body: data.body
+                }));
+            })
+        ])
+    );
+
 });
 
 self.addEventListener('notificationclick', (event) => {
