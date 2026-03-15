@@ -118,7 +118,11 @@ model PushSubscription {
   endpoint  String   @unique
   p256dh    String
   auth      String
+  adminId   String?
+  adminRole String?
   createdAt DateTime @default(now())
+
+  @@index([adminRole])
 }
 
 model StoredImage {
