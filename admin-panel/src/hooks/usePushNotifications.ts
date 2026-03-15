@@ -40,7 +40,7 @@ export function usePushNotifications() {
         setLoading(true);
         try {
             // Registrar service worker
-            const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
+            const reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' });
             await navigator.serviceWorker.ready;
 
             // Obtener VAPID public key del backend
