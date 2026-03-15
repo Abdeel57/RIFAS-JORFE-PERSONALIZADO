@@ -182,7 +182,7 @@ const MenuRow: React.FC<{
 }> = ({ icon, iconBg, label, subtitle, value, onClick, last }) => (
     <button
         onClick={onClick}
-        className={`w-full flex items-center gap-4 px-5 py-4 bg-white hover:bg-slate-50/80 active:bg-slate-100 transition-all ${!last ? 'border-b border-slate-50' : ''}`}
+        className={`w-full flex items-center gap-4 px-5 py-4 bg-white hover:bg-slate-50/80 active:bg-slate-100 transition-all ${!last ? 'border-b border-slate-100' : ''}`}
     >
         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-black/5 ${iconBg}`}>
             {icon}
@@ -547,7 +547,7 @@ const Settings: React.FC = () => {
                         <p className="text-sm text-slate-400 mt-1">Personaliza la experiencia de tu plataforma</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+                    <div className="space-y-4 max-w-2xl">
                         <MenuSection title="Identidad de Marca">
                             <MenuRow icon={<Image size={18} />} iconBg="bg-blue-50 text-blue-500" label="Logo y Nombre" subtitle={settings.siteName} onClick={() => setActivePanel('logo')} />
                             <MenuRow icon={<Palette size={18} />} iconBg="bg-violet-50 text-violet-500" label="Colores de Interfaz" value={settings.primaryColor} onClick={() => setActivePanel('colores')} last />
