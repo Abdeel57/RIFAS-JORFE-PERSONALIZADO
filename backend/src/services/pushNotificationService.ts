@@ -32,7 +32,9 @@ export async function sendPushToAdmins(payload: PushPayload): Promise<void> {
     init();
     if (!initialized) return;
 
-    const subscriptions = await prisma.pushSubscription.findMany();
+    const subscriptions = await prisma.pushSubscription.findMany({
+        where: { adminRole: { in: ['admin', 'super_admin'] } },
+    });
     if (subscriptions.length === 0) return;
 
     const message = JSON.stringify({

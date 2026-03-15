@@ -8,8 +8,9 @@ import Skeleton from '../components/Skeleton';
 import {
     ChevronRight, Palette, CreditCard, Phone,
     Image, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, User, Loader2, Facebook,
-    Wrench, Clock, AlertTriangle, CheckCircle2
+    Wrench, Clock, AlertTriangle, CheckCircle2, Bell, BellOff
 } from 'lucide-react';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 // ─── Color utilities ──────────────────────────────────────────────────────────
 
@@ -253,6 +254,7 @@ const Settings: React.FC = () => {
     const { showConfirm } = useConfirm();
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [activePanel, setActivePanel] = useState<Panel>(null);
+    const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, sendTest, isSupported } = usePushNotifications();
 
     const [settings, setSettings] = useState<SettingsData>({
         siteName: 'Bismark', bankName: '', clabe: '', beneficiary: '',
@@ -586,6 +588,53 @@ const Settings: React.FC = () => {
                             </MenuSection>
                         )}
                     </div>
+
+                    {/* ── Notificaciones Push ── */}
+                    {(admin?.role === 'admin' || admin?.role === 'super_admin') && isSupported && (
+                        <div className="space-y-2 max-w-2xl">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Notificaciones</p>
+                            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                                <div className="flex items-center gap-4 px-5 py-4">
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-black/5 ${subscribed ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400'}`}>
+                                        {subscribed ? <Bell size={18} /> : <BellOff size={18} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-black text-sm text-slate-800 tracking-tight leading-none">Notificaciones de pagos</p>
+                                        <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                                            {permission === 'denied'
+                                                ? 'Bloqueadas en el navegador'
+                                                : subscribed
+                                                    ? 'Activas en este dispositivo'
+                                                    : 'Desactivadas'}
+                                        </p>
+                                    </div>
+                                    {permission !== 'denied' && (
+                                        <button
+                                            onClick={subscribed ? unsubscribe : subscribe}
+                                            disabled={pushLoading}
+                                            className={`flex-shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 ${subscribed
+                                                ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100'
+                                                : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'
+                                            }`}
+                                        >
+                                            {pushLoading ? <Loader2 size={14} className="animate-spin" /> : subscribed ? 'Desactivar' : 'Activar'}
+                                        </button>
+                                    )}
+                                </div>
+                                {subscribed && (
+                                    <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
+                                        <p className="text-[10px] text-slate-400 font-medium">Enviar notificación de prueba</p>
+                                        <button
+                                            onClick={() => sendTest().then(() => toast.success('Notificación de prueba enviada'))}
+                                            className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-wider"
+                                        >
+                                            Probar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <button
                         onClick={handleSave}

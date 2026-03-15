@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateAdmin, isAdmin, isSuperAdmin } from '../middleware/auth.middleware';
+import { authenticateAdmin, isAdmin, isSuperAdmin, AuthRequest } from '../middleware/auth.middleware';
 import { login } from '../controllers/admin/auth.controller';
 import { getDashboardStats } from '../controllers/admin/dashboard.controller';
 import {
@@ -94,14 +94,14 @@ router.put('/admin-users/:id', isSuperAdmin, updateAdmin);
 router.delete('/admin-users/:id', isSuperAdmin, deleteAdmin);
 router.put('/admin-users/:id/plan', isSuperAdmin, setAdminPlan);
 
-// Push Notifications
-router.get('/push/vapid-key', (_req, res) => {
+// Push Notifications — solo admins y super_admins (no vendedores)
+router.get('/push/vapid-key', isAdmin, (_req, res) => {
     const key = getVapidPublicKey();
     if (!key) return res.status(503).json({ error: 'Push notifications no configuradas (falta VAPID_PUBLIC_KEY)' });
     res.json({ publicKey: key });
 });
 
-router.post('/push/subscribe', async (req, res) => {
+router.post('/push/subscribe', isAdmin, async (req: AuthRequest, res) => {
     try {
         const { endpoint, keys } = req.body;
         if (!endpoint || !keys?.p256dh || !keys?.auth) {
@@ -109,17 +109,28 @@ router.post('/push/subscribe', async (req, res) => {
         }
         await prisma.pushSubscription.upsert({
             where: { endpoint },
-            create: { endpoint, p256dh: keys.p256dh, auth: keys.auth },
-            update: { p256dh: keys.p256dh, auth: keys.auth },
+            create: {
+                endpoint,
+                p256dh: keys.p256dh,
+                auth: keys.auth,
+                adminId: req.admin!.id,
+                adminRole: req.admin!.role,
+            },
+            update: {
+                p256dh: keys.p256dh,
+                auth: keys.auth,
+                adminId: req.admin!.id,
+                adminRole: req.admin!.role,
+            },
         });
-        console.log('📲 Nueva suscripción push registrada');
+        console.log(`📲 Suscripción push registrada — ${req.admin!.email} (${req.admin!.role})`);
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 });
 
-router.delete('/push/subscribe', async (req, res) => {
+router.delete('/push/subscribe', isAdmin, async (req, res) => {
     try {
         const { endpoint } = req.body;
         if (!endpoint) return res.status(400).json({ error: 'endpoint requerido' });
@@ -130,8 +141,8 @@ router.delete('/push/subscribe', async (req, res) => {
     }
 });
 
-// Test de notificación (solo en desarrollo o para el admin)
-router.post('/push/test', async (_req, res) => {
+// Test de notificación (solo admins)
+router.post('/push/test', isAdmin, async (_req, res) => {
     await sendPushToAdmins({
         title: '🔔 Prueba de notificación',
         body: 'Las notificaciones push funcionan correctamente.',
