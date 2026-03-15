@@ -394,7 +394,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -428,7 +428,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main List */}
-      <div className="space-y-3 min-h-[200px]">
+      <div className="min-h-[200px]">
         {isLoading ? (
           <Skeleton count={5} className="h-44 w-full" />
         ) : error ? (
@@ -462,18 +462,20 @@ const Dashboard = () => {
               </motion.div>
             ) : (
               <LayoutGroup>
-                {purchases.map(p => (
-                  <OrderCard
-                    key={p.id}
-                    purchase={p}
-                    onPay={handlePay}
-                    onSetPending={handleSetPending}
-                    onRelease={handleRelease}
-                    onEdit={(p) => setEditTarget(p)}
-                    onViewProof={(p) => setProofTarget(p)}
-                    paying={paying}
-                  />
-                ))}
+                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:items-start">
+                  {purchases.map(p => (
+                    <OrderCard
+                      key={p.id}
+                      purchase={p}
+                      onPay={handlePay}
+                      onSetPending={handleSetPending}
+                      onRelease={handleRelease}
+                      onEdit={(p) => setEditTarget(p)}
+                      onViewProof={(p) => setProofTarget(p)}
+                      paying={paying}
+                    />
+                  ))}
+                </div>
               </LayoutGroup>
             )}
           </AnimatePresence>
@@ -495,7 +497,7 @@ const Dashboard = () => {
               initial={{ y: 50, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 50, opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-7 border border-white/20"
+              className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm lg:max-w-md p-7 border border-white/20"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-extrabold text-slate-800 tracking-tight">Editar Datos</h3>
@@ -594,7 +596,7 @@ const Dashboard = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-2xl max-w-sm w-full border border-white/20 flex flex-col max-h-[90vh]"
+              className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-2xl max-w-sm lg:max-w-lg w-full border border-white/20 flex flex-col max-h-[90vh]"
             >
               <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                 <div className="flex flex-col">
