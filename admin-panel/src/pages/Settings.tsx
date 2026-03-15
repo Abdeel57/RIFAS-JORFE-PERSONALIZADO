@@ -8,7 +8,7 @@ import Skeleton from '../components/Skeleton';
 import {
     ChevronRight, Palette, CreditCard, Phone,
     Image, Globe, Instagram, ArrowLeft, Save, Bot, X, Users, Trash2, Plus, Mail, User, Loader2, Facebook,
-    Wrench, Clock, AlertTriangle, CheckCircle2, Bell, BellOff
+    Wrench, Clock, AlertTriangle, CheckCircle2, Bell, BellOff, BellRing, Settings2
 } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
@@ -107,7 +107,7 @@ function compressImage(file: File): Promise<{ dataUrl: string; sizeKb: number }>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'marketing' | 'sistema' | 'usuarios' | 'herramientas' | null;
+type Panel = 'logo' | 'colores' | 'banco' | 'contacto' | 'redes' | 'marketing' | 'sistema' | 'usuarios' | 'herramientas' | 'notificaciones' | null;
 
 interface AdminUser {
     id: string;
@@ -255,6 +255,8 @@ const Settings: React.FC = () => {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [activePanel, setActivePanel] = useState<Panel>(null);
     const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, sendTest, isSupported } = usePushNotifications();
+    const push = { permission, subscribed, loading: pushLoading, subscribe, unsubscribe, sendTest, isSupported };
+
 
     const [settings, setSettings] = useState<SettingsData>({
         siteName: 'Bismark', bankName: '', clabe: '', beneficiary: '',
@@ -549,6 +551,7 @@ const Settings: React.FC = () => {
                         <p className="text-sm text-slate-400 mt-1">Personaliza la experiencia de tu plataforma</p>
                     </div>
 
+
                     <div className="space-y-4 max-w-2xl">
                         <MenuSection title="Identidad de Marca">
                             <MenuRow icon={<Image size={18} />} iconBg="bg-blue-50 text-blue-500" label="Logo y Nombre" subtitle={settings.siteName} onClick={() => setActivePanel('logo')} />
@@ -559,6 +562,26 @@ const Settings: React.FC = () => {
                             <MenuRow icon={<CreditCard size={18} />} iconBg="bg-emerald-50 text-emerald-500" label="Métodos de Pago" subtitle={settings.bankName || 'Bancos y Transferencia'} onClick={() => setActivePanel('banco')} />
                             <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Validación de pagos" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
                         </MenuSection>
+
+                        {admin?.role !== 'vendedor' && (
+                            <MenuSection title="Herramientas Avanzadas">
+                                <MenuRow
+                                    icon={<Bell size={18} />}
+                                    iconBg="bg-amber-50 text-amber-500"
+                                    label="Notificaciones Push"
+                                    subtitle={push.subscribed ? 'Activadas en este dispositivo' : 'Desactivadas'}
+                                    onClick={() => setActivePanel('notificaciones')}
+                                />
+                                <MenuRow
+                                    icon={<Wrench size={18} />}
+                                    iconBg="bg-orange-50 text-orange-500"
+                                    label="Herramientas y funciones"
+                                    subtitle="Configuración de automatización"
+                                    onClick={() => setActivePanel('herramientas')}
+                                    last
+                                />
+                            </MenuSection>
+                        )}
 
                         <MenuSection title="Comunicación">
                             <MenuRow icon={<Phone size={18} />} iconBg="bg-rose-50 text-rose-500" label="Contacto y Soporte" subtitle={settings.whatsapp} onClick={() => setActivePanel('contacto')} />
@@ -574,67 +597,57 @@ const Settings: React.FC = () => {
                                 <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
                             </MenuSection>
                         )}
-
-                        {admin?.role !== 'vendedor' && (
-                            <MenuSection title="Herramientas Avanzadas">
-                                <MenuRow
-                                    icon={<Wrench size={18} />}
-                                    iconBg="bg-orange-50 text-orange-500"
-                                    label="Herramientas y funciones"
-                                    subtitle="Configuración de automatización"
-                                    onClick={() => setActivePanel('herramientas')}
-                                    last
-                                />
-                            </MenuSection>
-                        )}
                     </div>
 
+
                     {/* ── Notificaciones Push ── */}
-                    {(admin?.role === 'admin' || admin?.role === 'super_admin') && isSupported && (
-                        <div className="space-y-2 max-w-2xl">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Notificaciones</p>
-                            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-4 px-5 py-4">
-                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-black/5 ${subscribed ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400'}`}>
-                                        {subscribed ? <Bell size={18} /> : <BellOff size={18} />}
+                    {
+                        (admin?.role === 'admin' || admin?.role === 'super_admin') && isSupported && (
+                            <div className="space-y-2 max-w-2xl">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Notificaciones</p>
+                                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                                    <div className="flex items-center gap-4 px-5 py-4">
+                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-black/5 ${subscribed ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400'}`}>
+                                            {subscribed ? <Bell size={18} /> : <BellOff size={18} />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-black text-sm text-slate-800 tracking-tight leading-none">Notificaciones de pagos</p>
+                                            <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                                                {permission === 'denied'
+                                                    ? 'Bloqueadas en el navegador'
+                                                    : subscribed
+                                                        ? 'Activas en este dispositivo'
+                                                        : 'Desactivadas'}
+                                            </p>
+                                        </div>
+                                        {permission !== 'denied' && (
+                                            <button
+                                                onClick={subscribed ? unsubscribe : subscribe}
+                                                disabled={pushLoading}
+                                                className={`flex-shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 ${subscribed
+                                                    ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100'
+                                                    : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'
+                                                    }`}
+                                            >
+                                                {pushLoading ? <Loader2 size={14} className="animate-spin" /> : subscribed ? 'Desactivar' : 'Activar'}
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-black text-sm text-slate-800 tracking-tight leading-none">Notificaciones de pagos</p>
-                                        <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase tracking-wider">
-                                            {permission === 'denied'
-                                                ? 'Bloqueadas en el navegador'
-                                                : subscribed
-                                                    ? 'Activas en este dispositivo'
-                                                    : 'Desactivadas'}
-                                        </p>
-                                    </div>
-                                    {permission !== 'denied' && (
-                                        <button
-                                            onClick={subscribed ? unsubscribe : subscribe}
-                                            disabled={pushLoading}
-                                            className={`flex-shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 ${subscribed
-                                                ? 'bg-red-50 text-red-500 border border-red-100 hover:bg-red-100'
-                                                : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'
-                                            }`}
-                                        >
-                                            {pushLoading ? <Loader2 size={14} className="animate-spin" /> : subscribed ? 'Desactivar' : 'Activar'}
-                                        </button>
+                                    {subscribed && (
+                                        <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
+                                            <p className="text-[10px] text-slate-400 font-medium">Enviar notificación de prueba</p>
+                                            <button
+                                                onClick={() => sendTest().then(() => toast.success('Notificación de prueba enviada'))}
+                                                className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-wider"
+                                            >
+                                                Probar
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                                {subscribed && (
-                                    <div className="border-t border-slate-100 px-5 py-3 flex items-center justify-between">
-                                        <p className="text-[10px] text-slate-400 font-medium">Enviar notificación de prueba</p>
-                                        <button
-                                            onClick={() => sendTest().then(() => toast.success('Notificación de prueba enviada'))}
-                                            className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-wider"
-                                        >
-                                            Probar
-                                        </button>
-                                    </div>
-                                )}
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
                     <button
                         onClick={handleSave}
@@ -646,7 +659,7 @@ const Settings: React.FC = () => {
                     </button>
 
                     <div className="pb-8" />
-                </motion.div>
+                </motion.div >
             );
         }
 
@@ -1280,6 +1293,112 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activePanel === 'notificaciones' && (
+                    <div className="space-y-5">
+                        <PanelHeader
+                            title="Notificaciones Push"
+                            icon={<Bell size={16} />}
+                            onBack={() => setActivePanel(null)}
+                            onSave={handleSave}
+                            isSaving={isSaving}
+                        />
+
+                        <div className="admin-card p-6 space-y-6">
+                            <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-2">
+                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
+                                    <BellRing size={20} />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Alertas en Tiempo Real</p>
+                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                        Recibe avisos inmediatos cuando un cliente suba un comprobante o cuando el sistema verifique un pago automáticamente.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div>
+                                        <p className="text-sm font-black text-slate-800">Estado en este dispositivo</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+                                            {push.isSupported
+                                                ? (push.subscribed ? 'Suscripción activa' : 'Sin suscripción')
+                                                : 'Navegador no compatible'}
+                                        </p>
+                                    </div>
+                                    <div className={`w-3 h-3 rounded-full ${push.subscribed ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                                </div>
+
+                                {!push.isSupported ? (
+                                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
+                                        <AlertTriangle className="text-amber-500 shrink-0" size={18} />
+                                        <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                                            Tu navegador o dispositivo no soporta notificaciones push nativas.
+                                            Si usas iOS (iPhone), asegúrate de estar en iOS 16.4+ y haber "Añadido a pantalla de inicio" esta web.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {push.subscribed ? (
+                                            <>
+                                                <button
+                                                    onClick={push.unsubscribe}
+                                                    disabled={push.loading}
+                                                    className="w-full h-12 bg-white border border-red-100 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    {push.loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                    Desactivar en este móvil/PC
+                                                </button>
+                                                <button
+                                                    onClick={push.sendTest}
+                                                    className="w-full h-12 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <Settings2 size={14} />
+                                                    Enviar Notificación de Prueba
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={push.subscribe}
+                                                disabled={push.loading}
+                                                className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-xl shadow-blue-100 active:scale-95 transition-all flex items-center justify-center gap-3"
+                                            >
+                                                {push.loading ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
+                                                Activar Notificaciones Aquí
+                                            </button>
+                                        )}
+
+                                        {push.permission === 'denied' && (
+                                            <p className="text-[10px] text-red-500 font-bold text-center uppercase mt-2">
+                                                Permiso denegado. Debes habilitarlo en los ajustes del navegador.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-50">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">¿Qué notificaciones recibiré?</p>
+                                <div className="space-y-2">
+                                    {[
+                                        { title: 'Nuevos Comprobantes', desc: 'Cuando un cliente suba un comprobante o se aparte una orden' },
+                                        { title: 'Validaciones Gemini', desc: 'Resultados del análisis automático por IA' },
+                                        { title: 'Alertas de Fraude', desc: 'Aviso inmediato si se detecta un ticket falso' }
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                            <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                            <div>
+                                                <p className="text-[11px] font-black text-slate-700">{item.title}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </motion.div>

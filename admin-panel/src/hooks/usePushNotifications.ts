@@ -40,7 +40,8 @@ export function usePushNotifications() {
         setLoading(true);
         try {
             // Registrar service worker
-            const reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' });
+            const swPath = import.meta.env.PROD ? '/admin/sw.js' : '/sw.js';
+            const reg = await navigator.serviceWorker.register(swPath, { scope: '/admin/' });
             await navigator.serviceWorker.ready;
 
             // Obtener VAPID public key del backend
@@ -50,7 +51,7 @@ export function usePushNotifications() {
             // Solicitar permiso y suscribir
             const sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey,
+                applicationServerKey: applicationServerKey as any,
             });
 
             // Enviar suscripción al backend
