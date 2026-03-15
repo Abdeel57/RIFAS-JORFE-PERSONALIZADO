@@ -113,6 +113,9 @@ interface AdminUser {
     email: string;
     name: string;
     role: string;
+    planType: string | null;
+    planStartDate: string | null;
+    planExpiryDate: string | null;
     createdAt: string;
 }
 
@@ -328,7 +331,10 @@ const Settings: React.FC = () => {
     const [isUsersLoading, setIsUsersLoading] = useState(false);
     const [isCreatingUser, setIsCreatingUser] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor', planType: '' });
+    const [planModal, setPlanModal] = useState<AdminUser | null>(null);
+    const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'por_rifa' | ''>('');
+    const [savingPlan, setSavingPlan] = useState(false);
 
     const fetchAdmins = async () => {
         setIsUsersLoading(true);
@@ -401,10 +407,10 @@ const Settings: React.FC = () => {
         }
         setIsCreatingUser(true);
         try {
-            const res = await api.post('/admin/admin-users', { name: name.trim(), email: email.trim(), password, role });
+            const res = await api.post('/admin/admin-users', { name: name.trim(), email: email.trim(), password, role, planType: newUser.planType || undefined });
             if (res.data?.success) {
                 toast.success('Usuario creado correctamente');
-                setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' });
+                setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor', planType: '' });
                 setShowAddForm(false);
                 fetchAdmins();
             }
@@ -414,6 +420,26 @@ const Settings: React.FC = () => {
         } finally {
             setIsCreatingUser(false);
         }
+    };
+
+    const handleSetPlan = async () => {
+        if (!planModal) return;
+        setSavingPlan(true);
+        try {
+            await api.put(`/admin/admin-users/${planModal.id}/plan`, { planType: selectedPlan || null });
+            toast.success('Plan actualizado correctamente');
+            setPlanModal(null);
+            fetchAdmins();
+        } catch {
+            toast.error('Error al actualizar el plan');
+        } finally {
+            setSavingPlan(false);
+        }
+    };
+
+    const getPlanDaysLeft = (expiryDate: string | null) => {
+        if (!expiryDate) return null;
+        return Math.ceil((new Date(expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     };
 
     const handleDeleteAdmin = (id: string, name: string) => {
@@ -946,6 +972,23 @@ const Settings: React.FC = () => {
                                                 <option value="admin">Administrador</option>
                                             </select>
                                         </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Plan de acceso</p>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {[
+                                                    { value: '', label: 'Sin plan', desc: '—' },
+                                                    { value: 'mensual', label: 'Mensual', desc: '30 días' },
+                                                    { value: 'por_rifa', label: 'Por Rifa', desc: 'Sin crear rifas' },
+                                                ].map(opt => (
+                                                    <button key={opt.value} type="button"
+                                                        onClick={() => setNewUser(p => ({ ...p, planType: opt.value }))}
+                                                        className={`p-2.5 rounded-xl border-2 text-center transition-all ${newUser.planType === opt.value ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                                                        <p className="font-black text-xs text-slate-800">{opt.label}</p>
+                                                        <p className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</p>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                         <div className="flex gap-2">
                                             <button onClick={handleCreateAdmin} disabled={isCreatingUser} className="bg-blue-600 text-white px-6 h-10 rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-50 flex items-center gap-2">
                                                 {isCreatingUser ? <Loader2 size={14} className="animate-spin" /> : null}
@@ -963,26 +1006,90 @@ const Settings: React.FC = () => {
                                 ) : adminUsers.length === 0 ? (
                                     <div className="p-8 text-center text-slate-400 text-sm">No hay colaboradores. Agrega uno con el botón de arriba.</div>
                                 ) : (
-                                    adminUsers.map(u => (
-                                        <div key={u.id} className="p-5 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600">{u.name.charAt(0)}</div>
-                                                <div>
+                                    adminUsers.filter(u => u.role !== 'super_admin').map(u => {
+                                        const daysLeft = getPlanDaysLeft(u.planExpiryDate);
+                                        const isExpired = daysLeft !== null && daysLeft < 0;
+                                        return (
+                                        <div key={u.id} className="p-5 flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600 shrink-0">{u.name.charAt(0)}</div>
+                                                <div className="min-w-0">
                                                     <p className="text-sm font-black text-slate-800">{u.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{u.email}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{u.email}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {u.planType ? (
+                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border ${u.planType === 'mensual' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'}`}>
+                                                                {u.planType === 'mensual' ? 'Mensual' : 'Por Rifa'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-400 border-slate-100">Sin plan</span>
+                                                        )}
+                                                        {u.planType === 'mensual' && u.planExpiryDate && (
+                                                            <span className={`text-[9px] font-bold ${isExpired ? 'text-red-500' : daysLeft !== null && daysLeft <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                                                {isExpired ? 'Expirado' : daysLeft === 0 ? 'Vence hoy' : `${daysLeft}d restantes`}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 shrink-0">
                                                 <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
-                                                <button onClick={() => handleDeleteAdmin(u.id, u.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50" title="Eliminar"><Trash2 size={16} /></button>
+                                                <button onClick={() => { setPlanModal(u); setSelectedPlan((u.planType as any) || ''); }} className="text-slate-400 hover:text-blue-500 transition-colors p-1.5 rounded-lg hover:bg-blue-50" title="Gestionar plan">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                                                </button>
+                                                <button onClick={() => handleDeleteAdmin(u.id, u.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Eliminar"><Trash2 size={15} /></button>
                                             </div>
                                         </div>
+                                        );
+                                    })
                                     ))
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
+
+                {/* Modal: Gestionar Plan */}
+                <AnimatePresence>
+                    {planModal && (
+                        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setPlanModal(null)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+                            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                                className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                                <div>
+                                    <h3 className="font-black text-slate-800 text-base">Gestionar plan</h3>
+                                    <p className="text-sm text-slate-400 mt-0.5">{planModal.name}</p>
+                                </div>
+                                <div className="space-y-2">
+                                    {([
+                                        { value: 'mensual', label: 'Mensual', desc: 'Acceso por 30 días. Se puede renovar.' },
+                                        { value: 'por_rifa', label: 'Por Rifa', desc: 'Acceso por rifa. Sin botón de crear rifa.' },
+                                    ] as const).map(plan => (
+                                        <button key={plan.value} onClick={() => setSelectedPlan(plan.value)}
+                                            className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedPlan === plan.value ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}>
+                                            <p className="font-black text-sm text-slate-800">{plan.label}</p>
+                                            <p className="text-xs text-slate-400 mt-0.5">{plan.desc}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[11px] text-slate-400">
+                                    {selectedPlan === 'mensual' ? 'Al guardar se establecerán 30 días de acceso desde hoy.' : selectedPlan === 'por_rifa' ? 'El usuario solo podrá editar rifas existentes.' : ''}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button onClick={handleSetPlan} disabled={!selectedPlan || savingPlan}
+                                        className="flex-1 min-h-[44px] bg-blue-600 disabled:opacity-50 text-white font-black rounded-xl text-sm transition-all active:scale-95">
+                                        {savingPlan ? 'Guardando...' : 'Guardar plan'}
+                                    </button>
+                                    <button onClick={() => setPlanModal(null)}
+                                        className="px-4 min-h-[44px] bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
 
                 {activePanel === 'herramientas' && (
                     <div className="space-y-5">
