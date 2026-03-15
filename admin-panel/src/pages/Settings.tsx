@@ -566,20 +566,24 @@ const Settings: React.FC = () => {
                         <MenuRow icon={<Facebook size={18} />} iconBg="bg-blue-50 text-blue-600" label="Meta Pixel" subtitle={settings.facebookPixelId || 'No configurado'} onClick={() => setActivePanel('marketing')} last />
                     </MenuSection>
 
-                    <MenuSection title="Control de Acceso">
-                        <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
-                    </MenuSection>
+                    {admin?.role === 'super_admin' && (
+                        <MenuSection title="Control de Acceso">
+                            <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
+                        </MenuSection>
+                    )}
 
-                    <MenuSection title="Herramientas Avanzadas">
-                        <MenuRow
-                            icon={<Wrench size={18} />}
-                            iconBg="bg-orange-50 text-orange-500"
-                            label="Herramientas y funciones"
-                            subtitle="Configuración de automatización"
-                            onClick={() => setActivePanel('herramientas')}
-                            last
-                        />
-                    </MenuSection>
+                    {admin?.role !== 'vendedor' && (
+                        <MenuSection title="Herramientas Avanzadas">
+                            <MenuRow
+                                icon={<Wrench size={18} />}
+                                iconBg="bg-orange-50 text-orange-500"
+                                label="Herramientas y funciones"
+                                subtitle="Configuración de automatización"
+                                onClick={() => setActivePanel('herramientas')}
+                                last
+                            />
+                        </MenuSection>
+                    )}
 
                     <button
                         onClick={handleSave}
@@ -726,8 +730,8 @@ const Settings: React.FC = () => {
                                                     <button
                                                         onClick={() => handleTogglePayment(method.id, method.isActive)}
                                                         className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border active:scale-95 transition-all ${method.isActive
-                                                                ? 'text-red-500 bg-red-50 border-red-100 hover:bg-red-100'
-                                                                : 'text-[#2563EB] bg-blue-50 border-blue-100 hover:bg-blue-100'
+                                                            ? 'text-red-500 bg-red-50 border-red-100 hover:bg-red-100'
+                                                            : 'text-[#2563EB] bg-blue-50 border-blue-100 hover:bg-blue-100'
                                                             }`}
                                                     >
                                                         {method.isActive ? 'Desactivar' : 'Activar'}
@@ -994,7 +998,7 @@ const Settings: React.FC = () => {
                                                 {isCreatingUser ? <Loader2 size={14} className="animate-spin" /> : null}
                                                 {isCreatingUser ? 'Creando...' : 'Crear Usuario'}
                                             </button>
-                                            <button onClick={() => { setShowAddForm(false); setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor' }); }} disabled={isCreatingUser} className="bg-white text-slate-400 px-6 h-10 rounded-xl font-bold text-xs">Cancelar</button>
+                                            <button onClick={() => { setShowAddForm(false); setNewUser({ name: '', email: '', password: '', confirmPassword: '', role: 'vendedor', planType: '' }); }} disabled={isCreatingUser} className="bg-white text-slate-400 px-6 h-10 rounded-xl font-bold text-xs">Cancelar</button>
                                         </div>
                                     </motion.div>
                                 )}
@@ -1010,39 +1014,38 @@ const Settings: React.FC = () => {
                                         const daysLeft = getPlanDaysLeft(u.planExpiryDate);
                                         const isExpired = daysLeft !== null && daysLeft < 0;
                                         return (
-                                        <div key={u.id} className="p-5 flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600 shrink-0">{u.name.charAt(0)}</div>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-black text-slate-800">{u.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{u.email}</p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        {u.planType ? (
-                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border ${u.planType === 'mensual' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'}`}>
-                                                                {u.planType === 'mensual' ? 'Mensual' : 'Por Rifa'}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-400 border-slate-100">Sin plan</span>
-                                                        )}
-                                                        {u.planType === 'mensual' && u.planExpiryDate && (
-                                                            <span className={`text-[9px] font-bold ${isExpired ? 'text-red-500' : daysLeft !== null && daysLeft <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
-                                                                {isExpired ? 'Expirado' : daysLeft === 0 ? 'Vence hoy' : `${daysLeft}d restantes`}
-                                                            </span>
-                                                        )}
+                                            <div key={u.id} className="p-5 flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-xs text-slate-600 shrink-0">{u.name.charAt(0)}</div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-black text-slate-800">{u.name}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{u.email}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {u.planType ? (
+                                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border ${u.planType === 'mensual' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-violet-50 text-violet-700 border-violet-100'}`}>
+                                                                    {u.planType === 'mensual' ? 'Mensual' : 'Por Rifa'}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-400 border-slate-100">Sin plan</span>
+                                                            )}
+                                                            {u.planType === 'mensual' && u.planExpiryDate && (
+                                                                <span className={`text-[9px] font-bold ${isExpired ? 'text-red-500' : daysLeft !== null && daysLeft <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                                                    {isExpired ? 'Expirado' : daysLeft === 0 ? 'Vence hoy' : `${daysLeft}d restantes`}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
+                                                    <button onClick={() => { setPlanModal(u); setSelectedPlan((u.planType as any) || ''); }} className="text-slate-400 hover:text-blue-500 transition-colors p-1.5 rounded-lg hover:bg-blue-50" title="Gestionar plan">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></svg>
+                                                    </button>
+                                                    <button onClick={() => handleDeleteAdmin(u.id, u.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Eliminar"><Trash2 size={15} /></button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="text-[9px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{u.role}</span>
-                                                <button onClick={() => { setPlanModal(u); setSelectedPlan((u.planType as any) || ''); }} className="text-slate-400 hover:text-blue-500 transition-colors p-1.5 rounded-lg hover:bg-blue-50" title="Gestionar plan">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                                                </button>
-                                                <button onClick={() => handleDeleteAdmin(u.id, u.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Eliminar"><Trash2 size={15} /></button>
-                                            </div>
-                                        </div>
                                         );
                                     })
-                                    ))
                                 )}
                             </div>
                         </div>
