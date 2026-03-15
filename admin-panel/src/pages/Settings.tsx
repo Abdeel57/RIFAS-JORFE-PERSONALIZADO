@@ -547,48 +547,50 @@ const Settings: React.FC = () => {
                         <p className="text-sm text-slate-400 mt-1">Personaliza la experiencia de tu plataforma</p>
                     </div>
 
-                    <MenuSection title="Identidad de Marca">
-                        <MenuRow icon={<Image size={18} />} iconBg="bg-blue-50 text-blue-500" label="Logo y Nombre" subtitle={settings.siteName} onClick={() => setActivePanel('logo')} />
-                        <MenuRow icon={<Palette size={18} />} iconBg="bg-violet-50 text-violet-500" label="Colores de Interfaz" value={settings.primaryColor} onClick={() => setActivePanel('colores')} last />
-                    </MenuSection>
-
-                    <MenuSection title="Pagos y Ventas">
-                        <MenuRow icon={<CreditCard size={18} />} iconBg="bg-emerald-50 text-emerald-500" label="Métodos de Pago" subtitle={settings.bankName || 'Bancos y Transferencia'} onClick={() => setActivePanel('banco')} />
-                        <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Validación de pagos" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
-                    </MenuSection>
-
-                    <MenuSection title="Comunicación">
-                        <MenuRow icon={<Phone size={18} />} iconBg="bg-rose-50 text-rose-500" label="Contacto y Soporte" subtitle={settings.whatsapp} onClick={() => setActivePanel('contacto')} />
-                        <MenuRow icon={<Globe size={18} />} iconBg="bg-sky-50 text-sky-500" label="Redes Sociales" value={`@${settings.instagram.replace(/^@/, '')}`} onClick={() => setActivePanel('redes')} last />
-                    </MenuSection>
-
-                    <MenuSection title="Marketing y Análisis">
-                        <MenuRow icon={<Facebook size={18} />} iconBg="bg-blue-50 text-blue-600" label="Meta Pixel" subtitle={settings.facebookPixelId || 'No configurado'} onClick={() => setActivePanel('marketing')} last />
-                    </MenuSection>
-
-                    {admin?.role === 'super_admin' && (
-                        <MenuSection title="Control de Acceso">
-                            <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+                        <MenuSection title="Identidad de Marca">
+                            <MenuRow icon={<Image size={18} />} iconBg="bg-blue-50 text-blue-500" label="Logo y Nombre" subtitle={settings.siteName} onClick={() => setActivePanel('logo')} />
+                            <MenuRow icon={<Palette size={18} />} iconBg="bg-violet-50 text-violet-500" label="Colores de Interfaz" value={settings.primaryColor} onClick={() => setActivePanel('colores')} last />
                         </MenuSection>
-                    )}
 
-                    {admin?.role !== 'vendedor' && (
-                        <MenuSection title="Herramientas Avanzadas">
-                            <MenuRow
-                                icon={<Wrench size={18} />}
-                                iconBg="bg-orange-50 text-orange-500"
-                                label="Herramientas y funciones"
-                                subtitle="Configuración de automatización"
-                                onClick={() => setActivePanel('herramientas')}
-                                last
-                            />
+                        <MenuSection title="Pagos y Ventas">
+                            <MenuRow icon={<CreditCard size={18} />} iconBg="bg-emerald-50 text-emerald-500" label="Métodos de Pago" subtitle={settings.bankName || 'Bancos y Transferencia'} onClick={() => setActivePanel('banco')} />
+                            <MenuRow icon={<Bot size={18} />} iconBg="bg-indigo-50 text-indigo-500" label="Validación de pagos" value={settings.autoVerificationEnabled ? 'Activa' : 'Manual'} onClick={() => setActivePanel('sistema')} last />
                         </MenuSection>
-                    )}
+
+                        <MenuSection title="Comunicación">
+                            <MenuRow icon={<Phone size={18} />} iconBg="bg-rose-50 text-rose-500" label="Contacto y Soporte" subtitle={settings.whatsapp} onClick={() => setActivePanel('contacto')} />
+                            <MenuRow icon={<Globe size={18} />} iconBg="bg-sky-50 text-sky-500" label="Redes Sociales" value={`@${settings.instagram.replace(/^@/, '')}`} onClick={() => setActivePanel('redes')} last />
+                        </MenuSection>
+
+                        <MenuSection title="Marketing y Análisis">
+                            <MenuRow icon={<Facebook size={18} />} iconBg="bg-blue-50 text-blue-600" label="Meta Pixel" subtitle={settings.facebookPixelId || 'No configurado'} onClick={() => setActivePanel('marketing')} last />
+                        </MenuSection>
+
+                        {admin?.role === 'super_admin' && (
+                            <MenuSection title="Control de Acceso">
+                                <MenuRow icon={<Users size={18} />} iconBg="bg-slate-50 text-slate-600" label="Gestionar Administradores" last onClick={() => setActivePanel('usuarios')} />
+                            </MenuSection>
+                        )}
+
+                        {admin?.role !== 'vendedor' && (
+                            <MenuSection title="Herramientas Avanzadas">
+                                <MenuRow
+                                    icon={<Wrench size={18} />}
+                                    iconBg="bg-orange-50 text-orange-500"
+                                    label="Herramientas y funciones"
+                                    subtitle="Configuración de automatización"
+                                    onClick={() => setActivePanel('herramientas')}
+                                    last
+                                />
+                            </MenuSection>
+                        )}
+                    </div>
 
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="w-full h-14 bg-slate-900 text-white rounded-[24px] font-black text-sm uppercase tracking-[0.1em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-full h-14 bg-slate-900 text-white rounded-[24px] font-black text-sm uppercase tracking-[0.1em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50 lg:max-w-sm"
                     >
                         {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                         {isSaving ? 'Guardando cambios...' : 'Guardar Todo'}
@@ -861,7 +863,7 @@ const Settings: React.FC = () => {
                 {activePanel === 'redes' && (
                     <div className="space-y-5">
                         <PanelHeader title="Redes Sociales" icon={<Globe size={16} />} onBack={() => setActivePanel(null)} onSave={handleSave} isSaving={isSaving} />
-                        <div className="admin-card p-6 space-y-4">
+                        <div className="admin-card p-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <FieldLabel hint="Solo el usuario (sin @).">Instagram</FieldLabel>
                                 <div className="relative">
@@ -907,7 +909,7 @@ const Settings: React.FC = () => {
 
                             <div className="pt-2">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Eventos Activos</p>
-                                <div className="space-y-2">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                                     {[
                                         { ev: 'PageView', desc: 'Vistas de cualquier página' },
                                         { ev: 'ViewContent', desc: 'Ver detalles de una rifa' },

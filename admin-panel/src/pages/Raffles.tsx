@@ -492,7 +492,7 @@ const Raffles = () => {
 
   // ─── Main view ─────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-6">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -513,9 +513,11 @@ const Raffles = () => {
       </div>
 
       {/* Main content */}
-      <div className="space-y-3">
+      <div>
         {isLoading ? (
-          <Skeleton count={3} className="h-64 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <Skeleton count={3} className="h-64 w-full" />
+          </div>
         ) : (
           <AnimatePresence mode="popLayout">
             {raffles.length === 0 ? (
@@ -541,6 +543,7 @@ const Raffles = () => {
               </motion.div>
             ) : (
               <LayoutGroup>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {raffles.map((raffle) => {
                   const sold = raffle._count?.tickets || 0;
                   const progress = Math.round((sold / raffle.totalTickets) * 100);
@@ -691,6 +694,7 @@ const Raffles = () => {
                     </motion.div>
                   );
                 })}
+                </div>
               </LayoutGroup>
             )}
           </AnimatePresence>
@@ -712,7 +716,7 @@ const Raffles = () => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: '100%', opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', damping: 30, stiffness: 400, mass: 0.8 }}
-              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10 border border-white/20"
+              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg lg:max-w-2xl h-[92dvh] sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden relative z-10 border border-white/20"
             >
               {/* Modal Header */}
               <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 shrink-0">
@@ -760,8 +764,8 @@ const Raffles = () => {
                   >
                     {/* Step 1: Información General y Configuración Base */}
                     {wizardStep === 'info' && (
-                      <div className="space-y-5">
-                        <div className="space-y-1.5">
+                      <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
+                        <div className="space-y-1.5 lg:col-span-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                             Título del Premio <span className="text-red-400">*</span>
                           </label>
@@ -771,7 +775,7 @@ const Raffles = () => {
                             placeholder="Ej. GANA $50,000 EN EFECTIVO" />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-3 lg:col-span-2 lg:grid-cols-2">
                           <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Boleto</label>
                             <div className="relative">
@@ -789,7 +793,7 @@ const Raffles = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5 min-w-0">
+                        <div className="space-y-1.5 min-w-0 lg:col-span-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha del Sorteo</label>
                           <div className="relative min-w-0 overflow-hidden">
                             <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
@@ -799,7 +803,7 @@ const Raffles = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 lg:col-span-1">
                           <div className="flex items-center justify-between ml-1">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                               Oportunidades por Boleto
@@ -820,14 +824,14 @@ const Raffles = () => {
                           </p>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 lg:col-span-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subtítulo (opcional)</label>
                           <input type="text" value={formData.subtitle}
                             onChange={e => set('subtitle', e.target.value)}
                             className="admin-input" placeholder="Ej. BILLETIZA EXPRESS" />
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 lg:col-span-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción Breve</label>
                           <textarea value={formData.description}
                             onChange={e => set('description', e.target.value)}
@@ -836,7 +840,7 @@ const Raffles = () => {
                         </div>
 
                         {/* Modo Optimizado Toggle */}
-                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between gap-4">
+                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center justify-between gap-4 lg:col-span-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-0.5">
                               <Sparkles size={14} className="text-blue-500 fill-blue-500" />
@@ -863,7 +867,7 @@ const Raffles = () => {
 
                     {/* Step 2: Medios y Video */}
                     {wizardStep === 'media' && (
-                      <div className="space-y-5">
+                      <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
                         <ImageField
                           label="Imagen Principal (Requerida)"
                           value={formData.prizeImage}
@@ -873,7 +877,7 @@ const Raffles = () => {
                           required
                         />
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 lg:col-span-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Video de Facebook/YouTube (opcional)</label>
                           <div className="relative">
                             <Video size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
@@ -883,7 +887,7 @@ const Raffles = () => {
                           </div>
                         </div>
 
-                        <div className="border-t border-slate-100 pt-5">
+                        <div className="border-t border-slate-100 pt-5 lg:col-span-2 lg:border-t-0 lg:pt-0">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Galería Auxiliar</p>
                           <div className="grid grid-cols-2 gap-3">
                             <ImageField

@@ -398,7 +398,7 @@ const Users = () => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -456,9 +456,11 @@ const Users = () => {
       </div>
 
       {/* Table/List */}
-      <div className="space-y-3">
+      <div>
         {isLoading ? (
-          <Skeleton count={5} className="h-24 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Skeleton count={6} className="h-24 w-full" />
+          </div>
         ) : (
           <AnimatePresence mode="popLayout">
             {users.length === 0 ? (
@@ -476,7 +478,8 @@ const Users = () => {
                 </p>
               </motion.div>
             ) : (
-              users.map((user, i) => (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {users.map((user, i) => (
                 <motion.div
                   key={user.id}
                   layout
@@ -526,7 +529,8 @@ const Users = () => {
                     </div>
                   </div>
                 </motion.div>
-              ))
+              ))}
+              </div>
             )}
           </AnimatePresence>
         )}
