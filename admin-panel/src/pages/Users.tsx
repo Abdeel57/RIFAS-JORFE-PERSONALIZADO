@@ -248,9 +248,9 @@ const AdminsPanel = () => {
               onClick={() => setShowCreate(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col overflow-hidden"
+              className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] flex flex-col"
             >
-              <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4">
                 <h3 className="font-black text-slate-800 text-base">Nuevo administrador</h3>
                 <div className="space-y-3">
                   {[
