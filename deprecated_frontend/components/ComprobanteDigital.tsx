@@ -66,31 +66,85 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
 
+    // Toast notification for feedback
+    const toastId = 'pdf-download';
+    if (typeof window !== 'undefined' && (window as any).toast) {
+      (window as any).toast.loading('Generando tu boleto digital...', { id: toastId });
+    }
+
     try {
-      // Import dynamicamente para evitar problemas de carga
+      // Dynamic imports to optimize bundle size
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
       const element = printRef.current;
+
+      // Force images to load before capturing
+      const images = Array.from(element.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
+
+      // Small delay to ensure layout is stable
+      await new Promise(r => setTimeout(r, 100));
+
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2, // High quality
         useCORS: true,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        allowTaint: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [canvas.width / 2, canvas.height / 2]
+        format: [canvas.width / 2, canvas.height / 2],
+        hotfixes: ['px_scaling']
       });
 
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`boleto-${purchaseId.slice(0, 8)}.pdf`);
+      const fileName = `boleto-${purchaseId.slice(0, 8)}.pdf`;
+
+      // Try Web Share API if available (better for mobile users to save to files/whatsapp)
+      if (navigator.share && navigator.canShare) {
+        try {
+          const pdfBlob = pdf.output('blob');
+          const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `Boleto ${brand.siteName}`,
+              text: `Aquí tienes mi boleto para ${raffle?.title || brand.siteName}`
+            });
+            if ((window as any).toast) (window as any).toast.success('¡Boleto compartido!', { id: toastId });
+            return;
+          }
+        } catch (shareError) {
+          console.warn('Web Share failed, falling back to direct download:', shareError);
+        }
+      }
+
+      // Standard download fallback
+      pdf.save(fileName);
+
+      if (typeof window !== 'undefined' && (window as any).toast) {
+        (window as any).toast.success('Descarga iniciada exitosamente', { id: toastId });
+      }
     } catch (error) {
       console.error('Error al generar PDF:', error);
-      // Fallback a impresión normal si falla la generación del PDF
+      if (typeof window !== 'undefined' && (window as any).toast) {
+        (window as any).toast.error('Error al generar PDF. Abriendo ventana de impresión...', { id: toastId });
+      }
+      // Ultimate fallback: Browser print
       window.print();
     }
   };
