@@ -63,8 +63,36 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
     }
   };
 
-  const handleDownloadPdf = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    if (!printRef.current) return;
+
+    try {
+      // Import dynamicamente para evitar problemas de carga
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const element = printRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`boleto-${purchaseId.slice(0, 8)}.pdf`);
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      // Fallback a impresión normal si falla la generación del PDF
+      window.print();
+    }
   };
 
   if (loading) {
@@ -293,8 +321,10 @@ const ComprobanteDigital: React.FC<ComprobanteDigitalProps> = ({ purchaseId, onC
             className="flex-[2] min-h-[56px] text-white rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 shadow-xl hover:brightness-110 active:scale-95 group"
             style={{ backgroundColor: brand.primaryColor }}
           >
-            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            <span className="text-[10px] uppercase tracking-widest">Imprimir Boleto</span>
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span className="text-[10px] uppercase tracking-widest">Descargar Boleto</span>
           </button>
         </div>
       </div>
