@@ -1,47 +1,45 @@
 #!/bin/sh
-set -e
+# startup.sh — Railway deployment entry point
+# Ejecuta: fix-schema → migrate deploy → seed → node
 
-echo "=== STARTUP: begin ==="
-echo "NODE_ENV=${NODE_ENV:-}"
-echo "PORT=${PORT:-}"
+echo "=== STARTUP BEGIN ==="
+echo "NODE_ENV=${NODE_ENV:-unset}"
+echo "PORT=${PORT:-unset}"
 
 if [ -n "${DATABASE_URL:-}" ]; then
-  echo "DATABASE_URL_SET=true"
+  echo "DATABASE_URL=SET"
 else
-  echo "DATABASE_URL_SET=false"
+  echo "DATABASE_URL=NOT SET ⚠️"
 fi
 
-if [ -n "${JWT_SECRET:-}" ]; then
-  echo "JWT_SECRET_SET=true"
+# ─── PASO 1: Reparar esquema directamente (bypassa el estado de Prisma) ─────
+echo ""
+echo "=== [1/4] fix-schema: aplicando columnas faltantes ==="
+if node dist/scripts/fix-schema.js; then
+  echo "=== fix-schema: OK ==="
 else
-  echo "JWT_SECRET_SET=false"
+  echo "=== fix-schema: FAILED (continuando de todas formas) ==="
 fi
 
-# Paso 1: Limpiar migraciones fallidas/bloqueadas antes de intentar deploy
-echo "=== STARTUP: resolving stuck migrations ==="
-if node dist/scripts/resolve-failed-migration.js; then
-  echo "=== STARTUP: resolve-migration ok ==="
-else
-  echo "=== STARTUP: resolve-migration failed (continuing anyway) ==="
-fi
-
-# Paso 2: Aplicar migraciones pendientes
-echo "=== STARTUP: migrate deploy ==="
+# ─── PASO 2: Aplicar migraciones pendientes con Prisma ── ───────────────────
+echo ""
+echo "=== [2/4] prisma migrate deploy ==="
 if npx prisma migrate deploy; then
-  echo "=== STARTUP: migrate ok ==="
+  echo "=== migrate deploy: OK ==="
 else
-  echo "=== STARTUP: migrate deploy FAILED ==="
-  echo "=== Check logs above for details ==="
-  # Continuar de todas formas para que la app arranque
+  echo "=== migrate deploy: FAILED (posiblemente ya sincronizado por fix-schema) ==="
 fi
 
-# Paso 3: Seed del admin (idempotente)
-echo "=== STARTUP: seeding admin ==="
+# ─── PASO 3: Seed del admin (idempotente) ────────────────────────────────────
+echo ""
+echo "=== [3/4] seed ==="
 if node dist/scripts/seed.js; then
-  echo "=== STARTUP: seed ok ==="
+  echo "=== seed: OK ==="
 else
-  echo "=== STARTUP: seed failed (revisa logs arriba) - continuando ==="
+  echo "=== seed: FAILED (continuando) ==="
 fi
 
-echo "=== STARTUP: launching node ==="
+# ─── PASO 4: Arrancar servidor ───────────────────────────────────────────────
+echo ""
+echo "=== [4/4] launching node dist/index.js ==="
 exec node dist/index.js
