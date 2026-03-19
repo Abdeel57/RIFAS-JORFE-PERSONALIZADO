@@ -502,7 +502,7 @@ const Raffles = () => {
             {isLoading ? 'Cargando...' : raffles.length === 0 ? 'Sin rifas aún' : `${raffles.length} rifa${raffles.length !== 1 ? 's' : ''} registrada${raffles.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        {admin?.planType !== 'por_rifa' && (
+        {admin?.planType !== 'por_rifa' && admin?.role !== 'vendedor' && (
           <button onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-3 min-h-[44px] bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white font-black rounded-2xl text-sm transition-all shadow-md shadow-blue-200">
             <Plus size={18} strokeWidth={2.5} />
@@ -534,7 +534,7 @@ const Raffles = () => {
                   <p className="font-black text-slate-700 text-lg">Sin rifas aún</p>
                   <p className="text-sm text-slate-400 mt-1">Crea tu primera rifa para comenzar</p>
                 </div>
-                {admin?.planType !== 'por_rifa' && (
+                {admin?.planType !== 'por_rifa' && admin?.role !== 'vendedor' && (
                   <button onClick={() => handleOpenModal()}
                     className="btn-primary flex items-center gap-2 px-6">
                     <Plus size={16} /> Crear primera rifa
@@ -544,156 +544,162 @@ const Raffles = () => {
             ) : (
               <LayoutGroup>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {raffles.map((raffle) => {
-                  const sold = raffle._count?.tickets || 0;
-                  const progress = Math.round((sold / raffle.totalTickets) * 100);
-                  const isActive = raffle.status === 'active';
-                  const revenue = sold * raffle.ticketPrice;
-                  return (
-                    <motion.div
-                      key={raffle.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 1 }}
-                      className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
-                    >
-                      {/* Image header */}
-                      {raffle.prizeImage && (
-                        <div className="relative h-32 bg-slate-100 overflow-hidden">
-                          <img src={raffle.prizeImage} alt={raffle.title}
-                            className="w-full h-full object-cover"
-                            onError={e => { e.currentTarget.parentElement!.style.display = 'none'; }} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-500 text-white border-emerald-400' :
-                            raffle.status === 'draft' ? 'bg-slate-900/80 text-white border-white/20 backdrop-blur-md' :
-                              'bg-slate-700 text-slate-200 border-slate-600'
-                            }`}>
-                            {raffle.status === 'active' ? '● Activa' :
-                              raffle.status === 'draft' ? '✎ Borrador' :
-                                '○ Completada'}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-black text-slate-800 text-base leading-tight truncate">{raffle.title}</p>
-                            {raffle.subtitle && <p className="text-xs text-slate-400 mt-0.5 truncate">{raffle.subtitle}</p>}
-                          </div>
-                          {!raffle.prizeImage && (
-                            <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                              raffle.status === 'draft' ? 'bg-slate-100 text-slate-900 border-slate-200' :
-                                'bg-slate-100 text-slate-500 border-slate-200'
+                  {raffles.map((raffle) => {
+                    const sold = raffle._count?.tickets || 0;
+                    const progress = Math.round((sold / raffle.totalTickets) * 100);
+                    const isActive = raffle.status === 'active';
+                    const revenue = sold * raffle.ticketPrice;
+                    return (
+                      <motion.div
+                        key={raffle.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 1 }}
+                        className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+                      >
+                        {/* Image header */}
+                        {raffle.prizeImage && (
+                          <div className="relative h-32 bg-slate-100 overflow-hidden">
+                            <img src={raffle.prizeImage} alt={raffle.title}
+                              className="w-full h-full object-cover"
+                              onError={e => { e.currentTarget.parentElement!.style.display = 'none'; }} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-500 text-white border-emerald-400' :
+                              raffle.status === 'draft' ? 'bg-slate-900/80 text-white border-white/20 backdrop-blur-md' :
+                                'bg-slate-700 text-slate-200 border-slate-600'
                               }`}>
-                              {raffle.status === 'active' ? 'Activa' :
-                                raffle.status === 'draft' ? 'Borrador' :
-                                  'Completada'}
+                              {raffle.status === 'active' ? '● Activa' :
+                                raffle.status === 'draft' ? '✎ Borrador' :
+                                  '○ Completada'}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
 
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { label: 'Precio', value: `$${raffle.ticketPrice}` },
-                            { label: 'Boletos', value: `${sold.toLocaleString()}/${raffle.totalTickets.toLocaleString()}` },
-                            { label: 'Recaudado', value: `$${revenue.toLocaleString()}` },
-                          ].map(({ label, value }) => (
-                            <div key={label} className="bg-slate-50 rounded-xl px-2.5 py-2 text-center">
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-                              <p className="text-xs font-black text-slate-700 mt-0.5 truncate">{value}</p>
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-black text-slate-800 text-base leading-tight truncate">{raffle.title}</p>
+                              {raffle.subtitle && <p className="text-xs text-slate-400 mt-0.5 truncate">{raffle.subtitle}</p>}
                             </div>
-                          ))}
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                            <span>{progress}% vendido</span>
-                            <span>Sorteo: {new Date(raffle.drawDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            {!raffle.prizeImage && (
+                              <span className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${raffle.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                raffle.status === 'draft' ? 'bg-slate-100 text-slate-900 border-slate-200' :
+                                  'bg-slate-100 text-slate-500 border-slate-200'
+                                }`}>
+                                {raffle.status === 'active' ? 'Activa' :
+                                  raffle.status === 'draft' ? 'Borrador' :
+                                    'Completada'}
+                              </span>
+                            )}
                           </div>
-                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min(progress, 100)}%` }}
-                              transition={{ duration: 1, ease: 'easeOut' }}
-                              className={`h-full rounded-full ${progress >= 80 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                            />
+
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { label: 'Precio', value: `$${raffle.ticketPrice}` },
+                              { label: 'Boletos', value: `${sold.toLocaleString()}/${raffle.totalTickets.toLocaleString()}` },
+                              { label: 'Recaudado', value: `$${revenue.toLocaleString()}` },
+                            ].map(({ label, value }) => (
+                              <div key={label} className="bg-slate-50 rounded-xl px-2.5 py-2 text-center">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+                                <p className="text-xs font-black text-slate-700 mt-0.5 truncate">{value}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                              <span>{progress}% vendido</span>
+                              <span>Sorteo: {new Date(raffle.drawDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(progress, 100)}%` }}
+                                transition={{ duration: 1, ease: 'easeOut' }}
+                                className={`h-full rounded-full ${progress >= 80 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-1 relative">
+                            {admin?.role !== 'vendedor' && (
+                              <button onClick={() => handleOpenModal(raffle)}
+                                className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-[#2563EB] rounded-xl text-sm font-bold transition-all">
+                                <Pencil size={14} /> Editar
+                              </button>
+                            )}
+
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === raffle.id ? null : raffle.id);
+                                }}
+                                className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-600 rounded-xl text-sm font-bold transition-all"
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+
+                              <AnimatePresence>
+                                {openDropdown === raffle.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 overflow-hidden"
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        setViewingTicketsRaffle(raffle);
+                                        loadTickets(raffle.id);
+                                      }}
+                                      className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                                    >
+                                      <Ticket size={16} className="text-blue-500" /> Ver boletos
+                                    </button>
+                                    {admin?.role !== 'vendedor' && (
+                                      <>
+                                        <button
+                                          onClick={() => {
+                                            setImportingRaffle(raffle);
+                                            setImportTab('manual');
+                                          }}
+                                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                                        >
+                                          <FileSpreadsheet size={16} className="text-emerald-500" /> Importar boletos
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setWinnerModalRaffle(raffle);
+                                            loadTickets(raffle.id);
+                                          }}
+                                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                                        >
+                                          <Trophy size={16} className="text-amber-500" /> Ganador
+                                        </button>
+                                      </>
+                                    )}
+                                    {admin?.role !== 'vendedor' && (
+                                      <div className="border-t border-slate-50 mt-1 pt-1">
+                                        <button
+                                          onClick={() => handleDelete(raffle.id, raffle.title)}
+                                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                                        >
+                                          <Trash2 size={16} /> Eliminar
+                                        </button>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex gap-2 pt-1 relative">
-                          <button onClick={() => handleOpenModal(raffle)}
-                            className="flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-[#2563EB] rounded-xl text-sm font-bold transition-all">
-                            <Pencil size={14} /> Editar
-                          </button>
-
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenDropdown(openDropdown === raffle.id ? null : raffle.id);
-                              }}
-                              className="flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-600 rounded-xl text-sm font-bold transition-all"
-                            >
-                              <MoreVertical size={16} />
-                            </button>
-
-                            <AnimatePresence>
-                              {openDropdown === raffle.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                  className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-20 overflow-hidden"
-                                >
-                                  <button
-                                    onClick={() => {
-                                      setViewingTicketsRaffle(raffle);
-                                      loadTickets(raffle.id);
-                                    }}
-                                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-                                  >
-                                    <Ticket size={16} className="text-blue-500" /> Ver boletos
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setImportingRaffle(raffle);
-                                      setImportTab('manual');
-                                    }}
-                                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-                                  >
-                                    <FileSpreadsheet size={16} className="text-emerald-500" /> Importar boletos
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setWinnerModalRaffle(raffle);
-                                      loadTickets(raffle.id);
-                                    }}
-                                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-                                  >
-                                    <Trophy size={16} className="text-amber-500" /> Ganador
-                                  </button>
-                                  {admin?.role === 'admin' && (
-                                    <div className="border-t border-slate-50 mt-1 pt-1">
-                                      <button
-                                        onClick={() => handleDelete(raffle.id, raffle.title)}
-                                        className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                                      >
-                                        <Trash2 size={16} /> Eliminar
-                                      </button>
-                                    </div>
-                                  )}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </LayoutGroup>
             )}
