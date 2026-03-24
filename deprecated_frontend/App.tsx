@@ -426,12 +426,10 @@ const App: React.FC = () => {
         <div className="fixed top-[68px] md:top-[88px] left-0 right-0 z-40 animate-in slide-in-from-top-2 duration-300">
           <div style={{ background: 'linear-gradient(135deg, #f97316 0%, #ef4444 50%, #dc2626 100%)' }}>
             {/* Title row */}
-            <div className="flex items-center justify-center gap-2 px-4 py-2.5">
-              <span className="text-base md:text-lg">🎰</span>
+            <div className="flex items-center justify-center px-4 py-2.5">
               <span className="font-black text-white text-sm md:text-base tracking-wide text-center leading-tight">
                 {featuredRaffle.promoTitle}
               </span>
-              <span className="text-base md:text-lg">💰</span>
             </div>
             {/* Description row */}
             {featuredRaffle.promoDescription && (

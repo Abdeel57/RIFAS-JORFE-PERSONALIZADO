@@ -778,10 +778,8 @@ const Raffles = () => {
                 {/* Live Preview */}
                 {(promoForm.title || promoForm.description) && (
                   <div className="rounded-2xl overflow-hidden shadow-lg">
-                    <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
-                      <span className="text-lg">🎰</span>
-                      <span className="font-black text-white text-sm flex-1">{promoForm.title || 'Título de la promoción'}</span>
-                      <span className="text-lg">💰</span>
+                    <div className="px-4 py-3 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+                      <span className="font-black text-white text-sm flex-1 text-center">{promoForm.title || 'Título de la promoción'}</span>
                     </div>
                     {promoForm.description && (
                       <div className="px-4 py-3 bg-red-600">
@@ -799,11 +797,11 @@ const Raffles = () => {
                   <input
                     type="text"
                     className="admin-input font-bold"
-                    placeholder="Ej: ¡PROMOCIÓN! Boletos a 3×1"
+                    placeholder="Ej: 🎰 ¡PROMOCIÓN! Boletos a 3×1 💰"
                     value={promoForm.title}
                     onChange={e => setPromoForm(p => ({ ...p, title: e.target.value }))}
                   />
-                  <p className="text-[10px] text-slate-400 ml-1">Los emojis 🎰 💰 se añaden automáticamente a los lados</p>
+                  <p className="text-[10px] text-slate-400 ml-1">Escribe el texto exactamente como quieres que se vea, incluyendo emojis si lo deseas.</p>
                 </div>
 
                 {/* Description */}

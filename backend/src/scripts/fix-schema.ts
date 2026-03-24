@@ -66,6 +66,14 @@ const PATCHES: Array<{ description: string; sql: string }> = [
         description: 'Purchase.paymentMethodId',
         sql: `ALTER TABLE "Purchase" ADD COLUMN IF NOT EXISTS "paymentMethodId" TEXT`,
     },
+    {
+        description: 'Raffle.promoTitle',
+        sql: `ALTER TABLE "Raffle" ADD COLUMN IF NOT EXISTS "promoTitle" TEXT`,
+    },
+    {
+        description: 'Raffle.promoDescription',
+        sql: `ALTER TABLE "Raffle" ADD COLUMN IF NOT EXISTS "promoDescription" TEXT`,
+    },
 ];
 
 // ─── Migraciones que deben quedar marcadas como aplicadas ─────────────────────
@@ -80,6 +88,7 @@ const MIGRATIONS_TO_MARK_APPLIED = [
     '20260318000000_add_admin_plan_fields',
     '20260318000001_push_subscription_add_admin_role',
     '20260319000000_fix_missing_raffle_columns',
+    '20260323000000_add_promo_fields',
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
