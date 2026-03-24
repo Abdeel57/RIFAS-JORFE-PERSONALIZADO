@@ -343,88 +343,48 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
 
       {/* ── Pricing Tiers — vertical list ── */}
       {activeTiers.length > 0 && (
-        <div className="space-y-2">
-          {/* Header */}
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🏷️ Precios especiales</span>
-            <span className="text-[9px] font-bold text-slate-300">Toca para elegir</span>
-          </div>
-
-          {/* Rows */}
-          <div className="space-y-1.5">
-            {activeTiers.map((tier, i) => {
-              const saving = Math.round(tier.qty * pricePerTicket - tier.price);
-              const isActive = selectedTickets.length === tier.qty;
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleTierSelect(tier.qty)}
+        <div className="space-y-1.5">
+          {activeTiers.map((tier, i) => {
+            const saving = Math.round(tier.qty * pricePerTicket - tier.price);
+            const isActive = selectedTickets.length === tier.qty;
+            return (
+              <button
+                key={i}
+                onClick={() => handleTierSelect(tier.qty)}
+                style={{
+                  background: isActive
+                    ? 'color-mix(in srgb, var(--brand-secondary) 10%, white)'
+                    : '#f8fafc',
+                  border: isActive ? '1.5px solid var(--brand-secondary)' : '1.5px solid #e2e8f0',
+                  transition: 'all 0.18s',
+                  borderRadius: '1rem',
+                }}
+                className="w-full flex flex-col items-center justify-center px-4 py-2.5 active:scale-[0.98]"
+              >
+                <span
+                  className="font-black uppercase tracking-widest leading-tight"
                   style={{
-                    position: 'relative',
-                    overflow: 'hidden',
-                    background: isActive
-                      ? 'color-mix(in srgb, var(--brand-secondary) 8%, white)'
-                      : '#f8fafc',
-                    border: isActive ? '1.5px solid var(--brand-secondary)' : '1.5px solid #e2e8f0',
-                    transition: 'all 0.18s',
-                    borderRadius: '1rem',
+                    fontSize: 'clamp(11px, 3.5vw, 13px)',
+                    letterSpacing: '0.06em',
+                    color: isActive ? 'var(--brand-secondary)' : '#334155',
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 active:scale-[0.98]"
                 >
-                  {/* Left accent bar */}
-                  <div
-                    style={{
-                      width: 3,
-                      alignSelf: 'stretch',
-                      borderRadius: 99,
-                      background: isActive ? 'var(--brand-secondary)' : '#e2e8f0',
-                      flexShrink: 0,
-                      transition: 'background 0.18s',
-                    }}
-                  />
-
-                  {/* Center: label + saving stacked */}
-                  <div className="flex-1 flex flex-col items-center gap-0.5 text-center">
-                    <span
-                      className="font-black tracking-wide leading-tight"
-                      style={{
-                        fontSize: 'clamp(12px, 3.8vw, 14px)',
-                        letterSpacing: '0.02em',
-                        color: isActive ? 'var(--brand-secondary)' : '#334155',
-                      }}
-                    >
-                      {tier.qty} {tier.qty === 1 ? 'boleto' : 'boletos'} por{' '}
-                      <span style={{ color: 'var(--brand-secondary)', fontWeight: 900 }}>
-                        ${tier.price.toLocaleString()}
-                      </span>
-                    </span>
-                    {saving > 0 && (
-                      <span
-                        className="text-[10px] font-bold leading-none"
-                        style={{ color: '#16a34a' }}
-                      >
-                        Ahorras ${saving}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Right icon */}
-                  {isActive ? (
-                    <span
-                      className="text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: 'var(--brand-secondary)', color: '#fff' }}
-                    >
-                      ✓
-                    </span>
-                  ) : (
-                    <svg style={{ color: '#cbd5e1', flexShrink: 0 }} className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  {tier.qty} POR{' '}
+                  <span style={{ color: 'var(--brand-secondary)' }}>
+                    ${tier.price.toLocaleString()}
+                  </span>
+                </span>
+                {saving > 0 && (
+                  <span
+                    className="text-[10px] font-semibold leading-none mt-0.5"
+                    style={{ color: '#16a34a' }}
+                  >
+                    Ahorras ${saving}
+                  </span>
+                )}
+              </button>
+            );
+          })}
 
           {/* Divider before ticket grid */}
           <div className="border-t border-slate-100 pt-2" />
