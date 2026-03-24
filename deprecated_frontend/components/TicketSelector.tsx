@@ -369,7 +369,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                     transition: 'all 0.18s',
                     borderRadius: '1rem',
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 active:scale-[0.98] text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 active:scale-[0.98]"
                 >
                   {/* Left accent bar */}
                   <div
@@ -377,55 +377,50 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                       width: 3,
                       alignSelf: 'stretch',
                       borderRadius: 99,
-                      background: isActive
-                        ? 'var(--brand-secondary)'
-                        : '#e2e8f0',
+                      background: isActive ? 'var(--brand-secondary)' : '#e2e8f0',
                       flexShrink: 0,
                       transition: 'background 0.18s',
                     }}
                   />
 
-                  {/* Label */}
-                  <span
-                    className="flex-1 font-black leading-none"
-                    style={{
-                      fontSize: 'clamp(12px, 3.8vw, 14px)',
-                      color: isActive ? 'var(--brand-secondary)' : '#334155',
-                    }}
-                  >
-                    {tier.qty} {tier.qty === 1 ? 'boleto' : 'boletos'} por{' '}
-                    <span style={{ color: 'var(--brand-secondary)' }}>
-                      ${tier.price.toLocaleString()}
+                  {/* Center: label + saving stacked */}
+                  <div className="flex-1 flex flex-col items-center gap-0.5 text-center">
+                    <span
+                      className="font-black tracking-wide leading-tight"
+                      style={{
+                        fontSize: 'clamp(12px, 3.8vw, 14px)',
+                        letterSpacing: '0.02em',
+                        color: isActive ? 'var(--brand-secondary)' : '#334155',
+                      }}
+                    >
+                      {tier.qty} {tier.qty === 1 ? 'boleto' : 'boletos'} por{' '}
+                      <span style={{ color: 'var(--brand-secondary)', fontWeight: 900 }}>
+                        ${tier.price.toLocaleString()}
+                      </span>
                     </span>
-                  </span>
-
-                  {/* Right side badges */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {saving > 0 && (
                       <span
-                        className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{
-                          background: isActive ? 'rgba(22,163,74,0.12)' : 'rgba(22,163,74,0.08)',
-                          color: '#16a34a',
-                          border: '1px solid rgba(22,163,74,0.15)',
-                        }}
+                        className="text-[10px] font-bold leading-none"
+                        style={{ color: '#16a34a' }}
                       >
-                        −${saving}
+                        Ahorras ${saving}
                       </span>
-                    )}
-                    {isActive ? (
-                      <span
-                        className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{ background: 'var(--brand-secondary)', color: '#fff' }}
-                      >
-                        ✓
-                      </span>
-                    ) : (
-                      <svg style={{ color: '#cbd5e1' }} className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
-                      </svg>
                     )}
                   </div>
+
+                  {/* Right icon */}
+                  {isActive ? (
+                    <span
+                      className="text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: 'var(--brand-secondary)', color: '#fff' }}
+                    >
+                      ✓
+                    </span>
+                  ) : (
+                    <svg style={{ color: '#cbd5e1', flexShrink: 0 }} className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </button>
               );
             })}
