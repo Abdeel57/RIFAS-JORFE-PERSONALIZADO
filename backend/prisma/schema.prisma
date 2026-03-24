@@ -29,6 +29,7 @@ model Raffle {
   luckyMachineNumbers Int[]   @default([5, 10, 20, 50])
   promoTitle    String?
   promoDescription String? @db.Text
+  promoTiers    Json     @default("[]")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

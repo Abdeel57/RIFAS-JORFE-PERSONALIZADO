@@ -76,6 +76,7 @@ const App: React.FC = () => {
   const [refreshTicketsAt, setRefreshTicketsAt] = useState<number>(0);
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
   const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number[]>([]);
+  const [overrideTotal, setOverrideTotal] = useState<number | undefined>(undefined);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [featuredRaffle, setFeaturedRaffle] = useState<Raffle | null>(null);
@@ -227,8 +228,9 @@ const App: React.FC = () => {
     soundService.setMute(newMute);
   };
 
-  const handleCheckout = useCallback((tickets: number[]) => {
+  const handleCheckout = useCallback((tickets: number[], effectiveTotal?: number) => {
     setSelectedTicketsToBuy(tickets);
+    setOverrideTotal(effectiveTotal);
     setIsCheckoutOpen(true);
   }, []);
 
@@ -615,6 +617,7 @@ const App: React.FC = () => {
                           refreshTrigger={refreshTicketsAt}
                           isVirtual={featuredRaffle.isVirtual}
                           luckyNumbers={featuredRaffle.luckyMachineNumbers}
+                          promoTiers={featuredRaffle.promoTiers}
                         />
                       ) : (
                         <div className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center p-20 text-center animate-pulse">
@@ -661,7 +664,7 @@ const App: React.FC = () => {
         featuredRaffle && (
           <CheckoutModal
             isOpen={isCheckoutOpen}
-            onClose={() => setIsCheckoutOpen(false)}
+            onClose={() => { setIsCheckoutOpen(false); setOverrideTotal(undefined); }}
             selectedTickets={selectedTicketsToBuy}
             raffleId={featuredRaffle.id}
             raffleTitle={featuredRaffle.title}
@@ -670,6 +673,7 @@ const App: React.FC = () => {
             logoUrl={brand.logoUrl}
             siteName={brand.siteName}
             initialSettings={rawSettings}
+            overrideTotal={overrideTotal}
           />
         )
       }

@@ -190,8 +190,9 @@ const Raffles = () => {
   const [importTab, setImportTab] = useState<'manual' | 'auto'>('manual');
   const [isImporting, setIsImporting] = useState(false);
   const [promoRaffle, setPromoRaffle] = useState<any>(null);
-  const [promoForm, setPromoForm] = useState({ title: '', description: '' });
+  const [promoForm, setPromoForm] = useState<{ title: string; description: string; tiers: { qty: number; price: number }[] }>({ title: '', description: '', tiers: [] });
   const [isSavingPromo, setIsSavingPromo] = useState(false);
+  const [tierInput, setTierInput] = useState({ qty: '', price: '' });
 
   // Reiniciar contador al buscar para mantener fluidez
   useEffect(() => {
@@ -500,6 +501,7 @@ const Raffles = () => {
       await adminService.updateRaffle(promoRaffle.id, {
         promoTitle: promoForm.title.trim() || null,
         promoDescription: promoForm.description.trim() || null,
+        promoTiers: promoForm.tiers.length > 0 ? promoForm.tiers : null,
       });
       toast.success('Promoción guardada correctamente');
       setPromoRaffle(null);
@@ -697,7 +699,9 @@ const Raffles = () => {
                                             setPromoForm({
                                               title: raffle.promoTitle || '',
                                               description: raffle.promoDescription || '',
+                                              tiers: Array.isArray(raffle.promoTiers) ? raffle.promoTiers : [],
                                             });
+                                            setTierInput({ qty: '', price: '' });
                                             setOpenDropdown(null);
                                           }}
                                           className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
@@ -810,11 +814,91 @@ const Raffles = () => {
                     Descripción / Detalles
                   </label>
                   <textarea
-                    className="admin-input resize-none h-24"
+                    className="admin-input resize-none h-20"
                     placeholder="Ej: Promoción válida hasta el martes 24 de marzo a las 6:00 PM."
                     value={promoForm.description}
                     onChange={e => setPromoForm(p => ({ ...p, description: e.target.value }))}
                   />
+                </div>
+
+                {/* ── Pricing Tiers ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precios de Paquete</label>
+                    <span className="text-[9px] text-slate-300 font-bold">Opcional</span>
+                  </div>
+
+                  {/* Add tier inputs */}
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1 space-y-0.5">
+                      <label className="text-[9px] font-bold text-slate-400 ml-1">Cantidad</label>
+                      <input
+                        type="number" min="1"
+                        className="admin-input text-sm"
+                        placeholder="Ej: 3"
+                        value={tierInput.qty}
+                        onChange={e => setTierInput(p => ({ ...p, qty: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-0.5">
+                      <label className="text-[9px] font-bold text-slate-400 ml-1">Precio total ($)</label>
+                      <input
+                        type="number" min="1"
+                        className="admin-input text-sm"
+                        placeholder="Ej: 250"
+                        value={tierInput.price}
+                        onChange={e => setTierInput(p => ({ ...p, price: e.target.value }))}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const qty = parseInt(tierInput.qty);
+                        const price = parseFloat(tierInput.price);
+                        if (!qty || !price || qty < 1 || price < 1) return;
+                        if (promoForm.tiers.some(t => t.qty === qty)) {
+                          setPromoForm(p => ({ ...p, tiers: p.tiers.map(t => t.qty === qty ? { qty, price } : t) }));
+                        } else {
+                          setPromoForm(p => ({ ...p, tiers: [...p.tiers, { qty, price }].sort((a, b) => a.qty - b.qty) }));
+                        }
+                        setTierInput({ qty: '', price: '' });
+                      }}
+                      className="h-10 px-3 bg-slate-800 text-white text-xs font-black rounded-xl hover:bg-slate-700 active:scale-95 transition-all whitespace-nowrap"
+                    >
+                      + Añadir
+                    </button>
+                  </div>
+
+                  {/* Tiers preview list (dark style like public page) */}
+                  {promoForm.tiers.length > 0 ? (
+                    <div className="rounded-2xl overflow-hidden border border-slate-800">
+                      <div
+                        style={{ background: '#111827', display: 'grid', gridTemplateColumns: `repeat(${Math.min(promoForm.tiers.length, 2)}, 1fr)` }}
+                      >
+                        {promoForm.tiers.map((tier, i) => (
+                          <div
+                            key={i}
+                            className="relative flex flex-col items-center justify-center px-3 py-2.5 group"
+                            style={{
+                              borderRight: i % 2 === 0 && promoForm.tiers.length > 1 ? '1px solid rgba(255,255,255,0.07)' : undefined,
+                              borderBottom: Math.floor(i / 2) < Math.floor((promoForm.tiers.length - 1) / 2) ? '1px solid rgba(255,255,255,0.07)' : undefined,
+                            }}
+                          >
+                            <span className="font-black text-white text-sm text-center">
+                              {tier.qty} por <span className="text-orange-400">${tier.price.toLocaleString()}</span>
+                            </span>
+                            <button
+                              onClick={() => setPromoForm(p => ({ ...p, tiers: p.tiers.filter((_, j) => j !== i) }))}
+                              className="text-[9px] font-bold text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
+                            >
+                              ✕ Quitar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-300 ml-1">Sin paquetes añadidos. Los paquetes aparecen encima de la tabla de boletos en la página pública.</p>
+                  )}
                 </div>
 
                 {/* Info box */}
@@ -829,7 +913,7 @@ const Raffles = () => {
                 <div className="flex gap-3 pt-2">
                   {(promoRaffle.promoTitle || promoRaffle.promoDescription) && (
                     <button
-                      onClick={() => setPromoForm({ title: '', description: '' })}
+                      onClick={() => setPromoForm({ title: '', description: '', tiers: [] })}
                       className="px-4 h-12 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all border border-red-100"
                     >
                       Limpiar

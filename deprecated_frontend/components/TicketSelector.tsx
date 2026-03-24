@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
+import { PromoTier } from '../types.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GAP = 8;
@@ -89,10 +90,11 @@ interface TicketSelectorProps {
   raffleId: string;
   totalTickets: number;
   pricePerTicket: number;
-  onCheckout: (tickets: number[]) => void;
+  onCheckout: (tickets: number[], effectiveTotal?: number) => void;
   refreshTrigger?: number;
   isVirtual?: boolean;
   luckyNumbers?: number[];
+  promoTiers?: PromoTier[] | null;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -103,6 +105,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   onCheckout,
   refreshTrigger,
   luckyNumbers = [5, 10, 20, 50],
+  promoTiers,
 }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -288,7 +291,46 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     }, 1200);
   };
 
-  const totalPrice = selectedTickets.length * pricePerTicket;
+  // ── Tier pricing logic ──
+  const activeTiers = useMemo(() => {
+    if (!promoTiers || promoTiers.length === 0) return [];
+    return [...promoTiers].sort((a, b) => a.qty - b.qty);
+  }, [promoTiers]);
+
+  const getEffectiveTotal = useCallback((count: number): { total: number; tier: PromoTier | null } => {
+    if (activeTiers.length === 0) return { total: count * pricePerTicket, tier: null };
+    // Find exact match first
+    const exact = activeTiers.find(t => t.qty === count);
+    if (exact) return { total: exact.price, tier: exact };
+    // Otherwise use regular price
+    return { total: count * pricePerTicket, tier: null };
+  }, [activeTiers, pricePerTicket]);
+
+  const { total: totalPrice, tier: appliedTier } = useMemo(
+    () => getEffectiveTotal(selectedTickets.length),
+    [selectedTickets.length, getEffectiveTotal]
+  );
+
+  // Quick-select a tier: pick N random available tickets
+  const handleTierSelect = useCallback((qty: number) => {
+    soundService.playSelect();
+    const available: number[] = [];
+    for (let n = 1; n <= totalTickets && available.length < qty; n++) {
+      if ((statusMap.get(n) || 'available') === 'available') available.push(n);
+    }
+    // Supplement with random picks if needed
+    if (available.length < qty) {
+      let attempts = 0;
+      while (available.length < qty && attempts < 5000) {
+        attempts++;
+        const n = Math.floor(Math.random() * totalTickets) + 1;
+        if (!available.includes(n) && (statusMap.get(n) || 'available') === 'available') available.push(n);
+      }
+    }
+    setSelectedTickets(available.slice(0, qty));
+  }, [totalTickets, statusMap]);
+
+  const regularTotal = selectedTickets.length * pricePerTicket;
 
   return (
     <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-5 md:p-8 space-y-6 relative overflow-hidden">
@@ -297,6 +339,89 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
           <div className="text-5xl animate-bounce mb-4">🎰</div>
           <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">BUSCANDO TU SUERTE...</h3>
         </div>
+      )}
+
+      {/* ── Pricing Tiers Table ── */}
+      {activeTiers.length > 0 && (
+        <>
+          <style>{`
+            @keyframes tier-shine {
+              0%   { transform: translateX(-100%) skewX(-15deg); }
+              100% { transform: translateX(250%) skewX(-15deg); }
+            }
+          `}</style>
+          <div className="rounded-2xl overflow-hidden border border-slate-900 shadow-lg">
+            {/* Header */}
+            <div
+              className="px-4 py-2.5 flex items-center justify-between"
+              style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}
+            >
+              <span className="text-white font-black text-xs uppercase tracking-widest">🏷️ Precios de Promoción</span>
+              <span className="text-slate-400 text-[10px] font-bold">Toca para seleccionar</span>
+            </div>
+
+            {/* Tiers grid */}
+            <div
+              className="grid"
+              style={{
+                background: '#111827',
+                gridTemplateColumns: `repeat(${Math.min(activeTiers.length, 2)}, 1fr)`,
+              }}
+            >
+              {activeTiers.map((tier, i) => {
+                const saving = Math.round(tier.qty * pricePerTicket - tier.price);
+                const isActive = selectedTickets.length === tier.qty;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => handleTierSelect(tier.qty)}
+                    style={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRight: i % 2 === 0 && activeTiers.length > 1 ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                      borderBottom: Math.floor(i / 2) < Math.floor((activeTiers.length - 1) / 2) ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                      background: isActive
+                        ? 'linear-gradient(135deg,#ea580c,#dc2626)'
+                        : 'transparent',
+                      transition: 'background 0.2s',
+                    }}
+                    className="px-4 py-3 text-center flex flex-col items-center gap-0.5 active:opacity-80 group"
+                  >
+                    {/* shimmer on hover */}
+                    {!isActive && (
+                      <div
+                        style={{
+                          position: 'absolute', top: 0, bottom: 0, width: '40%',
+                          background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.04),transparent)',
+                          animation: 'tier-shine 2.5s ease-in-out infinite',
+                          animationDelay: `${i * 0.4}s`,
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    )}
+                    <span
+                      className="font-black text-white leading-tight"
+                      style={{ fontSize: 'clamp(13px,4vw,16px)', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
+                    >
+                      {tier.qty} BOLETO{tier.qty !== 1 ? 'S' : ''} POR <span style={{ color: isActive ? '#fef08a' : '#fb923c' }}>${tier.price.toLocaleString()}</span>
+                    </span>
+                    {saving > 0 && (
+                      <span
+                        className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80' }}
+                      >
+                        Ahorras ${saving}
+                      </span>
+                    )}
+                    {isActive && (
+                      <span className="text-[9px] font-black text-yellow-200 uppercase tracking-widest mt-0.5">✓ Aplicado</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
       <div className="text-center">
@@ -440,11 +565,21 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total a pagar</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-slate-800 font-black text-xl tracking-tighter">${totalPrice.toLocaleString()}</span>
-                  <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-0.5 rounded-full">{selectedTickets.length} boleto(s)</span>
+                  {appliedTier && (
+                    <span className="text-green-600 text-[9px] font-black bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
+                      Promo ×{appliedTier.qty}
+                    </span>
+                  )}
+                  {!appliedTier && (
+                    <span className="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-0.5 rounded-full">{selectedTickets.length} boleto(s)</span>
+                  )}
+                  {appliedTier && regularTotal > totalPrice && (
+                    <span className="text-slate-400 line-through text-xs">${regularTotal.toLocaleString()}</span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg animate-soft-glow" onClick={e => { e.stopPropagation(); onCheckout(selectedTickets); }}>Pagar</button>
+                <button className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-2xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg animate-soft-glow" onClick={e => { e.stopPropagation(); onCheckout(selectedTickets, totalPrice); }}>Pagar</button>
                 <div className={`p-1 transition-transform duration-300 ${isTrayExpanded ? 'rotate-180 text-blue-600' : 'text-slate-300'}`}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>
                 </div>

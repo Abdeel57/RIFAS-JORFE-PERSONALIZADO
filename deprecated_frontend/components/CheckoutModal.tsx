@@ -17,6 +17,8 @@ interface CheckoutModalProps {
   raffleTitle: string;
   /** Settings cargados por el App (evita el doble fetch al abrir el modal) */
   initialSettings?: any;
+  /** Precio total ya calculado (con descuento de tier). Si se omite, se usa selectedTickets.length * pricePerTicket */
+  overrideTotal?: number;
 }
 
 // Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
@@ -46,6 +48,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   siteName,
   raffleTitle,
   initialSettings,
+  overrideTotal,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formData, setFormData] = useState({ name: '', phone: '', state: '' });
@@ -237,7 +240,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
   };
 
 
-  const total = selectedTickets.length * pricePerTicket;
+  const total = overrideTotal !== undefined ? overrideTotal : selectedTickets.length * pricePerTicket;
 
   const activePaymentMethod = useMemo(() => {
     const methods = dynamicSettings?.activePaymentMethods || [];

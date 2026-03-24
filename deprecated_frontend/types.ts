@@ -1,4 +1,9 @@
 
+export interface PromoTier {
+  qty: number;
+  price: number;
+}
+
 export interface Raffle {
   id: string;
   title: string;
@@ -18,6 +23,7 @@ export interface Raffle {
   luckyMachineNumbers: number[];
   promoTitle?: string | null;
   promoDescription?: string | null;
+  promoTiers?: PromoTier[] | null;
 }
 
 export interface Ticket {

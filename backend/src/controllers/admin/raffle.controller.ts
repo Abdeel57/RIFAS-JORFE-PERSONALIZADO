@@ -25,6 +25,7 @@ const createRaffleSchema = z.object({
   luckyMachineNumbers: z.array(z.number().int().positive()).default([5, 10, 20, 50]),
   promoTitle: z.string().optional().nullable(),
   promoDescription: z.string().optional().nullable(),
+  promoTiers: z.array(z.object({ qty: z.number().int().positive(), price: z.number().positive() })).optional().nullable(),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();
