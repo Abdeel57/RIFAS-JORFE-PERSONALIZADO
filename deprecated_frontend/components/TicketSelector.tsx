@@ -363,9 +363,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                     position: 'relative',
                     overflow: 'hidden',
                     background: isActive
-                      ? 'linear-gradient(100deg,#fff7ed 0%,#ffedd5 100%)'
+                      ? 'color-mix(in srgb, var(--brand-secondary) 8%, white)'
                       : '#f8fafc',
-                    border: isActive ? '1.5px solid #fb923c' : '1.5px solid #e2e8f0',
+                    border: isActive ? '1.5px solid var(--brand-secondary)' : '1.5px solid #e2e8f0',
                     transition: 'all 0.18s',
                     borderRadius: '1rem',
                   }}
@@ -378,7 +378,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                       alignSelf: 'stretch',
                       borderRadius: 99,
                       background: isActive
-                        ? 'linear-gradient(180deg,#ea580c,#dc2626)'
+                        ? 'var(--brand-secondary)'
                         : '#e2e8f0',
                       flexShrink: 0,
                       transition: 'background 0.18s',
@@ -390,11 +390,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                     className="flex-1 font-black leading-none"
                     style={{
                       fontSize: 'clamp(12px, 3.8vw, 14px)',
-                      color: isActive ? '#9a3412' : '#334155',
+                      color: isActive ? 'var(--brand-secondary)' : '#334155',
                     }}
                   >
                     {tier.qty} {tier.qty === 1 ? 'boleto' : 'boletos'} por{' '}
-                    <span style={{ color: isActive ? '#ea580c' : '#f97316' }}>
+                    <span style={{ color: 'var(--brand-secondary)' }}>
                       ${tier.price.toLocaleString()}
                     </span>
                   </span>
@@ -416,7 +416,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                     {isActive ? (
                       <span
                         className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
-                        style={{ background: '#ea580c', color: '#fff' }}
+                        style={{ background: 'var(--brand-secondary)', color: '#fff' }}
                       >
                         ✓
                       </span>
