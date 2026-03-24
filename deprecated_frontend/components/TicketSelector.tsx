@@ -118,8 +118,8 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [discoveryTickets, setDiscoveryTickets] = useState<number[]>([]);
   const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(false);
 
-  // Modo Descubrimiento si > 100,000 boletos
-  const isDiscoveryMode = useMemo(() => totalTickets > 100000, [totalTickets]);
+  // Modo Descubrimiento si > 25,000 boletos (umbral reducido para mejor performance móvil)
+  const isDiscoveryMode = useMemo(() => totalTickets > 25000, [totalTickets]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -168,24 +168,54 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     setTimeout(() => setIsDiscoveryLoading(false), 300);
   }, [totalTickets]);
 
-  // Load tickets
+  // Load tickets with Intersection Observer to defer loading until visible
+  const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
+
   useEffect(() => {
-    if (!raffleId) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasEnteredViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '400px' } // Empezar a cargar 400px antes de llegar
+    );
+
+    if (scrollContainerRef.current) {
+      observer.observe(scrollContainerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [raffleId]);
+
+  useEffect(() => {
+    if (!raffleId || !hasEnteredViewport) return;
     setIsLoadingTickets(true);
     const load = async () => {
       try {
-        const tickets = await apiService.getRaffleTickets(raffleId);
-        const map = new Map<number, string>(tickets.map((t: any) => [t.number, t.status]));
+        // OPTIMIZACIÓN CLAVE: Solo traemos boletos No Disponibles.
+        // Si no está en este mapa, asumimos que está disponible.
+        // Esto reduce el payload de 100k+ registros a solo unos cientos/miles.
+        const [sold, reserved] = await Promise.all([
+          apiService.getRaffleTickets(raffleId, 'sold'),
+          apiService.getRaffleTickets(raffleId, 'reserved')
+        ]);
+
+        const combined = [...sold, ...reserved];
+        const map = new Map<number, string>(combined.map((t: any) => [t.number, t.status]));
+
         setStatusMap(map);
         if (isDiscoveryMode) generateRandomDiscovery(map);
-      } catch {
+      } catch (error) {
+        console.error("Error loading tickets:", error);
         setStatusMap(new Map());
       } finally {
         setIsLoadingTickets(false);
       }
     };
     load();
-  }, [raffleId, totalTickets, refreshTrigger, isDiscoveryMode, generateRandomDiscovery]);
+  }, [raffleId, totalTickets, refreshTrigger, isDiscoveryMode, generateRandomDiscovery, hasEnteredViewport]);
 
   // ── Búsqueda Inteligente ──
   const searchResults = useMemo(() => {
@@ -311,22 +341,33 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     [selectedTickets.length, getEffectiveTotal]
   );
 
-  // Quick-select a tier: pick N random available tickets
+  // Quick-select a tier: pick N random available tickets (optimized for large raffles)
   const handleTierSelect = useCallback((qty: number) => {
     soundService.playSelect();
     const available: number[] = [];
-    for (let n = 1; n <= totalTickets && available.length < qty; n++) {
-      if ((statusMap.get(n) || 'available') === 'available') available.push(n);
-    }
-    // Supplement with random picks if needed
-    if (available.length < qty) {
-      let attempts = 0;
-      while (available.length < qty && attempts < 5000) {
-        attempts++;
-        const n = Math.floor(Math.random() * totalTickets) + 1;
-        if (!available.includes(n) && (statusMap.get(n) || 'available') === 'available') available.push(n);
+    let attempts = 0;
+    const maxTotalAttempts = 10000;
+
+    // Buscamos números al azar para que sea instantáneo incluso en rifas de 1M
+    while (available.length < qty && attempts < maxTotalAttempts) {
+      attempts++;
+      const num = Math.floor(Math.random() * totalTickets) + 1;
+      // Verificamos en el mapa parcial. Si no está en el mapa, está disponible.
+      if (!available.includes(num) && (statusMap.get(num) || 'available') === 'available') {
+        available.push(num);
       }
     }
+
+    // Fallback: si por mala suerte no encontramos suficientes al azar (muy improbable si hay stock), 
+    // hacemos una búsqueda lineal pequeña solo para completar el cupo.
+    if (available.length < qty) {
+      for (let n = 1; n <= totalTickets && available.length < qty; n++) {
+        if (!available.includes(n) && (statusMap.get(n) || 'available') === 'available') {
+          available.push(n);
+        }
+      }
+    }
+
     setSelectedTickets(available.slice(0, qty));
   }, [totalTickets, statusMap]);
 

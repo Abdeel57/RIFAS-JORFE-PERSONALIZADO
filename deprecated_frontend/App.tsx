@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { FEATURED_RAFFLE, CONTACT_INFO, FALLBACK_RAFFLE_ID } from './constants.ts';
-import TicketSelector from './components/TicketSelector.tsx';
+
+const TicketSelector = lazy(() => import('./components/TicketSelector.tsx'));
 import RaffleDetails from './components/RaffleDetails.tsx';
 import CheckoutModal from './components/CheckoutModal.tsx';
 import VerifyTickets from './components/VerifyTickets.tsx';
@@ -223,12 +224,11 @@ const App: React.FC = () => {
     loadMainContent();
   }, []);
 
-  // Postergamos la aparición de la boletera para que el scroll inicial sea fluido
+  // La boletera se carga de forma diferida (lazy) para maximizar el rendimiento inicial
   const [showTickets, setShowTickets] = useState(false);
   useEffect(() => {
     if (!isAppLoading) {
-      const timer = setTimeout(() => setShowTickets(true), 800);
-      return () => clearTimeout(timer);
+      setShowTickets(true);
     }
   }, [isAppLoading]);
 
@@ -614,23 +614,25 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="relative pt-4 overflow-hidden min-h-[400px]">
-                      {showTickets ? (
-                        <TicketSelector
-                          key={featuredRaffle.id}
-                          raffleId={featuredRaffle.id}
-                          totalTickets={featuredRaffle.totalTickets}
-                          pricePerTicket={featuredRaffle.ticketPrice}
-                          onCheckout={handleCheckout}
-                          refreshTrigger={refreshTicketsAt}
-                          isVirtual={featuredRaffle.isVirtual}
-                          luckyNumbers={featuredRaffle.luckyMachineNumbers}
-                          promoTiers={featuredRaffle.promoTiers}
-                        />
-                      ) : (
-                        <div className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center p-20 text-center animate-pulse">
-                          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-                          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Preparando boletera...</p>
-                        </div>
+                      {showTickets && (
+                        <Suspense fallback={
+                          <div className="w-full bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center p-20 text-center animate-pulse">
+                            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Preparando boletera...</p>
+                          </div>
+                        }>
+                          <TicketSelector
+                            key={featuredRaffle.id}
+                            raffleId={featuredRaffle.id}
+                            totalTickets={featuredRaffle.totalTickets}
+                            pricePerTicket={featuredRaffle.ticketPrice}
+                            onCheckout={handleCheckout}
+                            refreshTrigger={refreshTicketsAt}
+                            isVirtual={featuredRaffle.isVirtual}
+                            luckyNumbers={featuredRaffle.luckyMachineNumbers}
+                            promoTiers={featuredRaffle.promoTiers}
+                          />
+                        </Suspense>
                       )}
                     </div>
 
