@@ -413,22 +413,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       )}
 
       <div className="text-center">
-        <h2 className="text-xl font-black text-slate-800 tracking-tight">Elige tus Boletos</h2>
-        <div className="flex flex-col items-center gap-1 mt-1">
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-            {isDiscoveryMode ? 'Modo de Selección Inteligente' : 'Pulsa los números para elegir'}
-          </p>
-          {isDiscoveryMode && (
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100">
-                1M Boletos Optimizado
-              </span>
-              <span className="text-[9px] font-bold text-slate-300">
-                Libres: {totalItemsCount} disponibles
-              </span>
-            </div>
-          )}
-        </div>
+        <h2 className="text-xl font-black text-slate-800 tracking-[0.05em] uppercase">ELIGE TUS BOLETOS</h2>
       </div>
 
       <div className="flex flex-col gap-3">
