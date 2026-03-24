@@ -86,7 +86,37 @@ const App: React.FC = () => {
   // rawSettings: se pasa al CheckoutModal para evitar que haga su propio fetch (doble petición)
   const [rawSettings, setRawSettings] = useState<any>(null);
 
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
   const raffleDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Scroll listener para ocultar/mostrar el navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Umbral mínimo para evitar parpadeos en el borde superior
+      if (currentScrollY < 10) {
+        setIsNavbarVisible(true);
+        setLastScrollY(currentScrollY);
+        return;
+      }
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down y ya pasamos 100px
+        setIsNavbarVisible(false);
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setIsNavbarVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -257,7 +287,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">
       {/* ── Navbar "Liquid Glass" ────────────────────────────────── */}
-      <div className="fixed top-0 left-0 right-0 z-50 px-3 py-3 md:px-4 md:py-5 flex justify-center pointer-events-none">
+      <div
+        className="fixed top-0 left-0 right-0 z-50 px-3 py-3 md:px-4 md:py-5 flex justify-center pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        style={{
+          transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)',
+          opacity: isNavbarVisible ? 1 : 0
+        }}
+      >
         <nav
           className="pointer-events-auto relative w-full max-w-2xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
           style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', alignItems: 'center', gap: 0, paddingLeft: 6, paddingRight: 12 }}
@@ -442,9 +478,9 @@ const App: React.FC = () => {
           `}</style>
 
           <div
-            className="fixed left-0 right-0 z-40 px-3 md:px-6"
+            className="fixed left-0 right-0 z-40 px-3 md:px-6 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
             style={{
-              top: '74px',
+              top: isNavbarVisible ? '74px' : '15px',
               animation: 'promo-enter 0.4s cubic-bezier(0.34,1.35,0.64,1) both',
             }}
           >
