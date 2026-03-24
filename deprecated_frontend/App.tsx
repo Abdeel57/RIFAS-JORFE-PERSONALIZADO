@@ -3,12 +3,12 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { FEATURED_RAFFLE, CONTACT_INFO, FALLBACK_RAFFLE_ID } from './constants.ts';
 
 const TicketSelector = lazy(() => import('./components/TicketSelector.tsx'));
-import RaffleDetails from './components/RaffleDetails.tsx';
-import CheckoutModal from './components/CheckoutModal.tsx';
-import VerifyTickets from './components/VerifyTickets.tsx';
-import TermsAndConditions from './components/TermsAndConditions.tsx';
-import SupportChat from './components/SupportChat.tsx';
-import ComprobanteDigital from './components/ComprobanteDigital.tsx';
+const RaffleDetails = lazy(() => import('./components/RaffleDetails.tsx'));
+const CheckoutModal = lazy(() => import('./components/CheckoutModal.tsx'));
+const VerifyTickets = lazy(() => import('./components/VerifyTickets.tsx'));
+const TermsAndConditions = lazy(() => import('./components/TermsAndConditions.tsx'));
+const SupportChat = lazy(() => import('./components/SupportChat.tsx'));
+const ComprobanteDigital = lazy(() => import('./components/ComprobanteDigital.tsx'));
 import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
 import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
@@ -277,10 +277,16 @@ const App: React.FC = () => {
 
   if (comprobantePurchaseId) {
     return (
-      <ComprobanteDigital
-        purchaseId={comprobantePurchaseId}
-        onClose={handleCloseComprobante}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+        </div>
+      }>
+        <ComprobanteDigital
+          purchaseId={comprobantePurchaseId}
+          onClose={handleCloseComprobante}
+        />
+      </Suspense>
     );
   }
 
@@ -636,7 +642,9 @@ const App: React.FC = () => {
                       )}
                     </div>
 
-                    <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} facebookUrl={brand.facebookUrl} siteName={brand.siteName} logoUrl={brand.logoUrl} />
+                    <Suspense fallback={<div className="h-40 animate-pulse bg-slate-100 rounded-[2rem]" />}>
+                      <RaffleDetails raffle={featuredRaffle} onOpenSupport={() => setIsSupportChatOpen(true)} facebookUrl={brand.facebookUrl} siteName={brand.siteName} logoUrl={brand.logoUrl} />
+                    </Suspense>
                   </>
                 ) : (
                   <div className="text-center py-20">
@@ -659,18 +667,22 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : activeView === 'verify' ? (
-          <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <VerifyTickets />
-          </div>
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <VerifyTickets />
+            </div>
+          </Suspense>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <TermsAndConditions onBack={() => handleViewChange('raffle')} siteName={brand.siteName} />
-          </div>
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <TermsAndConditions onBack={() => handleViewChange('raffle')} siteName={brand.siteName} />
+            </div>
+          </Suspense>
         )}
       </main>
 
-      {
-        featuredRaffle && (
+      <Suspense fallback={null}>
+        {featuredRaffle && (
           <CheckoutModal
             isOpen={isCheckoutOpen}
             onClose={() => { setIsCheckoutOpen(false); setOverrideTotal(undefined); }}
@@ -684,10 +696,10 @@ const App: React.FC = () => {
             initialSettings={rawSettings}
             overrideTotal={overrideTotal}
           />
-        )
-      }
+        )}
 
-      <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
+        <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
+      </Suspense>
 
       {/* ── Badge Flotante Sorteos Seguros ── */}
       {activeView === 'raffle' && !isCheckoutOpen && !isSupportChatOpen && (
