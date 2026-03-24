@@ -24,6 +24,7 @@ export interface Raffle {
   promoTitle?: string | null;
   promoDescription?: string | null;
   promoTiers?: PromoTier[] | null;
+  showCountdown?: boolean;
 }
 
 export interface Ticket {

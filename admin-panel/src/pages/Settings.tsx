@@ -1303,6 +1303,45 @@ const Settings: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Bloque 3: Temporizador de Cuenta Regresiva */}
+                                <div className="admin-card p-6 space-y-4">
+                                    <div className="flex items-start gap-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 mb-2">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm flex-shrink-0">
+                                            <Clock size={20} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Cuenta Regresiva</p>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={activeRaffleDetail.showCountdown || false}
+                                                        onChange={(e) => {
+                                                            const val = e.target.checked;
+                                                            setRaffles(prev => prev.map(r => r.id === activeRaffleDetail.id ? { ...r, showCountdown: val } : r));
+                                                        }}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 shadow-inner"></div>
+                                                </label>
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">Muestra un reloj en vivo hasta la fecha del sorteo en la página principal.</p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const res = await api.put(`/admin/raffles/${activeRaffleDetail.id}`, { showCountdown: activeRaffleDetail.showCountdown || false });
+                                                if (res.data?.success) toast.success('Ajuste de cuenta regresiva guardado');
+                                            } catch { toast.error('Error al guardar'); }
+                                        }}
+                                        className="w-full h-11 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                                    >
+                                        Guardar Ajuste de Reloj
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

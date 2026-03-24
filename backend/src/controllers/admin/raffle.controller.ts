@@ -27,6 +27,7 @@ const createRaffleSchema = z.object({
   promoTitle: z.string().optional().nullable(),
   promoDescription: z.string().optional().nullable(),
   promoTiers: z.array(z.object({ qty: z.number().int().positive(), price: z.number().positive() })).optional().nullable(),
+  showCountdown: z.boolean().optional().default(false),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();
@@ -89,6 +90,7 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
           ...restData,
           status: data.status || 'active',
           drawDate: new Date(data.drawDate),
+          showCountdown: data.showCountdown ?? false,
           autoReleaseHours: data.autoReleaseHours || 0,
           luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
           // Prisma requires Prisma.JsonNull instead of null for Json fields

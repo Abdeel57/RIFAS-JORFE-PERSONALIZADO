@@ -78,6 +78,10 @@ const PATCHES: Array<{ description: string; sql: string }> = [
         description: 'Raffle.promoTiers',
         sql: `ALTER TABLE "Raffle" ADD COLUMN IF NOT EXISTS "promoTiers" JSONB NOT NULL DEFAULT '[]'::JSONB`,
     },
+    {
+        description: 'Raffle.showCountdown',
+        sql: `ALTER TABLE "Raffle" ADD COLUMN IF NOT EXISTS "showCountdown" BOOLEAN NOT NULL DEFAULT false`,
+    },
 ];
 
 // ─── Migraciones que deben quedar marcadas como aplicadas ─────────────────────
@@ -94,6 +98,7 @@ const MIGRATIONS_TO_MARK_APPLIED = [
     '20260319000000_fix_missing_raffle_columns',
     '20260323000000_add_promo_fields',
     '20260323000001_add_promo_tiers',
+    '20260324000000_add_show_countdown',
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

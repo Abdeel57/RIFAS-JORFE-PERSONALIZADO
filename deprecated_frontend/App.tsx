@@ -637,6 +637,8 @@ const App: React.FC = () => {
                             isVirtual={featuredRaffle.isVirtual}
                             luckyNumbers={featuredRaffle.luckyMachineNumbers}
                             promoTiers={featuredRaffle.promoTiers}
+                            showCountdown={featuredRaffle.showCountdown}
+                            drawDate={featuredRaffle.drawDate}
                           />
                         </Suspense>
                       )}

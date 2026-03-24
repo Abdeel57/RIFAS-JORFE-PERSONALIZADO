@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
 import { PromoTier } from '../types.ts';
+import CountdownTimer from './CountdownTimer.tsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GAP = 8;
@@ -95,6 +96,8 @@ interface TicketSelectorProps {
   isVirtual?: boolean;
   luckyNumbers?: number[];
   promoTiers?: PromoTier[] | null;
+  showCountdown?: boolean;
+  drawDate?: string;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -106,6 +109,8 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   refreshTrigger,
   luckyNumbers = [5, 10, 20, 50],
   promoTiers,
+  showCountdown,
+  drawDate
 }) => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -359,6 +364,13 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
           <div className="text-5xl animate-bounce mb-4">🎰</div>
           <h3 className="text-xl font-black text-blue-600 italic tracking-tighter animate-pulse">BUSCANDO TU SUERTE...</h3>
+        </div>
+      )}
+
+      {/* ── Countdown Timer ── */}
+      {showCountdown && drawDate && (
+        <div className="pb-2 border-b border-slate-50">
+          <CountdownTimer targetDate={drawDate} />
         </div>
       )}
 

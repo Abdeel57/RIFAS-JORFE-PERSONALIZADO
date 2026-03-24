@@ -30,6 +30,7 @@ model Raffle {
   promoTitle    String?
   promoDescription String? @db.Text
   promoTiers    Json     @default("[]")
+  showCountdown Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
