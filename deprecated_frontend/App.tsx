@@ -433,120 +433,91 @@ const App: React.FC = () => {
             }
             @keyframes promo-breathe {
               0%, 100% { opacity: 1; }
-              50%       { opacity: 0.87; }
-            }
-            @keyframes promo-ping {
-              0%        { transform: scale(1); opacity: 0.85; }
-              75%, 100% { transform: scale(2.4); opacity: 0; }
+              50%       { opacity: 0.9; }
             }
             @keyframes promo-enter {
-              from { opacity: 0; transform: translateY(-12px); }
-              to   { opacity: 1; transform: translateY(0); }
+              from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+              to   { opacity: 1; transform: translateY(0) scale(1); }
             }
           `}</style>
 
           <div
-            className="fixed left-0 right-0 z-40 overflow-hidden"
+            className="fixed left-0 right-0 z-40 px-3 md:px-6"
             style={{
-              top: '68px',
-              animation: 'promo-enter 0.45s cubic-bezier(0.34,1.4,0.64,1) both',
+              top: '74px',
+              animation: 'promo-enter 0.4s cubic-bezier(0.34,1.35,0.64,1) both',
             }}
           >
-            {/* ── gradient title bar ── */}
             <div
-              style={{
-                background: 'linear-gradient(100deg,#c2410c 0%,#ea580c 18%,#ef4444 52%,#dc2626 78%,#991b1b 100%)',
-                position: 'relative',
-                overflow: 'hidden',
-                animation: 'promo-breathe 3.2s ease-in-out infinite',
-              }}
+              className="overflow-hidden shadow-lg shadow-orange-900/20"
+              style={{ borderRadius: '1.25rem' }}
             >
-              {/* shimmer sweep */}
-              <div style={{
-                position: 'absolute', top: 0, bottom: 0,
-                width: '35%',
-                background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent)',
-                animation: 'promo-shimmer 2.8s ease-in-out infinite',
-                pointerEvents: 'none',
-              }} />
-
-              {/* inner top highlight line */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-                background: 'rgba(255,255,255,0.25)',
-                pointerEvents: 'none',
-              }} />
-
-              <div className="relative flex items-center justify-center gap-3 px-5 py-2.5 md:py-3">
-                {/* left live-dot */}
-                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{
-                    position: 'absolute', inset: 0,
-                    borderRadius: '50%', background: '#fcd34d',
-                    animation: 'promo-ping 1.6s ease-out infinite',
-                  }} />
-                  <span style={{
-                    display: 'block', width: 7, height: 7, borderRadius: '50%',
-                    background: '#fef08a',
-                    boxShadow: '0 0 8px 3px rgba(253,224,71,0.55)',
-                  }} />
-                </span>
-
-                {/* title */}
-                <span
-                  className="font-black text-white text-center leading-snug"
-                  style={{
-                    fontSize: 'clamp(12px, 3.8vw, 15px)',
-                    letterSpacing: '0.025em',
-                    textShadow: '0 1px 10px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.15)',
-                  }}
-                >
-                  {featuredRaffle.promoTitle}
-                </span>
-
-                {/* right live-dot (offset ping) */}
-                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{
-                    position: 'absolute', inset: 0,
-                    borderRadius: '50%', background: '#fcd34d',
-                    animation: 'promo-ping 1.6s ease-out 0.8s infinite',
-                  }} />
-                  <span style={{
-                    display: 'block', width: 7, height: 7, borderRadius: '50%',
-                    background: '#fef08a',
-                    boxShadow: '0 0 8px 3px rgba(253,224,71,0.55)',
-                  }} />
-                </span>
-              </div>
-            </div>
-
-            {/* ── frosted-glass description strip ── */}
-            {featuredRaffle.promoDescription && (
+              {/* ── gradient title bar ── */}
               <div
                 style={{
-                  background: 'rgba(120,10,10,0.55)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  borderTop: '1px solid rgba(255,100,100,0.2)',
-                  borderBottom: '1px solid rgba(0,0,0,0.15)',
+                  background: 'linear-gradient(108deg,#c2410c 0%,#ea580c 20%,#ef4444 55%,#dc2626 80%,#991b1b 100%)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: 'promo-breathe 3s ease-in-out infinite',
                 }}
-                className="px-5 py-1.5 md:py-2"
               >
-                <p
-                  className="text-white/90 text-center font-medium leading-relaxed"
-                  style={{ fontSize: 'clamp(11px, 3vw, 13px)', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
-                >
-                  {featuredRaffle.promoDescription}
-                </p>
+                {/* shimmer sweep */}
+                <div style={{
+                  position: 'absolute', top: 0, bottom: 0,
+                  width: '30%',
+                  background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)',
+                  animation: 'promo-shimmer 3s ease-in-out infinite',
+                  pointerEvents: 'none',
+                }} />
+
+                {/* top highlight */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+                  background: 'rgba(255,255,255,0.3)',
+                  pointerEvents: 'none',
+                }} />
+
+                <div className="relative flex items-center justify-center px-4 py-2 md:py-2.5">
+                  <span
+                    className="font-black text-white text-center leading-tight"
+                    style={{
+                      fontSize: 'clamp(11px, 3.5vw, 14px)',
+                      letterSpacing: '0.03em',
+                      textShadow: '0 1px 8px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    {featuredRaffle.promoTitle}
+                  </span>
+                </div>
               </div>
-            )}
+
+              {/* ── frosted description strip ── */}
+              {featuredRaffle.promoDescription && (
+                <div
+                  style={{
+                    background: 'rgba(100,10,10,0.72)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    borderTop: '1px solid rgba(255,120,100,0.15)',
+                  }}
+                  className="px-4 py-1.5 md:py-2"
+                >
+                  <p
+                    className="text-white/90 text-center font-semibold leading-snug"
+                    style={{ fontSize: 'clamp(10px, 2.8vw, 13px)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+                  >
+                    {featuredRaffle.promoDescription}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
       {/* Dynamic spacer: taller when promo is shown */}
       <div className={activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen
-        ? [featuredRaffle.promoDescription ? 'h-40 md:h-52' : 'h-32 md:h-40'].join(' ')
+        ? [featuredRaffle.promoDescription ? 'h-36 md:h-44' : 'h-28 md:h-36'].join(' ')
         : 'h-20 md:h-28'
       } />
 

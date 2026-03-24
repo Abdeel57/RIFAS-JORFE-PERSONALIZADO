@@ -341,87 +341,99 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         </div>
       )}
 
-      {/* ── Pricing Tiers Table ── */}
+      {/* ── Pricing Tiers — vertical list ── */}
       {activeTiers.length > 0 && (
-        <>
-          <style>{`
-            @keyframes tier-shine {
-              0%   { transform: translateX(-100%) skewX(-15deg); }
-              100% { transform: translateX(250%) skewX(-15deg); }
-            }
-          `}</style>
-          <div className="rounded-2xl overflow-hidden border border-slate-900 shadow-lg">
-            {/* Header */}
-            <div
-              className="px-4 py-2.5 flex items-center justify-between"
-              style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}
-            >
-              <span className="text-white font-black text-xs uppercase tracking-widest">🏷️ Precios de Promoción</span>
-              <span className="text-slate-400 text-[10px] font-bold">Toca para seleccionar</span>
-            </div>
+        <div className="space-y-2">
+          {/* Header */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🏷️ Precios especiales</span>
+            <span className="text-[9px] font-bold text-slate-300">Toca para elegir</span>
+          </div>
 
-            {/* Tiers grid */}
-            <div
-              className="grid"
-              style={{
-                background: '#111827',
-                gridTemplateColumns: `repeat(${Math.min(activeTiers.length, 2)}, 1fr)`,
-              }}
-            >
-              {activeTiers.map((tier, i) => {
-                const saving = Math.round(tier.qty * pricePerTicket - tier.price);
-                const isActive = selectedTickets.length === tier.qty;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleTierSelect(tier.qty)}
+          {/* Rows */}
+          <div className="space-y-1.5">
+            {activeTiers.map((tier, i) => {
+              const saving = Math.round(tier.qty * pricePerTicket - tier.price);
+              const isActive = selectedTickets.length === tier.qty;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleTierSelect(tier.qty)}
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: isActive
+                      ? 'linear-gradient(100deg,#fff7ed 0%,#ffedd5 100%)'
+                      : '#f8fafc',
+                    border: isActive ? '1.5px solid #fb923c' : '1.5px solid #e2e8f0',
+                    transition: 'all 0.18s',
+                    borderRadius: '1rem',
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 active:scale-[0.98] text-left"
+                >
+                  {/* Left accent bar */}
+                  <div
                     style={{
-                      position: 'relative',
-                      overflow: 'hidden',
-                      borderRight: i % 2 === 0 && activeTiers.length > 1 ? '1px solid rgba(255,255,255,0.06)' : undefined,
-                      borderBottom: Math.floor(i / 2) < Math.floor((activeTiers.length - 1) / 2) ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                      width: 3,
+                      alignSelf: 'stretch',
+                      borderRadius: 99,
                       background: isActive
-                        ? 'linear-gradient(135deg,#ea580c,#dc2626)'
-                        : 'transparent',
-                      transition: 'background 0.2s',
+                        ? 'linear-gradient(180deg,#ea580c,#dc2626)'
+                        : '#e2e8f0',
+                      flexShrink: 0,
+                      transition: 'background 0.18s',
                     }}
-                    className="px-4 py-3 text-center flex flex-col items-center gap-0.5 active:opacity-80 group"
+                  />
+
+                  {/* Label */}
+                  <span
+                    className="flex-1 font-black leading-none"
+                    style={{
+                      fontSize: 'clamp(12px, 3.8vw, 14px)',
+                      color: isActive ? '#9a3412' : '#334155',
+                    }}
                   >
-                    {/* shimmer on hover */}
-                    {!isActive && (
-                      <div
-                        style={{
-                          position: 'absolute', top: 0, bottom: 0, width: '40%',
-                          background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.04),transparent)',
-                          animation: 'tier-shine 2.5s ease-in-out infinite',
-                          animationDelay: `${i * 0.4}s`,
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    )}
-                    <span
-                      className="font-black text-white leading-tight"
-                      style={{ fontSize: 'clamp(13px,4vw,16px)', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
-                    >
-                      {tier.qty} BOLETO{tier.qty !== 1 ? 'S' : ''} POR <span style={{ color: isActive ? '#fef08a' : '#fb923c' }}>${tier.price.toLocaleString()}</span>
+                    {tier.qty} {tier.qty === 1 ? 'boleto' : 'boletos'} por{' '}
+                    <span style={{ color: isActive ? '#ea580c' : '#f97316' }}>
+                      ${tier.price.toLocaleString()}
                     </span>
+                  </span>
+
+                  {/* Right side badges */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {saving > 0 && (
                       <span
-                        className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                        style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80' }}
+                        className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                        style={{
+                          background: isActive ? 'rgba(22,163,74,0.12)' : 'rgba(22,163,74,0.08)',
+                          color: '#16a34a',
+                          border: '1px solid rgba(22,163,74,0.15)',
+                        }}
                       >
-                        Ahorras ${saving}
+                        −${saving}
                       </span>
                     )}
-                    {isActive && (
-                      <span className="text-[9px] font-black text-yellow-200 uppercase tracking-widest mt-0.5">✓ Aplicado</span>
+                    {isActive ? (
+                      <span
+                        className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full"
+                        style={{ background: '#ea580c', color: '#fff' }}
+                      >
+                        ✓
+                      </span>
+                    ) : (
+                      <svg style={{ color: '#cbd5e1' }} className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+                      </svg>
                     )}
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </>
+
+          {/* Divider before ticket grid */}
+          <div className="border-t border-slate-100 pt-2" />
+        </div>
       )}
 
       <div className="text-center">
