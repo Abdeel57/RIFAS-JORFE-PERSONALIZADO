@@ -168,29 +168,9 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     setTimeout(() => setIsDiscoveryLoading(false), 300);
   }, [totalTickets]);
 
-  // Load tickets with Intersection Observer to defer loading until visible
-  const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
-
+  // Load tickets
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHasEnteredViewport(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '400px' } // Empezar a cargar 400px antes de llegar
-    );
-
-    if (scrollContainerRef.current) {
-      observer.observe(scrollContainerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [raffleId]);
-
-  useEffect(() => {
-    if (!raffleId || !hasEnteredViewport) return;
+    if (!raffleId) return;
     setIsLoadingTickets(true);
     const load = async () => {
       try {
@@ -215,7 +195,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       }
     };
     load();
-  }, [raffleId, totalTickets, refreshTrigger, isDiscoveryMode, generateRandomDiscovery, hasEnteredViewport]);
+  }, [raffleId, totalTickets, refreshTrigger, isDiscoveryMode, generateRandomDiscovery]);
 
   // ── Búsqueda Inteligente ──
   const searchResults = useMemo(() => {
