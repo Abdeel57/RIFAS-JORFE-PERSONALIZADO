@@ -421,8 +421,35 @@ const App: React.FC = () => {
         </nav>
       </div>
 
+      {/* ── PROMO BANNER (sticky, below navbar) ── */}
+      {activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen && (
+        <div className="fixed top-[68px] md:top-[88px] left-0 right-0 z-40 animate-in slide-in-from-top-2 duration-300">
+          <div style={{ background: 'linear-gradient(135deg, #f97316 0%, #ef4444 50%, #dc2626 100%)' }}>
+            {/* Title row */}
+            <div className="flex items-center justify-center gap-2 px-4 py-2.5">
+              <span className="text-base md:text-lg">🎰</span>
+              <span className="font-black text-white text-sm md:text-base tracking-wide text-center leading-tight">
+                {featuredRaffle.promoTitle}
+              </span>
+              <span className="text-base md:text-lg">💰</span>
+            </div>
+            {/* Description row */}
+            {featuredRaffle.promoDescription && (
+              <div className="bg-red-700/60 px-4 py-2">
+                <p className="text-white/95 text-xs md:text-sm text-center font-medium leading-relaxed">
+                  {featuredRaffle.promoDescription}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-      <div className="h-20 md:h-28"></div>
+      {/* Dynamic spacer: taller when promo is shown */}
+      <div className={activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen
+        ? [featuredRaffle.promoDescription ? 'h-40 md:h-52' : 'h-32 md:h-40'].join(' ')
+        : 'h-20 md:h-28'
+      } />
 
 
       <main className="flex-grow max-w-7xl mx-auto px-4 py-6 md:py-10 w-full">

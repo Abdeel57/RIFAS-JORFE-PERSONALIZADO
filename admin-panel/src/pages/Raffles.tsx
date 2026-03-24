@@ -11,7 +11,7 @@ import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
   MoreVertical, Trophy, Sliders, FileSpreadsheet, Download, RefreshCw, Save,
-  Dice5, UserCheck, Play, RotateCcw, AlertCircle, Sparkles
+  Dice5, UserCheck, Play, RotateCcw, AlertCircle, Sparkles, Megaphone
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -189,6 +189,9 @@ const Raffles = () => {
   const [importingRaffle, setImportingRaffle] = useState<any>(null);
   const [importTab, setImportTab] = useState<'manual' | 'auto'>('manual');
   const [isImporting, setIsImporting] = useState(false);
+  const [promoRaffle, setPromoRaffle] = useState<any>(null);
+  const [promoForm, setPromoForm] = useState({ title: '', description: '' });
+  const [isSavingPromo, setIsSavingPromo] = useState(false);
 
   // Reiniciar contador al buscar para mantener fluidez
   useEffect(() => {
@@ -254,7 +257,7 @@ const Raffles = () => {
 
   // Lock scroll cuando cualquier modal está abierto — tarjeta estática, fondo fijo
   const scrollLockRef = useRef<number>(0);
-  const anyModalOpen = isModalOpen || !!viewingTicketsRaffle || !!winnerTarget || !!winnerModalRaffle || !!importingRaffle;
+  const anyModalOpen = isModalOpen || !!viewingTicketsRaffle || !!winnerTarget || !!winnerModalRaffle || !!importingRaffle || !!promoRaffle;
   useEffect(() => {
     if (anyModalOpen) {
       scrollLockRef.current = window.scrollY;
@@ -490,6 +493,24 @@ const Raffles = () => {
     toast.success('Excel generado correctamente');
   };
 
+  const handleSavePromo = async () => {
+    if (!promoRaffle) return;
+    setIsSavingPromo(true);
+    try {
+      await adminService.updateRaffle(promoRaffle.id, {
+        promoTitle: promoForm.title.trim() || null,
+        promoDescription: promoForm.description.trim() || null,
+      });
+      toast.success('Promoción guardada correctamente');
+      setPromoRaffle(null);
+      loadRaffles();
+    } catch {
+      toast.error('Error al guardar la promoción');
+    } finally {
+      setIsSavingPromo(false);
+    }
+  };
+
   // ─── Main view ─────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4 lg:space-y-6">
@@ -672,6 +693,19 @@ const Raffles = () => {
                                         </button>
                                         <button
                                           onClick={() => {
+                                            setPromoRaffle(raffle);
+                                            setPromoForm({
+                                              title: raffle.promoTitle || '',
+                                              description: raffle.promoDescription || '',
+                                            });
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                                        >
+                                          <Megaphone size={16} className="text-orange-500" /> Promoción
+                                        </button>
+                                        <button
+                                          onClick={() => {
                                             setWinnerModalRaffle(raffle);
                                             loadTickets(raffle.id);
                                           }}
@@ -706,6 +740,123 @@ const Raffles = () => {
           </AnimatePresence>
         )}
       </div>
+
+      {/* ── PROMO MODAL ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {promoRaffle && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPromoRaffle(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ y: '100%', opacity: 0.5, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: '100%', opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 400, mass: 0.8 }}
+              className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-lg flex flex-col overflow-hidden relative z-10 border border-white/20"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 px-5 pt-5 pb-3 shrink-0 border-b border-slate-50">
+                <div className="w-11 h-11 rounded-2xl bg-orange-50 flex items-center justify-center">
+                  <Megaphone size={20} className="text-orange-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Configurar Promoción</h3>
+                  <p className="text-[10px] font-bold text-slate-400 truncate">{promoRaffle.title}</p>
+                </div>
+                <button onClick={() => setPromoRaffle(null)}
+                  className="w-10 h-10 bg-slate-50 hover:bg-slate-100 active:scale-90 rounded-2xl flex items-center justify-center text-slate-400 transition-all">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-5 overflow-y-auto">
+                {/* Live Preview */}
+                {(promoForm.title || promoForm.description) && (
+                  <div className="rounded-2xl overflow-hidden shadow-lg">
+                    <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)' }}>
+                      <span className="text-lg">🎰</span>
+                      <span className="font-black text-white text-sm flex-1">{promoForm.title || 'Título de la promoción'}</span>
+                      <span className="text-lg">💰</span>
+                    </div>
+                    {promoForm.description && (
+                      <div className="px-4 py-3 bg-red-600">
+                        <p className="text-white text-sm text-center font-medium leading-relaxed">{promoForm.description}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Title */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Título de la Promoción
+                  </label>
+                  <input
+                    type="text"
+                    className="admin-input font-bold"
+                    placeholder="Ej: ¡PROMOCIÓN! Boletos a 3×1"
+                    value={promoForm.title}
+                    onChange={e => setPromoForm(p => ({ ...p, title: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-slate-400 ml-1">Los emojis 🎰 💰 se añaden automáticamente a los lados</p>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Descripción / Detalles
+                  </label>
+                  <textarea
+                    className="admin-input resize-none h-24"
+                    placeholder="Ej: Promoción válida hasta el martes 24 de marzo a las 6:00 PM."
+                    value={promoForm.description}
+                    onChange={e => setPromoForm(p => ({ ...p, description: e.target.value }))}
+                  />
+                </div>
+
+                {/* Info box */}
+                <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-2xl border border-orange-100">
+                  <Megaphone size={16} className="text-orange-500 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-orange-700 font-medium leading-relaxed">
+                    El banner se mostrará fijo en la parte superior de la página pública mientras el usuario navega, llamando la atención inmediatamente.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  {(promoRaffle.promoTitle || promoRaffle.promoDescription) && (
+                    <button
+                      onClick={() => setPromoForm({ title: '', description: '' })}
+                      className="px-4 h-12 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all border border-red-100"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setPromoRaffle(null)}
+                    className="flex-1 h-12 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSavePromo}
+                    disabled={isSavingPromo}
+                    className="flex-[2] h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {isSavingPromo ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Guardar Promoción
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── MODAL ─────────────────────────────────────────── */}
       <AnimatePresence>

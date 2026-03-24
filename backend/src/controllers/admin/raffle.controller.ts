@@ -23,6 +23,8 @@ const createRaffleSchema = z.object({
   opportunities: z.number().int().min(1).default(1),
   autoReleaseHours: z.number().int().min(0).default(0),
   luckyMachineNumbers: z.array(z.number().int().positive()).default([5, 10, 20, 50]),
+  promoTitle: z.string().optional().nullable(),
+  promoDescription: z.string().optional().nullable(),
 });
 
 const updateRaffleSchema = createRaffleSchema.partial();

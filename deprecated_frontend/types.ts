@@ -16,6 +16,8 @@ export interface Raffle {
   opportunities: number;
   autoReleaseHours: number;
   luckyMachineNumbers: number[];
+  promoTitle?: string | null;
+  promoDescription?: string | null;
 }
 
 export interface Ticket {
