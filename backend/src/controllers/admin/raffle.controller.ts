@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/database';
 import { AppError } from '../../utils/errors';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 const createRaffleSchema = z.object({
   title: z.string().min(1),
@@ -82,13 +83,16 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
     const data = createRaffleSchema.parse(req.body);
 
     const raffle = await prisma.$transaction(async (tx) => {
+      const { promoTiers, ...restData } = data;
       const newRaffle = await tx.raffle.create({
         data: {
-          ...data,
+          ...restData,
           status: data.status || 'active',
           drawDate: new Date(data.drawDate),
           autoReleaseHours: data.autoReleaseHours || 0,
           luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
+          // Prisma requires Prisma.JsonNull instead of null for Json fields
+          ...(promoTiers !== undefined ? { promoTiers: promoTiers === null ? Prisma.JsonNull : promoTiers } : {}),
         },
       });
 
@@ -128,8 +132,13 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
     if (!existingRaffle) throw new AppError(404, 'Raffle not found');
 
     const result = await prisma.$transaction(async (tx) => {
-      const updateData: any = { ...data };
+      const { promoTiers: newPromoTiers, ...restUpdateData } = data;
+      const updateData: any = { ...restUpdateData };
       if (data.drawDate) updateData.drawDate = new Date(data.drawDate);
+      // Sanitize Json field: Prisma requires Prisma.JsonNull instead of null
+      if (newPromoTiers !== undefined) {
+        updateData.promoTiers = newPromoTiers === null ? Prisma.JsonNull : newPromoTiers;
+      }
 
       const updatedRaffle = await tx.raffle.update({
         where: { id },
