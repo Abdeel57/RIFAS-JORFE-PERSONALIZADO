@@ -81,7 +81,7 @@ const Tickets = () => {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h2 className="section-title">Boletos</h2>
+        <h2 className="section-title">Emisiones</h2>
         <p className="section-sub">Busca y gestiona números específicos</p>
       </div>
 

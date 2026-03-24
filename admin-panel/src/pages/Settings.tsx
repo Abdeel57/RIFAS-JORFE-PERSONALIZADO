@@ -1198,7 +1198,7 @@ const Settings: React.FC = () => {
                                                 >
                                                     <div className="text-left">
                                                         <p className="text-sm font-black text-slate-800">{raffle.title}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{raffle.status} • {raffle.totalTickets} boletos</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{raffle.status} • {raffle.totalTickets} emisiones</p>
                                                     </div>
                                                     <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                                                 </button>
@@ -1306,114 +1306,117 @@ const Settings: React.FC = () => {
                             </div>
                         )}
                     </div>
-                )}
+                )
+                }
 
-                {activePanel === 'notificaciones' && (
-                    <div className="space-y-5">
-                        <PanelHeader
-                            title="Notificaciones Push"
-                            icon={<Bell size={16} />}
-                            onBack={() => setActivePanel(null)}
-                            onSave={handleSave}
-                            isSaving={isSaving}
-                        />
+                {
+                    activePanel === 'notificaciones' && (
+                        <div className="space-y-5">
+                            <PanelHeader
+                                title="Notificaciones Push"
+                                icon={<Bell size={16} />}
+                                onBack={() => setActivePanel(null)}
+                                onSave={handleSave}
+                                isSaving={isSaving}
+                            />
 
-                        <div className="admin-card p-6 space-y-6">
-                            <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-2">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
-                                    <BellRing size={20} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Alertas en Tiempo Real</p>
-                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                        Recibe avisos inmediatos cuando un cliente suba un comprobante o cuando el sistema verifique un pago automáticamente.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div>
-                                        <p className="text-sm font-black text-slate-800">Estado en este dispositivo</p>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
-                                            {push.isSupported
-                                                ? (push.subscribed ? 'Suscripción activa' : 'Sin suscripción')
-                                                : 'Navegador no compatible'}
+                            <div className="admin-card p-6 space-y-6">
+                                <div className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 mb-2">
+                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0">
+                                        <BellRing size={20} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Alertas en Tiempo Real</p>
+                                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                            Recibe avisos inmediatos cuando un cliente suba un comprobante o cuando el sistema verifique un pago automáticamente.
                                         </p>
                                     </div>
-                                    <div className={`w-3 h-3 rounded-full ${push.subscribed ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
                                 </div>
 
-                                {!push.isSupported ? (
-                                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                                        <AlertTriangle className="text-amber-500 shrink-0" size={18} />
-                                        <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
-                                            Tu navegador o dispositivo no soporta notificaciones push nativas.
-                                            Si usas iOS (iPhone), asegúrate de estar en iOS 16.4+ y haber "Añadido a pantalla de inicio" esta web.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {push.subscribed ? (
-                                            <>
-                                                <button
-                                                    onClick={push.unsubscribe}
-                                                    disabled={push.loading}
-                                                    className="w-full h-12 bg-white border border-red-100 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    {push.loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                                                    Desactivar en este móvil/PC
-                                                </button>
-                                                <button
-                                                    onClick={push.sendTest}
-                                                    className="w-full h-12 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <Settings2 size={14} />
-                                                    Enviar Notificación de Prueba
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                onClick={push.subscribe}
-                                                disabled={push.loading}
-                                                className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-xl shadow-blue-100 active:scale-95 transition-all flex items-center justify-center gap-3"
-                                            >
-                                                {push.loading ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
-                                                Activar Notificaciones Aquí
-                                            </button>
-                                        )}
-
-                                        {push.permission === 'denied' && (
-                                            <p className="text-[10px] text-red-500 font-bold text-center uppercase mt-2">
-                                                Permiso denegado. Debes habilitarlo en los ajustes del navegador.
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <p className="text-sm font-black text-slate-800">Estado en este dispositivo</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
+                                                {push.isSupported
+                                                    ? (push.subscribed ? 'Suscripción activa' : 'Sin suscripción')
+                                                    : 'Navegador no compatible'}
                                             </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-4 border-t border-slate-50">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">¿Qué notificaciones recibiré?</p>
-                                <div className="space-y-2">
-                                    {[
-                                        { title: 'Nuevos Comprobantes', desc: 'Cuando un cliente suba un comprobante o se aparte una orden' },
-                                        { title: 'Validaciones Gemini', desc: 'Resultados del análisis automático por IA' },
-                                        { title: 'Alertas de Fraude', desc: 'Aviso inmediato si se detecta un ticket falso' }
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                            <div className="w-2 h-2 rounded-full bg-blue-400" />
-                                            <div>
-                                                <p className="text-[11px] font-black text-slate-700">{item.title}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">{item.desc}</p>
-                                            </div>
                                         </div>
-                                    ))}
+                                        <div className={`w-3 h-3 rounded-full ${push.subscribed ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                                    </div>
+
+                                    {!push.isSupported ? (
+                                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
+                                            <AlertTriangle className="text-amber-500 shrink-0" size={18} />
+                                            <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                                                Tu navegador o dispositivo no soporta notificaciones push nativas.
+                                                Si usas iOS (iPhone), asegúrate de estar en iOS 16.4+ y haber "Añadido a pantalla de inicio" esta web.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {push.subscribed ? (
+                                                <>
+                                                    <button
+                                                        onClick={push.unsubscribe}
+                                                        disabled={push.loading}
+                                                        className="w-full h-12 bg-white border border-red-100 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        {push.loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                        Desactivar en este móvil/PC
+                                                    </button>
+                                                    <button
+                                                        onClick={push.sendTest}
+                                                        className="w-full h-12 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Settings2 size={14} />
+                                                        Enviar Notificación de Prueba
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={push.subscribe}
+                                                    disabled={push.loading}
+                                                    className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-xl shadow-blue-100 active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                >
+                                                    {push.loading ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
+                                                    Activar Notificaciones Aquí
+                                                </button>
+                                            )}
+
+                                            {push.permission === 'denied' && (
+                                                <p className="text-[10px] text-red-500 font-bold text-center uppercase mt-2">
+                                                    Permiso denegado. Debes habilitarlo en los ajustes del navegador.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-50">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">¿Qué notificaciones recibiré?</p>
+                                    <div className="space-y-2">
+                                        {[
+                                            { title: 'Nuevos Comprobantes', desc: 'Cuando un cliente suba un comprobante o se aparte una orden' },
+                                            { title: 'Validaciones Gemini', desc: 'Resultados del análisis automático por IA' },
+                                            { title: 'Alertas de Fraude', desc: 'Aviso inmediato si se detecta un ticket falso' }
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                                <div>
+                                                    <p className="text-[11px] font-black text-slate-700">{item.title}</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">{item.desc}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </motion.div>
+                    )
+                }
+            </motion.div >
         );
     };
 

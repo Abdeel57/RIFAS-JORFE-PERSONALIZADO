@@ -598,7 +598,7 @@ const Raffles = () => {
                           <div className="grid grid-cols-3 gap-2">
                             {[
                               { label: 'Precio', value: `$${raffle.ticketPrice}` },
-                              { label: 'Boletos', value: `${sold.toLocaleString()}/${raffle.totalTickets.toLocaleString()}` },
+                              { label: 'Emisiones', value: `${sold.toLocaleString()}/${raffle.totalTickets.toLocaleString()}` },
                               { label: 'Recaudado', value: `$${revenue.toLocaleString()}` },
                             ].map(({ label, value }) => (
                               <div key={label} className="bg-slate-50 rounded-xl px-2.5 py-2 text-center">
@@ -657,7 +657,7 @@ const Raffles = () => {
                                       }}
                                       className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                                     >
-                                      <Ticket size={16} className="text-blue-500" /> Ver boletos
+                                      <Ticket size={16} className="text-blue-500" /> Ver emisiones
                                     </button>
                                     {admin?.role !== 'vendedor' && (
                                       <>
@@ -668,7 +668,7 @@ const Raffles = () => {
                                           }}
                                           className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                                         >
-                                          <FileSpreadsheet size={16} className="text-emerald-500" /> Importar boletos
+                                          <FileSpreadsheet size={16} className="text-emerald-500" /> Importar emisiones
                                         </button>
                                         <button
                                           onClick={() => {
@@ -792,7 +792,7 @@ const Raffles = () => {
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Boletos</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Emisiones</label>
                             <input type="number" inputMode="numeric" value={formData.totalTickets}
                               onChange={e => set('totalTickets', e.target.value)}
                               className="admin-input font-black" placeholder="1000" />
