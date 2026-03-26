@@ -181,7 +181,7 @@ const Raffles = () => {
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [ticketSearch, setTicketSearch] = useState('');
   const [winnerTarget, setWinnerTarget] = useState<any>(null);
-  const [visibleCount, setVisibleCount] = useState(1000);
+  const [visibleCount, setVisibleCount] = useState(500);
   const [winnerModalRaffle, setWinnerModalRaffle] = useState<any>(null);
   const [winnerMethod, setWinnerMethod] = useState<'manual' | 'random' | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -427,7 +427,7 @@ const Raffles = () => {
   // ─── Tickets Logic ────────────────────────────────────────────────────────
   const loadTickets = async (raffleId: string) => {
     setIsLoadingTickets(true);
-    setVisibleCount(1000); // Reset count on load
+    setVisibleCount(500); // Reset count on load
     try {
       const data = await adminService.getTickets({ raffleId });
       setTicketsList(data);
@@ -472,26 +472,60 @@ const Raffles = () => {
   const handleExportExcel = () => {
     if (!ticketsList.length) return;
 
-    const soldTickets = ticketsList.filter(t => t.status === 'sold');
-    if (!soldTickets.length) {
-      toast.error('No hay boletos pagados para exportar');
-      return;
-    }
+    // Exportar TODOS los boletos: pagados, apartados y libres
+    const allTickets = [...ticketsList].sort((a, b) => a.number - b.number);
 
-    const data = soldTickets.map(t => ({
-      'Boleto': `#${t.number}`,
-      'Cliente': t.purchase?.user?.name || '—',
-      'Teléfono': t.purchase?.user?.phone || '—',
-      'Estado': 'PAGADO',
-      'Fecha Compra': t.purchase?.createdAt ? new Date(t.purchase.createdAt).toLocaleDateString() : '—',
-      'Método': t.purchase?.paymentMethod || '—'
+    const statusLabel = (s: string) => {
+      if (s === 'sold') return 'PAGADO';
+      if (s === 'reserved') return 'APARTADO';
+      return 'LIBRE';
+    };
+
+    const data = allTickets.map(t => ({
+      'Número': String(t.number).padStart(Math.max(3, String(viewingTicketsRaffle?.totalTickets || 0).length), '0'),
+      'Estado': statusLabel(t.status),
+      'Cliente': t.purchase?.user?.name || (t.status === 'sold' ? '—' : ''),
+      'Teléfono': t.purchase?.user?.phone || (t.status === 'sold' ? '—' : ''),
+      'Email': t.purchase?.user?.email || '',
+      'Fecha Compra': t.purchase?.createdAt ? new Date(t.purchase.createdAt).toLocaleDateString('es-MX') : '',
+      'Método de Pago': t.purchase?.paymentMethod || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
+
+    // Ajustar ancho de columnas
+    ws['!cols'] = [
+      { wch: 10 }, // Número
+      { wch: 12 }, // Estado
+      { wch: 28 }, // Cliente
+      { wch: 16 }, // Teléfono
+      { wch: 28 }, // Email
+      { wch: 15 }, // Fecha
+      { wch: 18 }, // Método
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Boletos Pagados");
-    XLSX.writeFile(wb, `Boletos_Pagados_${viewingTicketsRaffle?.title.substring(0, 25).replace(/\s+/g, '_')}.xlsx`);
-    toast.success('Excel generado correctamente');
+    XLSX.utils.book_append_sheet(wb, ws, 'Boletería Completa');
+
+    // Hoja extra solo con pagados
+    const pagados = allTickets.filter(t => t.status === 'sold');
+    if (pagados.length > 0) {
+      const dataPagados = pagados.map(t => ({
+        'Número': String(t.number).padStart(Math.max(3, String(viewingTicketsRaffle?.totalTickets || 0).length), '0'),
+        'Cliente': t.purchase?.user?.name || '—',
+        'Teléfono': t.purchase?.user?.phone || '—',
+        'Email': t.purchase?.user?.email || '—',
+        'Fecha Compra': t.purchase?.createdAt ? new Date(t.purchase.createdAt).toLocaleDateString('es-MX') : '—',
+        'Método de Pago': t.purchase?.paymentMethod || '—',
+      }));
+      const wsPagados = XLSX.utils.json_to_sheet(dataPagados);
+      wsPagados['!cols'] = [{ wch: 10 }, { wch: 28 }, { wch: 16 }, { wch: 28 }, { wch: 15 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, wsPagados, 'Solo Pagados');
+    }
+
+    const safeName = (viewingTicketsRaffle?.title || 'Rifa').substring(0, 25).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '_');
+    XLSX.writeFile(wb, `Boletos_${safeName}.xlsx`);
+    toast.success(`Excel generado: ${allTickets.length} boletos exportados`);
   };
 
   const handleSavePromo = async () => {
@@ -1372,10 +1406,10 @@ const Raffles = () => {
 
                     {filteredTickets.length > visibleCount && (
                       <button
-                        onClick={() => setVisibleCount(prev => prev + 1000)}
+                        onClick={() => setVisibleCount(prev => prev + 500)}
                         className="w-full py-4 mt-2 bg-slate-50 hover:bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest rounded-2xl border-2 border-dashed border-slate-200 transition-all active:scale-[0.98]"
                       >
-                        Cargar 1,000 boletos más...
+                        Cargar 500 boletos más... ({filteredTickets.length - visibleCount} restantes)
                       </button>
                     )}
                   </div>
@@ -1383,11 +1417,26 @@ const Raffles = () => {
               </div>
 
               <div className="p-4 sm:p-5 border-t border-slate-100 bg-white shadow-inner shrink-0 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                    {Math.min(visibleCount, filteredTickets.length)} / {filteredTickets.length} mostrados
-                  </span>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                      {Math.min(visibleCount, filteredTickets.length)} / {filteredTickets.length} mostrados
+                    </span>
+                  </div>
+                  {ticketsList.length > 0 && (
+                    <div className="flex items-center gap-3 ml-3.5">
+                      <span className="text-[8px] font-bold text-emerald-500">
+                        {ticketsList.filter(t => t.status === 'sold').length} pagados
+                      </span>
+                      <span className="text-[8px] font-bold text-amber-500">
+                        {ticketsList.filter(t => t.status === 'reserved').length} apartados
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-400">
+                        {ticketsList.filter(t => t.status === 'available').length} libres
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setViewingTicketsRaffle(null)}

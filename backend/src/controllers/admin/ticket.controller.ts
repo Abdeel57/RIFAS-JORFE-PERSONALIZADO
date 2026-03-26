@@ -59,24 +59,55 @@ export const getTickets = async (req: Request, res: Response, next: NextFunction
         { raffleId: 'asc' },
         { number: 'asc' },
       ],
-      take: 500, // Límite de seguridad
     });
 
-    // Si se buscó un número específico en una rifa virtual y no se encontró, "sintetizar" uno disponible
-    if (searchNumber && tickets.length === 0 && raffleId) {
+    // Si se filtra por una rifa específica, completar con boletos virtuales disponibles
+    // para mostrar la boletería completa (hasta totalTickets)
+    if (raffleId && !status && !search) {
       const raffle = await prisma.raffle.findUnique({
         where: { id: raffleId as string },
         select: { id: true, title: true, isVirtual: true, totalTickets: true },
       });
 
-      if (raffle?.isVirtual && searchNumber >= 1 && searchNumber <= raffle.totalTickets) {
+      if (raffle) {
+        // Construir un Set de los números de boleto que ya existen en la BD
+        const existingNumbers = new Set(tickets.map((t: any) => t.number));
+
+        // Agregar boletos disponibles virtuales para los números que faltan
+        for (let n = 1; n <= raffle.totalTickets; n++) {
+          if (!existingNumbers.has(n)) {
+            tickets.push({
+              id: `virtual-${raffle.id}-${n}`,
+              raffleId: raffle.id,
+              number: n,
+              status: 'available',
+              purchaseId: null,
+              raffle: { id: raffle.id, title: raffle.title, isVirtual: raffle.isVirtual, totalTickets: raffle.totalTickets },
+              purchase: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            } as any);
+          }
+        }
+
+        // Reordenar por número de boleto
+        tickets.sort((a: any, b: any) => a.number - b.number);
+      }
+    } else if (searchNumber && tickets.length === 0 && raffleId) {
+      // Si se buscó un número específico y no se encontró, sintetizar uno disponible
+      const raffle = await prisma.raffle.findUnique({
+        where: { id: raffleId as string },
+        select: { id: true, title: true, isVirtual: true, totalTickets: true },
+      });
+
+      if (raffle && searchNumber >= 1 && searchNumber <= raffle.totalTickets) {
         tickets.push({
           id: `virtual-${raffle.id}-${searchNumber}`,
           raffleId: raffle.id,
           number: searchNumber,
           status: 'available',
           purchaseId: null,
-          raffle: { id: raffle.id, title: raffle.title },
+          raffle: { id: raffle.id, title: raffle.title, isVirtual: raffle.isVirtual, totalTickets: raffle.totalTickets },
           purchase: null,
           createdAt: new Date(),
           updatedAt: new Date(),

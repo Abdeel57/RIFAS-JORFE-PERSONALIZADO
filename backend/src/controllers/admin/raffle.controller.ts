@@ -265,7 +265,7 @@ export const importTickets = async (req: Request, res: Response, next: NextFunct
     }
 
     const raffle = await prisma.raffle.findUnique({ where: { id: raffleId } });
-    if (!raffle) throw new AppError(404, 'Raffle not found');
+    if (!raffle) throw new AppError(404, 'Rifa no encontrada');
 
     const results = {
       success: 0,
@@ -274,20 +274,27 @@ export const importTickets = async (req: Request, res: Response, next: NextFunct
 
     for (const row of rows) {
       try {
-        const { name, phone: rawPhone, ticketNumbers, status, state } = row;
+        const { name, phone: rawPhone, ticketNumbers, status: ticketStatus, state } = row;
         const phone = normalizePhoneImport(rawPhone);
 
-        if (!name || !phone || phone.length < 10 || !ticketNumbers || ticketNumbers.length === 0) {
-          results.errors.push(`Fila inválida: Faltan datos obligatorios`);
+        // Validaciones básicas
+        if (!name || !phone || phone.length < 10 || !ticketNumbers || !Array.isArray(ticketNumbers) || ticketNumbers.length === 0) {
+          results.errors.push(`Fila inválida: Faltan datos obligatorios para ${name || 'usuario desconocido'}`);
           continue;
         }
 
+        // Mapear estado de ticket a estado de compra
+        // status en row puede ser 'sold' o 'reserved'
+        const purchaseStatus = ticketStatus === 'reserved' ? 'pending' : 'paid';
+        const finalTicketStatus = ticketStatus === 'reserved' ? 'reserved' : 'sold';
+
         await prisma.$transaction(async (tx) => {
-          // 1. Upsert User
+          // 1. Upsert User (Normalizar nombre)
+          const userName = String(name).trim();
           const user = await tx.user.upsert({
             where: { phone },
-            update: { name, state: state || undefined },
-            create: { name, phone, state: state || undefined },
+            update: { name: userName, state: state || undefined },
+            create: { name: userName, phone, state: state || undefined },
           });
 
           // 2. Create Purchase
@@ -295,7 +302,7 @@ export const importTickets = async (req: Request, res: Response, next: NextFunct
             data: {
               userId: user.id,
               raffleId,
-              status: status === 'sold' ? 'paid' : 'pending',
+              status: purchaseStatus as any,
               totalAmount: ticketNumbers.length * raffle.ticketPrice,
               paymentMethod: 'Importación Manual',
               paymentReference: 'IMPORTD',
@@ -305,35 +312,39 @@ export const importTickets = async (req: Request, res: Response, next: NextFunct
 
           // 3. Process Tickets
           for (const num of ticketNumbers) {
-            if (num < 1 || num > raffle.totalTickets) {
+            const ticketNum = Number(num);
+            if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > raffle.totalTickets) {
               throw new Error(`Número de boleto fuera de rango: ${num}`);
             }
 
-            if ((raffle as any).isVirtual) {
+            if (raffle.isVirtual) {
               // En modo virtual, el boleto podría no existir aún en BD
               await tx.ticket.upsert({
-                where: { raffleId_number: { raffleId, number: num } },
-                update: { status, purchaseId: purchase.id },
-                create: { raffleId, number: num, status, purchaseId: purchase.id },
+                where: { raffleId_number: { raffleId, number: ticketNum } },
+                update: { status: finalTicketStatus, purchaseId: purchase.id },
+                create: { raffleId, number: ticketNum, status: finalTicketStatus, purchaseId: purchase.id },
               });
             } else {
-              // En modo tradicional, el boleto DEBE existir
+              // En modo tradicional, el boleto DEBE existir (creado al crear la rifa)
               const existingTicket = await tx.ticket.findUnique({
-                where: { raffleId_number: { raffleId, number: num } },
+                where: { raffleId_number: { raffleId, number: ticketNum } },
               });
 
               if (!existingTicket) {
-                throw new Error(`Boleto #${num} no existe en la base de datos de esta rifa tradicional`);
-              }
+                // Si por alguna razón no existe, lo creamos para no fallar la importación
+                await tx.ticket.create({
+                  data: { raffleId, number: ticketNum, status: finalTicketStatus, purchaseId: purchase.id },
+                });
+              } else {
+                if (existingTicket.status !== 'available') {
+                  throw new Error(`Boleto #${ticketNum} ya está ocupado (${existingTicket.status})`);
+                }
 
-              if (existingTicket.status !== 'available') {
-                throw new Error(`Boleto #${num} ya está ocupado (${existingTicket.status})`);
+                await tx.ticket.update({
+                  where: { id: existingTicket.id },
+                  data: { status: finalTicketStatus, purchaseId: purchase.id },
+                });
               }
-
-              await tx.ticket.update({
-                where: { id: existingTicket.id },
-                data: { status, purchaseId: purchase.id },
-              });
             }
           }
         });
