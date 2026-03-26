@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Raffle" ADD COLUMN IF NOT EXISTS "showCountdown" BOOLEAN NOT NULL DEFAULT false;
