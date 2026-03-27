@@ -68,7 +68,7 @@ const Layout = () => {
       <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 z-40 bg-white border-r border-slate-200/60 shadow-sm">
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100 shrink-0">
-          <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md shadow-blue-100 border border-slate-100 overflow-hidden">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-black/5 overflow-hidden">
             <img
               src="/admin/bismark.png"
               alt="B"
@@ -139,7 +139,7 @@ const Layout = () => {
         <header className="glass sticky top-0 z-40 border-b border-slate-200/50 pt-safe lg:hidden">
           <div className="flex items-center justify-between h-16 px-5 max-w-2xl mx-auto w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100 border border-slate-100 overflow-hidden group transition-all active:scale-90">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl shadow-black/10 overflow-hidden group transition-all active:scale-90">
                 <img
                   src="/admin/bismark.png"
                   alt="B"

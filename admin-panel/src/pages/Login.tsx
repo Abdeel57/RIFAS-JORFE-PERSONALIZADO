@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const BismarkLogo = () => (
-  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-200 border border-slate-100 overflow-hidden">
+  <div className="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden">
     <img
       src="/admin/bismark.png"
       alt="Bismark Logo"
-      className="w-full h-full object-contain transform"
+      className="w-full h-full object-contain transform hover:scale-105 transition-transform duration-500"
     />
   </div>
 );
