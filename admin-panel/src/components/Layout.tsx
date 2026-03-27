@@ -72,7 +72,7 @@ const Layout = () => {
             <img
               src="/admin/bismark.png"
               alt="B"
-              className="w-6 h-6 object-contain"
+              className="w-full h-full object-contain"
             />
           </div>
           <div className="leading-none">
@@ -143,7 +143,7 @@ const Layout = () => {
                 <img
                   src="/admin/bismark.png"
                   alt="B"
-                  className="w-7 h-7 object-contain group-hover:scale-110 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-110 transition-transform"
                 />
               </div>
               <div className="leading-none">
