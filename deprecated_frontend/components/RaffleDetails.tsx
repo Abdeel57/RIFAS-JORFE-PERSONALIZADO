@@ -269,7 +269,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
     },
     {
       question: '¿Qué pasa si resulto ganador?',
-      answer: 'Nos pondremos en contacto contigo de inmediato al teléfono registrado. La entrega del vehículo se coordina personalmente y se transmite en vivo por Facebook.',
+      answer: 'Nos pondremos en contacto contigo de inmediato al teléfono registrado. La entrega del premio se coordina personalmente y se transmite en vivo por Facebook.',
     },
     {
       question: `¿Es seguro participar con ${siteName}?`,
