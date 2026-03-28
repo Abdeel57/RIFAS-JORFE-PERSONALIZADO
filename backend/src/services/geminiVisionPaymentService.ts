@@ -64,7 +64,7 @@ Extrae EXACTAMENTE los valores visibles en el comprobante:
 - bancoEmisor: banco que ENVÍA
 - bancoDestino: banco que RECIBE
 - ordenante: nombre de quien ENVÍA si aparece (en muchos bancos no es visible → null si no aparece)
-- concepto: texto del campo "Concepto", "Descripción", "Referencia" o similar — aquí el cliente escribe su nombre. Extrae el valor EXACTO visible. Si no hay campo concepto → null.
+- concepto: texto del campo "Concepto", "Descripción", "Referencia" o similar. Extrae el valor EXACTO visible. Si el campo no existe en el comprobante → null. Si el campo existe pero está vacío → null.
 - beneficiario: nombre de quien RECIBE
 - cuentaDestino: número de cuenta, CLABE o CLABE parcial visible en el comprobante (ej. "****6010", "012180...2410")
 
@@ -75,27 +75,56 @@ Revisa si el comprobante parece falsificado. Solo marca "fake" o "suspicious" si
 - Comprobante que claramente no es de un banco real
 Si el comprobante se ve coherente y legítimo, marca "authentic". No seas excesivamente estricto con la tipografía.
 
-TAREA 3 — VALIDACIÓN DE DATOS (CRITERIOS PRINCIPALES):
-1. MONTO: ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN? Tolerancia ±$15 pesos (pequeñas diferencias por redondeo son aceptables).
-2. NOMBRE EN CONCEPTO: Busca en CONCEPTO primero, luego en ORDENANTE.
-   - Compara IGNORANDO mayúsculas/minúsculas y acentos. "JUAN" = "juan" = "Juan".
-   - nameMatch = true  → si AL MENOS 1 palabra del cliente "${opts.customerName}" aparece en el CONCEPTO o ORDENANTE.
-     Ejemplos válidos: concepto "juan perez" con cliente "Juan Carlos Pérez García" ✓
-                       concepto "PAGO RIFA MARIA" con cliente "María López" ✓
-                       concepto "Orlando Garcia" con cliente "ORLANDO GARCÍA" ✓
-   - nameMatch = false → si ninguna palabra del cliente aparece en concepto ni ordenante.
-   - nameMatch = null  → si concepto y ordenante son null o vacíos (no visibles en el comprobante).
+TAREA 3 — VALIDACIÓN DE DATOS:
+
+1. MONTO: ¿El monto del comprobante coincide con $${opts.expectedAmount} MXN?
+   Tolerancia ±$15 pesos (pequeñas diferencias por redondeo son aceptables).
+
+2. NOMBRE EN CONCEPTO — LEE CON MUCHA ATENCIÓN:
+   El cliente registrado es: "${opts.customerName}"
+   Busca su nombre en el campo CONCEPTO primero, luego en ORDENANTE.
+
+   REGLAS DE COINCIDENCIA — Sé MUY generoso, los clientes escriben de muchas formas:
+   - Ignora COMPLETAMENTE mayúsculas/minúsculas y acentos:
+     "JUAN" = "juan" = "Juan", "GARCIA" = "García" = "garcia", "PEREZ" = "Pérez"
+   
+   nameMatch = TRUE si CUALQUIERA de lo siguiente aplica:
+     a) Al menos 1 palabra del nombre "${opts.customerName}" aparece en CONCEPTO o ORDENANTE.
+        Ejemplos que SON válidos (nameMatch=true):
+        ✓ Concepto "JUAN PEREZ" para cliente "Juan Carlos Pérez García"
+        ✓ Concepto "pago garcia" para cliente "Luis García"
+        ✓ Concepto "PAGO RIFA MARIA" para cliente "María López"
+        ✓ Concepto "Orlando Garcia" para cliente "ORLANDO GARCÍA"
+        ✓ Concepto "ORTIZ" para cliente "Carmen Ortiz Ramírez"
+        ✓ Concepto "JPEREZ" o "J PEREZ" para cliente "Juan Pérez"
+        ✓ Ordenante "JUAN CARLOS PEREZ" para cliente "Juan Pérez"
+     b) Hay una abreviatura o variante razonable del nombre del cliente.
+   
+   nameMatch = FALSE ÚNICAMENTE si:
+     - El concepto contiene el nombre completo de OTRA persona claramente diferente
+       (ej. concepto "PEDRO SANCHEZ RUIZ" cuando el cliente es "María López") 
+       Y el ordenante tampoco tiene relación con el cliente.
+     - Texto genérico en concepto como "PAGO", "RIFA", "TRANSFERENCIA", números solos,
+       "SPEI", "REF123", etc. NO cuenta como false → eso es NULL.
+   
+   nameMatch = NULL si:
+     - El concepto Y el ordenante son ambos null o vacíos.
+     - El concepto solo tiene texto completamente genérico sin nombre de persona.
+
 ${last4 ? `3. CUENTA DESTINO: ¿Los últimos 4 dígitos visibles coinciden con "${last4}"?
    Busca en CLABE, cuenta, ****XXXX. Si la cuenta NO es visible en el comprobante → accountMatch = null (no penalizar).` : ''}
 
 AUTENTICIDAD:
-- Solo marca "fake" o "suspicious" si hay señales OBVIAS de edición (números claramente pegados, recortes visibles).
-- Si el comprobante se ve natural y los datos (monto, nombre, cuenta) coinciden, favorece "authentic" y verdict="approve".
+- Solo marca "fake" o "suspicious" si hay señales OBVIAS de edición.
+- Si el comprobante se ve natural y los datos coinciden, favorece "authentic" y verdict="approve".
 
-CRITERIOS DE VEREDICTO:
-- "approve": monto coincide, nombre en concepto coincide (sin importar mayúsculas), cuenta coincide o no visible. Confianza "high" o "medium".
-- "review": datos incompletos o alguna duda menor. No rechaces por diferencias de mayúsculas o 1 palabra en el concepto.
-- "reject": SOLO si hay signos CLAROS de falsificación o la cuenta destino visible es INCORRECTA.
+CRITERIOS DE VEREDICTO — MUY IMPORTANTE:
+- "approve": monto coincide (amountMatch=true) Y (nameMatch=true O nameMatch=null) Y cuenta coincide o no visible (accountMatch=true o null) Y autenticidad NO es "fake".
+  La confianza puede ser "high", "medium" o "low" siempre que los datos de monto y nombre sean correctos.
+- "review": algún dato dudoso sin fraude claro. Úsalo cuando: monto con diferencia mayor a $15, nameMatch=false con nombre de otra persona, fecha muy antigua.
+- "reject": SOLO si hay signos INDUDABLES de falsificación (fake) o la cuenta destino visible es claramente INCORRECTA.
+
+IMPORTANTE: nameMatch=null NO debe impedir la aprobación. Si el monto coincide, la cuenta coincide o no es visible, y el comprobante es auténtico, da verdict="approve" aunque nameMatch sea null.
 
 RESPONDE ÚNICAMENTE CON ESTE JSON (sin markdown, sin texto adicional):
 {
@@ -145,7 +174,6 @@ export async function analyzePaymentProof(
     try {
         console.log(`🤖 [GEMINI] Solicitando análisis a modelo gemini-2.5-flash...`);
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY!);
-        // gemini-1.5-flash está deprecado (404). Usamos gemini-2.5-flash (estable actual).
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 

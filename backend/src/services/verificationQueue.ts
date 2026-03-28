@@ -109,11 +109,22 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             razon: analysis.verdictReason,
         });
 
-        // Aceptar approve con confianza 'high' o 'medium' cuando los datos coinciden
+        // REGLA 1: Si nameMatch=true Y amountMatch=true, no castigar por confidence baja.
+        // Este es el caso principal: el cliente SÍ escribió su nombre en el concepto.
+        const nameFoundInConcept = analysis.nameMatch === true;
+        const amountCorrect = analysis.amountMatch === true;
+
+        // Aceptar approve con confianza 'high' o 'medium' siempre.
+        // Aceptar approve con confianza 'low' SOLO si el nombre coincide Y el monto coincide.
         if (analysis.verdict === 'approve' && analysis.confidence === 'low') {
-            console.log(`⚠️  Confianza low → forzando revisión manual`);
-            analysis.verdict = 'review';
-            analysis.verdictReason = `Confianza insuficiente. Se requiere validación manual.`;
+            if (nameFoundInConcept && amountCorrect) {
+                console.log(`✅ Confianza low pero nameMatch=true y amountMatch=true → permitiendo aprobación`);
+                // No forzar review, dejamos pasar
+            } else {
+                console.log(`⚠️  Confianza low sin nombre/monto confirmados → forzando revisión manual`);
+                analysis.verdict = 'review';
+                analysis.verdictReason = `Confianza insuficiente. Se requiere validación manual.`;
+            }
         }
 
         // Override solo en casos críticos: fake, cuenta incorrecta, monto incorrecto
@@ -124,8 +135,18 @@ async function runVerification(purchaseId: string, imageBase64: string): Promise
             finalVerdict = 'review'; // cuenta destino visible e incorrecta
         } else if (analysis.amountMatch === false) {
             finalVerdict = 'review'; // monto no coincide
+        } else if (analysis.nameMatch === false) {
+            // nameMatch=false significa que hay OTRA persona en el concepto.
+            // Solo bajamos a review, nunca rechazamos por esto solo.
+            // nameMatch=null (concepto no visible) NO penaliza.
+            if (finalVerdict === 'approve') {
+                finalVerdict = 'review';
+                analysis.verdictReason = `Nombre en concepto no coincide con el cliente registrado. ${analysis.verdictReason}`;
+                console.log(`⚠️  nameMatch=false → bajando de approve a review`);
+            }
         }
         // accountMatch === null (no visible) → no penalizar, permitir approve
+        // nameMatch === null (concepto no visible) → no penalizar, permitir approve
 
         if (finalVerdict !== analysis.verdict) {
             console.log(`⚠️  Veredicto Gemini "${analysis.verdict}" sobreescrito a "${finalVerdict}" por regla de seguridad`);
