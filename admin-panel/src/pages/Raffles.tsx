@@ -603,9 +603,10 @@ const Raffles = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {raffles.map((raffle) => {
                     const sold = raffle._count?.tickets || 0;
-                    const progress = Math.round((sold / raffle.totalTickets) * 100);
+                    const totalPossibleEmissions = raffle.totalTickets * (raffle.opportunities || 1);
+                    const progress = Math.round((sold / totalPossibleEmissions) * 100);
                     const isActive = raffle.status === 'active';
-                    const revenue = sold * raffle.ticketPrice;
+                    const revenue = raffle.totalRevenue || 0;
                     return (
                       <motion.div
                         key={raffle.id}
@@ -655,7 +656,7 @@ const Raffles = () => {
                           <div className="grid grid-cols-3 gap-2">
                             {[
                               { label: 'Precio', value: `$${raffle.ticketPrice}` },
-                              { label: 'Emisiones', value: `${sold.toLocaleString()}/${raffle.totalTickets.toLocaleString()}` },
+                              { label: 'Emisiones', value: `${sold.toLocaleString()}/${(raffle.totalTickets * (raffle.opportunities || 1)).toLocaleString()}` },
                               { label: 'Recaudado', value: `$${revenue.toLocaleString()}` },
                             ].map(({ label, value }) => (
                               <div key={label} className="bg-slate-50 rounded-xl px-2.5 py-2 text-center">

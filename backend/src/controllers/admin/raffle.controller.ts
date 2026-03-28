@@ -115,9 +115,17 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
       },
     });
 
+    const totalRevenueSum = await prisma.purchase.aggregate({
+      where: { raffleId: raffle.id, status: 'paid' },
+      _sum: { totalAmount: true },
+    });
+
     res.status(201).json({
       success: true,
-      data: raffleWithDetails,
+      data: {
+        ...raffleWithDetails,
+        totalRevenue: totalRevenueSum._sum.totalAmount || 0,
+      },
     });
   } catch (error) {
     if (error instanceof z.ZodError) return next(error);
@@ -182,9 +190,17 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
       },
     });
 
+    const totalRevenueSum = await prisma.purchase.aggregate({
+      where: { raffleId: result.id, status: 'paid' },
+      _sum: { totalAmount: true },
+    });
+
     res.json({
       success: true,
-      data: raffleWithDetails,
+      data: {
+        ...raffleWithDetails,
+        totalRevenue: totalRevenueSum._sum.totalAmount || 0,
+      },
     });
   } catch (error) {
     if (error instanceof z.ZodError) return next(error);
@@ -243,9 +259,23 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
       },
     });
 
+    // Calcular ingresos por cada rifa
+    const revenueByRaffle = await prisma.purchase.groupBy({
+      by: ['raffleId'],
+      _sum: { totalAmount: true },
+      where: { status: 'paid' },
+    });
+
+    const revenueMap = new Map(revenueByRaffle.map(r => [r.raffleId, r._sum.totalAmount || 0]));
+
+    const result = raffles.map(r => ({
+      ...r,
+      totalRevenue: revenueMap.get(r.id) || 0,
+    }));
+
     res.json({
       success: true,
-      data: raffles,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -313,7 +343,8 @@ export const importTickets = async (req: Request, res: Response, next: NextFunct
           // 3. Process Tickets
           for (const num of ticketNumbers) {
             const ticketNum = Number(num);
-            if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > raffle.totalTickets) {
+            const totalEmissions = raffle.totalTickets * (raffle.opportunities || 1);
+            if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > totalEmissions) {
               throw new Error(`Número de boleto fuera de rango: ${num}`);
             }
 
