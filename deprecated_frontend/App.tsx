@@ -764,19 +764,17 @@ const App: React.FC = () => {
               };
               const displayPhone = phone ? formatPhone(whatsapp) : 'Sin configurar';
               return (
-                <>
-                  <p className="text-lg font-bold text-[#25D366] tracking-tight tabular-nums">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 transition-all active:scale-95 ${phone ? 'cursor-pointer' : 'cursor-not-allowed pointer-events-none'}`}
+                >
+                  <img src="/whatsapp-logo.png" alt="WhatsApp" className="w-6 h-6 object-contain flex-shrink-0" />
+                  <span className="text-lg font-bold text-[#25D366] tracking-tight tabular-nums">
                     {displayPhone}
-                  </p>
-                  <a
-                    href={waUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center justify-center p-3 rounded-full border-2 transition-all active:scale-95 ${phone ? 'border-[#25D366] bg-white hover:bg-[#25D366]/5 text-[#25D366]' : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed pointer-events-none'}`}
-                  >
-                    <img src="/whatsapp-logo.png" alt="WhatsApp" className="w-8 h-8 object-contain" />
-                  </a>
-                </>
+                  </span>
+                </a>
               );
             })()}
           </div>
