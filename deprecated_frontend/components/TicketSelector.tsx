@@ -71,14 +71,14 @@ const TicketItem = React.memo(({
         flex items-center justify-center font-black rounded-lg
         transition-colors duration-150 relative leading-none tracking-tight
         ${status === 'sold'
-          ? 'bg-slate-50 text-slate-200 cursor-not-allowed'
+          ? 'bg-slate-50 text-slate-100 cursor-not-allowed'
           : status === 'reserved'
-            ? 'bg-amber-50 text-amber-300 border border-amber-100 cursor-not-allowed'
+            ? 'bg-amber-50 text-amber-600 border border-amber-200 cursor-not-allowed opacity-60'
             : isLucky
               ? 'bg-blue-600 text-white scale-110 z-10 animate-bounce'
               : isSelected
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105 z-10'
-                : 'bg-slate-50/50 text-slate-400 hover:bg-white hover:text-blue-600 border border-transparent hover:border-blue-100'}
+                : 'bg-white text-black border border-black hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600'}
       `}
     >
       {padded}
@@ -535,11 +535,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4 px-1 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-100 rounded-full" /><span>Libre</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-600 rounded-full" /><span>Mío</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-amber-100 rounded-full" /><span>Apartado</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-slate-50 rounded-full opacity-50" /><span>Vendido</span></div>
+      <div className="flex flex-wrap gap-4 px-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-white border border-black rounded-full" /><span>Libre</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-blue-600 rounded-full" /><span>Mío</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-amber-100 border border-amber-200 rounded-full" /><span>Apartado</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-slate-50 rounded-full opacity-50" /><span>Vendido</span></div>
       </div>
 
       {selectedTickets.length > 0 && (
@@ -577,8 +577,8 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               </div>
               <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                 {selectedTickets.sort((a, b) => a - b).map(num => (
-                  <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-slate-50 border border-slate-100 rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90">
-                    <span className="text-slate-700 font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
+                  <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm">
+                    <span className="text-black font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
                     <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                   </div>
                 ))}
