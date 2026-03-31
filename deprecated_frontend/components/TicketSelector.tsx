@@ -18,18 +18,20 @@ function computeLayout(
   maxTickets: number,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
-  const aspectRatio = 1;
 
-  // Forzamos un diseño consistente de menos columnas para que quepan todos los dígitos (3 a 7)
-  // 6 columnas en escritorio, 4 en móviles pequeños
-  const cols = containerWidth < 400 ? 4 : 6;
+  // Aumentamos el ratio a 1.5 para que sean rectángulos horizontales (más anchos que altos)
+  const aspectRatio = 1.5;
+
+  // Aumentamos la cantidad de columnas para ver más cantidad de boletos de un solo vistazo
+  // 5 en móvil, 8 en escritorio
+  const cols = containerWidth < 450 ? 5 : 8;
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Calculamos fuente dinámica para que quepa según el ancho de pantalla
-  let fontSize = '11px';
-  if (digits >= 7) fontSize = btnW >= 60 ? '11px' : '9px';
-  else if (digits >= 5) fontSize = btnW >= 60 ? '12px' : '10px';
-  else fontSize = btnW >= 60 ? '14px' : '12px';
+  // Ajustamos la fuente para que quepa bien en el nuevo diseño rectangular
+  let fontSize = '10px';
+  if (digits >= 7) fontSize = btnW >= 50 ? '10px' : '8px';
+  else if (digits >= 5) fontSize = btnW >= 50 ? '11px' : '9px';
+  else fontSize = btnW >= 50 ? '13px' : '11px';
 
   return { cols, fontSize, aspectRatio };
 }
@@ -128,11 +130,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Estado inicial inteligente: Siempre 6 columnas para mejor legibilidad
-  const [columnsCount, setColumnsCount] = useState(6);
-  const [rowHeight, setRowHeight] = useState(60);
+  // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
+  const [columnsCount, setColumnsCount] = useState(8);
+  const [rowHeight, setRowHeight] = useState(40);
   const [ticketFontSize, setTicketFontSize] = useState('12px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(1);
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.5);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
