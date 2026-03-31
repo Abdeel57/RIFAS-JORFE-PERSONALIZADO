@@ -244,22 +244,12 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
     const phone = (dynamicSettings?.whatsapp || '').replace(/\D/g, '');
     const cleanPhone = phone.startsWith('52') ? phone : `52${phone}`;
 
-    // Código de reservación legible a partir del purchaseId
-    const rawId = purchaseId || '';
-    const reservationCode = rawId
-      .replace(/-/g, '')
-      .toUpperCase()
-      .slice(0, 10) +
-      '-' +
-      rawId.replace(/-/g, '').slice(-4).toUpperCase();
-
     // Nombre del sitio desde settings o fallback
     const siteNameLabel = dynamicSettings?.siteName || siteName || 'Rifas';
 
-    // Nombre del cliente
+    // Datos del cliente
     const clientName = formData.name;
     const clientState = formData.state;
-    const clientPhone = formData.phone;
 
     // Tickets (sorted, padded)
     const ticketsSorted = [...selectedTickets].sort((a, b) => a - b);
@@ -270,35 +260,27 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
     // Total formateado
     const totalFormatted = `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // URL de pagos (usa el dominio donde está la página, con /pagos)
-    const paymentUrl = `${window.location.origin}/pagos`;
+    const isPlural = ticketsSorted.length > 1;
+    const ticketLabel = isPlural ? 'boletos' : 'boleto';
+    const numLabel = isPlural ? 'Mis números' : 'Mi número';
+
+    // URL del verificador corta y con teléfono prellenado
+    const verifierUrl = `${window.location.host}/#v?tel=${formData.phone}`;
 
     const message =
-      `*${siteNameLabel}*
-
-¡Hola! Soy *${clientName}* de *${clientState}*, mi número de teléfono es *${clientPhone}*
-
-Reservé *${ticketsSorted.length}*  números para el evento de:
-▼ *${raffleTitle}* ▼
-
-*Reservación*${reservationCode}*
-
-*Total:* ${totalFormatted}    
-
-*Enlace para ver las cuentas para pago:*
-${paymentUrl} 
-
-*Número(s):* 
-${ticketsLines}
-
-
-_*Por favor envíanos tu comprobante de pago por aquí mismo*_.`;
+      `*${siteNameLabel}* 🎟️\n\n` +
+      `¡Hola! 👋 Soy *${clientName}* de *${clientState}*.\n\n` +
+      `He reservado *${ticketsSorted.length} ${ticketLabel}* para el evento:\n` +
+      `🏆 *${raffleTitle}*\n\n` +
+      `💰 *Monto a pagar:* *${totalFormatted}*\n\n` +
+      `🔗 *Consulta la validez de tus boletos aquí:*\n${verifierUrl}\n\n` +
+      `🔢 *${numLabel}:*\n${ticketsLines}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📸 *Por favor, envíame tu comprobante de pago por este medio para confirmar mi participación.*`;
 
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
   };
-
-
   const total = overrideTotal !== undefined ? overrideTotal : selectedTickets.length * pricePerTicket;
 
   const activePaymentMethod = useMemo(() => {

@@ -122,9 +122,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const onHashChange = () => {
       setComprobantePurchaseId(getComprobantePurchaseId());
-      if (window.location.hash === '#verify') setActiveView('verify');
+      if (window.location.hash.startsWith('#verify') || window.location.hash.startsWith('#v')) {
+        setActiveView('verify');
+      }
     };
-    if (window.location.hash === '#verify') setActiveView('verify');
+    if (window.location.hash.startsWith('#verify') || window.location.hash.startsWith('#v')) {
+      setActiveView('verify');
+    }
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);

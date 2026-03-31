@@ -16,6 +16,16 @@ const VerifyTickets: React.FC = () => {
 
   // Efecto proactivo: Se ejecuta al montar para ver si el dispositivo tiene algo pendiente
   useEffect(() => {
+    // 1. Verificar si hay un teléfono en la URL (#v?tel= o #verify?tel=)
+    const hash = window.location.hash;
+    if ((hash.startsWith('#v') || hash.startsWith('#verify')) && hash.includes('?')) {
+      const params = new URLSearchParams(hash.split('?')[1]);
+      const tel = params.get('tel');
+      if (tel && tel.length === 10) {
+        setPhone(tel);
+      }
+    }
+
     const checkPending = async () => {
       const savedPending = localStorage.getItem(STORAGE_KEY_PENDING);
       if (savedPending) {
