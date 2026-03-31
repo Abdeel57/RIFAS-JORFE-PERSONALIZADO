@@ -70,7 +70,7 @@ const TicketItem = React.memo(({
       disabled={isUnavailable}
       style={{ width: '100%', aspectRatio: `${aspectRatio} / 1`, fontSize }}
       className={`
-        flex items-center justify-center font-black rounded-lg
+        flex items-center justify-center font-black rounded-md
         transition-colors duration-150 relative leading-none tracking-tight
         ${status === 'sold'
           ? 'bg-slate-50 text-slate-100 cursor-not-allowed'
@@ -579,7 +579,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               </div>
               <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                 {selectedTickets.sort((a, b) => a - b).map(num => (
-                  <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-xl py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm">
+                  <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-md py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm">
                     <span className="text-black font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
                     <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                   </div>
