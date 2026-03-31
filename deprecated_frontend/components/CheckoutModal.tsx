@@ -239,6 +239,65 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
     window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
   };
 
+  // ── Botón "Validar pago" (solo en modo sin verificación automática) ──
+  const handleValidarPagoWhatsApp = () => {
+    const phone = (dynamicSettings?.whatsapp || '').replace(/\D/g, '');
+    const cleanPhone = phone.startsWith('52') ? phone : `52${phone}`;
+
+    // Código de reservación legible a partir del purchaseId
+    const rawId = purchaseId || '';
+    const reservationCode = rawId
+      .replace(/-/g, '')
+      .toUpperCase()
+      .slice(0, 10) +
+      '-' +
+      rawId.replace(/-/g, '').slice(-4).toUpperCase();
+
+    // Nombre del sitio desde settings o fallback
+    const siteNameLabel = dynamicSettings?.siteName || siteName || 'Rifas';
+
+    // Nombre del cliente
+    const clientName = formData.name;
+    const clientState = formData.state;
+    const clientPhone = formData.phone;
+
+    // Tickets (sorted, padded)
+    const ticketsSorted = [...selectedTickets].sort((a, b) => a - b);
+    const ticketsLines = ticketsSorted
+      .map(n => `🎟 ${n.toString().padStart(6, '0')}`)
+      .join('\n');
+
+    // Total formateado
+    const totalFormatted = `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // URL de pagos (usa el dominio donde está la página, con /pagos)
+    const paymentUrl = `${window.location.origin}/pagos`;
+
+    const message =
+      `*${siteNameLabel}*
+
+¡Hola! Soy *${clientName}* de *${clientState}*, mi número de teléfono es *${clientPhone}*
+
+Reservé *${ticketsSorted.length}*  números para el evento de:
+▼ *${raffleTitle}* ▼
+
+*Reservación*${reservationCode}*
+
+*Total:* ${totalFormatted}    
+
+*Enlace para ver las cuentas para pago:*
+${paymentUrl} 
+
+*Número(s):* 
+${ticketsLines}
+
+
+_*Por favor envíanos tu comprobante de pago por aquí mismo*_.`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
+  };
+
 
   const total = overrideTotal !== undefined ? overrideTotal : selectedTickets.length * pricePerTicket;
 
@@ -1005,14 +1064,29 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                         Volver a comprar
                       </button>
 
-                      <button
-                        onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[9px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110 shadow-lg shadow-blue-100"
-                        style={{ backgroundColor: '#1877F2' }}
-                      >
-                        <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073" /></svg>
-                        Seguir en Facebook
-                      </button>
+                      {dynamicSettings?.autoVerificationEnabled === false ? (
+                        /* ── MODO MANUAL: Botón verde de WhatsApp "Validar pago" ── */
+                        <button
+                          onClick={handleValidarPagoWhatsApp}
+                          className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[9px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110 shadow-lg shadow-green-200"
+                          style={{ backgroundColor: '#25D366' }}
+                        >
+                          <svg className="w-3.5 h-3.5 fill-white flex-shrink-0" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                          </svg>
+                          Validar pago
+                        </button>
+                      ) : (
+                        /* ── MODO AUTO: Botón de Facebook (comportamiento original) ── */
+                        <button
+                          onClick={() => window.open(dynamicSettings?.facebookUrl || 'https://facebook.com', '_blank')}
+                          className="flex-1 flex items-center justify-center gap-1.5 text-white font-black py-3.5 rounded-2xl text-[9px] uppercase tracking-widest transition-all active:scale-95 hover:brightness-110 shadow-lg shadow-blue-100"
+                          style={{ backgroundColor: '#1877F2' }}
+                        >
+                          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073" /></svg>
+                          Seguir en Facebook
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>
