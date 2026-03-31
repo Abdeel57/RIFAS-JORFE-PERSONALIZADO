@@ -83,28 +83,28 @@ export const createRaffle = async (req: Request, res: Response, next: NextFuncti
   try {
     const data = createRaffleSchema.parse(req.body);
 
-    const raffle = await prisma.$transaction(async (tx) => {
-      const { promoTiers, ...restData } = data;
-      const newRaffle = await tx.raffle.create({
-        data: {
-          ...restData,
-          status: data.status || 'active',
-          drawDate: new Date(data.drawDate),
-          showCountdown: data.showCountdown ?? false,
-          autoReleaseHours: data.autoReleaseHours || 0,
-          luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
-          // Prisma requires Prisma.JsonNull instead of null for Json fields
-          ...(promoTiers !== undefined ? { promoTiers: promoTiers === null ? Prisma.JsonNull : promoTiers } : {}),
-        },
-      });
+    // ── Paso 1: Crear la rifa (transacción corta, sin riesgo de timeout) ──
+    const { promoTiers, ...restData } = data;
+    const newRaffle = await prisma.raffle.create({
+      data: {
+        ...restData,
+        status: data.status || 'active',
+        drawDate: new Date(data.drawDate),
+        showCountdown: data.showCountdown ?? false,
+        autoReleaseHours: data.autoReleaseHours || 0,
+        luckyMachineNumbers: data.luckyMachineNumbers || [5, 10, 20, 50],
+        ...(promoTiers !== undefined ? { promoTiers: promoTiers === null ? Prisma.JsonNull : promoTiers } : {}),
+      },
+    });
 
-      // Crear boletos solo si NO es virtual
-      if (!data.isVirtual) {
+    // ── Paso 2: Crear boletos en transacción separada con timeout extendido ──
+    if (!data.isVirtual) {
+      await prisma.$transaction(async (tx) => {
         await ensureTicketsExist(newRaffle.id, data.totalTickets, data.opportunities || 1, tx);
-      }
+      }, { timeout: 120000 }); // 2 min para rifas con muchos boletos
+    }
 
-      return newRaffle;
-    }, { timeout: 30000 }); // Aumentar timeout para rifas grandes
+    const raffle = newRaffle;
 
     const raffleWithDetails = await prisma.raffle.findUnique({
       where: { id: raffle.id },
@@ -141,45 +141,51 @@ export const updateRaffle = async (req: Request, res: Response, next: NextFuncti
     const existingRaffle = await prisma.raffle.findUnique({ where: { id } });
     if (!existingRaffle) throw new AppError(404, 'Raffle not found');
 
-    const result = await prisma.$transaction(async (tx) => {
-      const { promoTiers: newPromoTiers, ...restUpdateData } = data;
-      const updateData: any = { ...restUpdateData };
-      if (data.drawDate) updateData.drawDate = new Date(data.drawDate);
-      // Sanitize Json field: Prisma requires Prisma.JsonNull instead of null
-      if (newPromoTiers !== undefined) {
-        updateData.promoTiers = newPromoTiers === null ? Prisma.JsonNull : newPromoTiers;
+    // ── Paso 1: Actualizar los datos de la rifa (commit inmediato, nunca hace rollback por boletos) ──
+    const { promoTiers: newPromoTiers, ...restUpdateData } = data;
+    const updateData: any = { ...restUpdateData };
+    if (data.drawDate) updateData.drawDate = new Date(data.drawDate);
+    if (newPromoTiers !== undefined) {
+      updateData.promoTiers = newPromoTiers === null ? Prisma.JsonNull : newPromoTiers;
+    }
+
+    const result = await prisma.raffle.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // ── Paso 2: Gestionar boletos en transacción separada con timeout extendido ──
+    // Si falla, la rifa ya está actualizada en BD (no hay rollback de los datos principales)
+    const isNowVirtual = data.isVirtual !== undefined ? data.isVirtual : existingRaffle.isVirtual;
+    const totalTickets = data.totalTickets !== undefined ? data.totalTickets : existingRaffle.totalTickets;
+    const existingOpportunities = (existingRaffle as any).opportunities ?? 1;
+
+    if (!isNowVirtual) {
+      const opportunities = data.opportunities !== undefined ? data.opportunities : existingOpportunities;
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          await ensureTicketsExist(id, totalTickets, opportunities, tx);
+
+          // Si se redujo el número de boletos, eliminar los disponibles sobrantes
+          const totalEmissions = totalTickets * opportunities;
+          const existingTotal = existingRaffle.totalTickets * existingOpportunities;
+
+          if (totalEmissions < existingTotal) {
+            await tx.ticket.deleteMany({
+              where: {
+                raffleId: id,
+                status: 'available',
+                number: { gt: totalEmissions },
+              },
+            });
+          }
+        }, { timeout: 120000 }); // 2 min para rifas con 30k-60k boletos
+      } catch (ticketErr: any) {
+        // Los datos de la rifa ya están guardados — solo logueamos el error de boletos
+        console.warn(`⚠️ [RAFFLE UPDATE] Rifa ${id} actualizada, pero hubo un error gestionando boletos (no crítico):`, ticketErr?.message);
       }
-
-      const updatedRaffle = await tx.raffle.update({
-        where: { id },
-        data: updateData,
-      });
-
-      // Determinar si ahora es tradicional y si necesitamos generar boletos
-      const isNowVirtual = data.isVirtual !== undefined ? data.isVirtual : existingRaffle.isVirtual;
-      const totalTickets = data.totalTickets !== undefined ? data.totalTickets : existingRaffle.totalTickets;
-
-      if (!isNowVirtual) {
-        const opportunities = data.opportunities !== undefined ? data.opportunities : existingRaffle.opportunities;
-        await ensureTicketsExist(id, totalTickets, opportunities, tx);
-
-        // Si se redujo el numero de boletos o ahora hay menos emisiones
-        const totalEmissions = totalTickets * opportunities;
-        const existingTotal = existingRaffle.totalTickets * (existingRaffle as any).opportunities;
-
-        if (totalEmissions < existingTotal) {
-          await tx.ticket.deleteMany({
-            where: {
-              raffleId: id,
-              status: 'available',
-              number: { gt: totalEmissions },
-            },
-          });
-        }
-      }
-
-      return updatedRaffle;
-    }, { timeout: 30000 });
+    }
 
     const raffleWithDetails = await prisma.raffle.findUnique({
       where: { id: result.id },
@@ -270,6 +276,8 @@ export const getAllRaffles = async (req: Request, res: Response, next: NextFunct
 
     const result = raffles.map(r => ({
       ...r,
+      // Normalizar siempre a número para evitar null/undefined en clientes con Prisma desactualizado
+      opportunities: (r as any).opportunities ?? 1,
       totalRevenue: revenueMap.get(r.id) || 0,
     }));
 
