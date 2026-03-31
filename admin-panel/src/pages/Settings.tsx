@@ -711,6 +711,26 @@ const Settings: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className="border-t border-slate-50 pt-5 space-y-3">
+                                <FieldLabel hint="Controla qué tan grande se muestra el logo en el header. Valor recomendado: 44px.">Tamaño del Logo en Header</FieldLabel>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="range"
+                                        min={24}
+                                        max={96}
+                                        step={2}
+                                        value={settings.logoSize}
+                                        onChange={e => set('logoSize', Number(e.target.value))}
+                                        className="flex-1 h-2 appearance-none bg-slate-100 rounded-full accent-blue-600 cursor-pointer"
+                                    />
+                                    <span className="w-14 text-center text-sm font-black text-slate-700 bg-slate-50 border border-slate-100 rounded-xl py-1">{settings.logoSize}px</span>
+                                </div>
+                                <div className="flex justify-between text-[9px] font-bold text-slate-300 uppercase tracking-widest px-1">
+                                    <span>Pequeño (24)</span>
+                                    <span>Recomendado (44)</span>
+                                    <span>Grande (96)</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

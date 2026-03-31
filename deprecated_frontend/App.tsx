@@ -311,6 +311,29 @@ const App: React.FC = () => {
           {/* Glassmorphism inner gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-white/10 pointer-events-none rounded-2xl md:rounded-[2rem]" />
 
+          {/* ── Franja superior: relleno de color principal con gradiente ── */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              top: 0, left: 0, right: 0,
+              height: 14,
+              background: 'linear-gradient(to bottom, rgba(var(--brand-primary-rgb), 0.90) 0%, transparent 60%)',
+              borderRadius: '2rem 2rem 0 0',
+              zIndex: 2,
+            }}
+          />
+          {/* ── Franja inferior: relleno de color principal con gradiente ── */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              bottom: 0, left: 0, right: 0,
+              height: 14,
+              background: 'linear-gradient(to top, rgba(var(--brand-primary-rgb), 0.90) 0%, transparent 60%)',
+              borderRadius: '0 0 2rem 2rem',
+              zIndex: 2,
+            }}
+          />
+
           {/* ── COLUMNA IZQUIERDA (flex:1): Botón Sorteo ── */}
           <div className="flex items-center justify-start z-10 flex-1 min-w-0">
             <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 shadow-inner flex-shrink-0" ref={raffleDropdownRef}>
@@ -377,7 +400,7 @@ const App: React.FC = () => {
           {/* ── COLUMNA CENTRAL: Logo centrado ── */}
           <div
             className="flex items-center justify-center z-10 flex-shrink-0 cursor-pointer group"
-            style={{ width: Math.round((brand.logoSize || 44) * 1.2) + 16 }}
+            style={{ width: (brand.logoSize || 44) + 16 }}
             onClick={() => handleViewChange('raffle')}
           >
             {/*
@@ -385,7 +408,7 @@ const App: React.FC = () => {
               ║  BADGE VERIFICADO — posición fija relativa al logo      ║
               ╚══════════════════════════════════════════════════════════╝
             */}
-            <div style={{ position: 'relative', width: Math.round((brand.logoSize || 44) * 1.2), height: Math.round((brand.logoSize || 44) * 1.2), flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: brand.logoSize || 44, height: brand.logoSize || 44, flexShrink: 0 }}>
               {/* Badge verificado */}
               <div
                 className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
