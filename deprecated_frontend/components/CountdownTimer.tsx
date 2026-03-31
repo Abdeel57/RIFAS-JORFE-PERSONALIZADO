@@ -15,7 +15,6 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) => {
     useEffect(() => {
         const calculateTimeLeft = () => {
             const difference = +new Date(targetDate) - +new Date();
-
             if (difference > 0) {
                 setTimeLeft({
                     days: Math.floor(difference / (1000 * 60 * 60 * 24)),
@@ -30,37 +29,55 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) => {
 
         calculateTimeLeft();
         const timer = setInterval(calculateTimeLeft, 1000);
-
         return () => clearInterval(timer);
     }, [targetDate]);
 
     if (!timeLeft) return null;
 
     const TimeUnit = ({ value, label }: { value: number; label: string }) => (
-        <div className="flex flex-col items-center px-3 py-2 bg-white rounded-2xl border border-slate-100 shadow-sm min-w-[64px]">
-            <span className="text-xl font-black text-slate-800 tracking-tighter leading-none tabular-nums">
+        <div className="flex flex-col items-center">
+            <span
+                className="font-black tabular-nums leading-none"
+                style={{
+                    fontSize: 'clamp(36px, 9vw, 64px)',
+                    letterSpacing: '-0.04em',
+                    color: 'var(--brand-primary)',
+                    textShadow: '0 2px 20px rgba(var(--brand-primary-rgb, 59, 130, 246), 0.18)',
+                }}
+            >
                 {value.toString().padStart(2, '0')}
             </span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] mt-1">
                 {label}
             </span>
         </div>
     );
 
+    const Colon = () => (
+        <span
+            className="font-black text-slate-200 self-start"
+            style={{ fontSize: 'clamp(28px, 7vw, 52px)', marginTop: '4px', lineHeight: 1 }}
+        >
+            :
+        </span>
+    );
+
     return (
-        <div className="flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">El sorteo finaliza en:</span>
+        <div className="flex flex-col items-center gap-2 py-5 animate-in fade-in duration-700">
+            <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">
+                    El sorteo finaliza en
+                </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 md:gap-5">
                 <TimeUnit value={timeLeft.days} label="Días" />
-                <span className="text-xl font-black text-slate-200 -mt-4">:</span>
+                <Colon />
                 <TimeUnit value={timeLeft.hours} label="Hrs" />
-                <span className="text-xl font-black text-slate-200 -mt-4">:</span>
+                <Colon />
                 <TimeUnit value={timeLeft.minutes} label="Min" />
-                <span className="text-xl font-black text-slate-200 -mt-4">:</span>
+                <Colon />
                 <TimeUnit value={timeLeft.seconds} label="Seg" />
             </div>
         </div>
