@@ -306,83 +306,14 @@ const App: React.FC = () => {
       >
         <nav
           className="pointer-events-auto relative w-full max-w-2xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
-          style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', alignItems: 'center', gap: 0, paddingLeft: 6, paddingRight: 12 }}
+          style={{ display: 'flex', alignItems: 'center', paddingLeft: 8, paddingRight: 8, gap: 0 }}
         >
           {/* Glassmorphism inner gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-white/10 pointer-events-none rounded-2xl md:rounded-[2rem]" />
 
-          {/*
-            ╔══════════════════════════════════════════════════════════╗
-            ║  BADGE VERIFICADO — POSICIÓN 100% FIJA                  ║
-            ║  Hijo directo del <nav>, position:absolute               ║
-            ║  Coordenadas en píxeles duros: top:5 left:40            ║
-            ║  No tiene relación con el logo ni con nada más          ║
-            ║  Nunca se moverá sin importar logoSize, nombre, etc.    ║
-            ╚══════════════════════════════════════════════════════════╝
-          */}
-          <div
-            className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
-            style={{ width: 14, height: 14, top: 5, left: 40, zIndex: 50 }}
-          >
-            <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
-              <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
-            </svg>
-          </div>
-
-          {/* ── COLUMNA IZQUIERDA: Logo (absolute) + Nombre ── */}
-          <div
-            className="relative flex items-center z-10 cursor-pointer group min-w-0"
-            style={{ paddingLeft: 50 }}
-            onClick={() => handleViewChange('raffle')}
-          >
-            {/* Logo: position:absolute, centrado verticalmente, escala libre */}
-            <div
-              className="absolute flex items-center justify-center"
-              style={{ left: 0, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, overflow: 'visible', zIndex: 10 }}
-            >
-              {brand.logoUrl ? (
-                <img
-                  src={brand.logoUrl}
-                  alt="Logo"
-                  className="object-contain drop-shadow-sm transform group-hover:scale-105 transition-transform duration-300"
-                  style={{ position: 'absolute', width: brand.logoSize, height: brand.logoSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-                />
-              ) : (
-                <div
-                  className="rounded-xl flex items-center justify-center shadow-md transform group-hover:scale-105 transition-transform duration-300"
-                  style={{ position: 'absolute', width: brand.logoSize, height: brand.logoSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
-                >
-                  <span className="text-white font-black text-lg italic">N</span>
-                </div>
-              )}
-            </div>
-
-            {/* Nombre: hasta 2 líneas, empuja el menú */}
-            <div className="flex flex-col" style={{ paddingRight: 8 }}>
-              <span
-                className="font-black tracking-tight text-slate-800 leading-tight"
-                style={{
-                  fontSize: brand.siteName.length <= 8 ? 14 : brand.siteName.length <= 14 ? 12 : 10,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  wordBreak: 'break-word',
-                  whiteSpace: 'normal',
-                }}
-              >
-                {brand.siteName}
-              </span>
-              <span className="font-bold uppercase leading-none mt-0.5 hidden md:block tracking-widest" style={{ fontSize: 7, color: 'var(--brand-primary)', whiteSpace: 'nowrap' }}>
-                Sorteos Certificados
-              </span>
-            </div>
-          </div>
-
-
-          {/* ── COLUMNA CENTRAL (auto): Botones de navegación ──────── */}
-          <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 z-10 shadow-inner">
-            <div className="relative" ref={raffleDropdownRef}>
+          {/* ── COLUMNA IZQUIERDA (flex:1): Botón Sorteo ── */}
+          <div className="flex items-center justify-start z-10 flex-1 min-w-0">
+            <div className="relative flex bg-white/50 p-0.5 rounded-xl border border-white/80 shadow-inner flex-shrink-0" ref={raffleDropdownRef}>
               <button
                 onClick={() => {
                   if (activeRaffles.length > 1) {
@@ -410,7 +341,7 @@ const App: React.FC = () => {
 
               {/* Menú Desplegable de Rifas */}
               {isRaffleDropdownOpen && activeRaffles.length > 1 && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 md:w-56 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-48 md:w-56 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 mb-1 border-b border-slate-50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sorteos Activos</p>
                   </div>
@@ -441,21 +372,62 @@ const App: React.FC = () => {
                 </div>
               )}
             </div>
-
-            <button
-              onClick={() => handleViewChange('verify')}
-              className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
-              style={activeView === 'verify' ? { color: 'var(--brand-primary)' } : {}}
-            >
-              Verificar
-            </button>
           </div>
 
-          {/* ── COLUMNA DERECHA (1fr): Botón de sonido ─────────────── */}
-          <div className="flex items-center justify-end z-10">
+          {/* ── COLUMNA CENTRAL: Logo centrado ── */}
+          <div
+            className="flex items-center justify-center z-10 flex-shrink-0 cursor-pointer group"
+            style={{ width: Math.round((brand.logoSize || 44) * 1.2) + 16 }}
+            onClick={() => handleViewChange('raffle')}
+          >
+            {/*
+              ╔══════════════════════════════════════════════════════════╗
+              ║  BADGE VERIFICADO — posición fija relativa al logo      ║
+              ╚══════════════════════════════════════════════════════════╝
+            */}
+            <div style={{ position: 'relative', width: Math.round((brand.logoSize || 44) * 1.2), height: Math.round((brand.logoSize || 44) * 1.2), flexShrink: 0 }}>
+              {/* Badge verificado */}
+              <div
+                className="absolute bg-[#1877F2] border-2 border-white rounded-full flex items-center justify-center shadow-sm pointer-events-none"
+                style={{ width: 14, height: 14, top: 0, right: 0, zIndex: 50 }}
+              >
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="white">
+                  <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
+                </svg>
+              </div>
+
+              {brand.logoUrl ? (
+                <img
+                  src={brand.logoUrl}
+                  alt="Logo"
+                  className="object-contain drop-shadow-sm transform group-hover:scale-105 transition-transform duration-300"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ) : (
+                <div
+                  className="rounded-xl flex items-center justify-center shadow-md transform group-hover:scale-105 transition-transform duration-300"
+                  style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
+                >
+                  <span className="text-white font-black text-lg italic">N</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── COLUMNA DERECHA (flex:1): Botón Verificar + Audio ── */}
+          <div className="flex items-center justify-end z-10 flex-1 min-w-0 gap-2">
+            <div className="flex bg-white/50 p-0.5 rounded-xl border border-white/80 shadow-inner flex-shrink-0">
+              <button
+                onClick={() => handleViewChange('verify')}
+                className={`px-3 md:px-5 py-1.5 rounded-[10px] text-[9px] md:text-[10px] font-black transition-all duration-200 uppercase tracking-widest ${activeView === 'verify' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                style={activeView === 'verify' ? { color: 'var(--brand-primary)' } : {}}
+              >
+                Verificar
+              </button>
+            </div>
             <button
               onClick={toggleMute}
-              className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90 ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white shadow-sm'}`}
+              className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border transition-all active:scale-90 flex-shrink-0 ${isMuted ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-white border-white shadow-sm'}`}
               style={!isMuted ? { color: 'var(--brand-primary)' } : {}}
               title={isMuted ? 'Activar Sonido' : 'Silenciar Sonido'}
             >
