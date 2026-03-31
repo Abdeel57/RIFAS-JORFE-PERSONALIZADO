@@ -67,7 +67,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) => {
             <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">
-                    El sorteo finaliza en
+                    Se realiza en:
                 </span>
             </div>
 
