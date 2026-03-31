@@ -490,7 +490,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             <p className="text-slate-400 text-xs font-bold animate-pulse">Cargando boletos...</p>
           </div>
         ) : (
-          <div ref={scrollContainerRef} className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div ref={scrollContainerRef} className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
               {virtualizer.getVirtualItems().map(virtualRow => {
                 const startIdx = virtualRow.index * columnsCount;
