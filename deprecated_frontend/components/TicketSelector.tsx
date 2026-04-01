@@ -19,19 +19,27 @@ function computeLayout(
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
 
-  // Aumentamos el ratio a 1.5 para que sean rectángulos horizontales (más anchos que altos)
-  const aspectRatio = 1.5;
+  // Ratio horizontal: más ancho que alto para leer mejor los números
+  const aspectRatio = 2.2;
 
-  // Aumentamos la cantidad de columnas para ver más cantidad de boletos de un solo vistazo
-  // 5 en móvil, 8 en escritorio
-  const cols = containerWidth < 450 ? 5 : 8;
+  // Columnas adaptadas para que los números sean completamente visibles:
+  // - Rifas con 6+ dígitos: menos columnas para que quepan los números
+  // - Móvil (<500px): 4 cols max para 6 dígitos, 3 para 7+
+  // - Escritorio (>=500px): 6 cols max para 6 dígitos, 5 para 7+
+  let cols: number;
+  if (containerWidth < 500) {
+    cols = digits >= 7 ? 3 : digits >= 6 ? 4 : 5;
+  } else {
+    cols = digits >= 7 ? 5 : digits >= 6 ? 6 : 7;
+  }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Ajustamos la fuente para que quepa bien en el nuevo diseño rectangular
-  let fontSize = '10px';
-  if (digits >= 7) fontSize = btnW >= 50 ? '10px' : '8px';
-  else if (digits >= 5) fontSize = btnW >= 50 ? '11px' : '9px';
-  else fontSize = btnW >= 50 ? '13px' : '11px';
+  // Fuente ajustada al ancho real del botón para máxima legibilidad
+  let fontSize = '11px';
+  if (digits >= 7) fontSize = btnW >= 60 ? '10px' : '9px';
+  else if (digits >= 6) fontSize = btnW >= 55 ? '11px' : '10px';
+  else if (digits >= 5) fontSize = btnW >= 50 ? '12px' : '11px';
+  else fontSize = btnW >= 50 ? '13px' : '12px';
 
   return { cols, fontSize, aspectRatio };
 }
@@ -367,7 +375,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <CountdownTimer targetDate={drawDate} />
       )}
 
-      <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-5 md:p-8 space-y-6 relative overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-4 md:p-6 space-y-6 relative overflow-hidden w-[95%] mx-auto">
         {isAnimating && (
           <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
             <div className="text-5xl animate-bounce mb-4">🎰</div>
