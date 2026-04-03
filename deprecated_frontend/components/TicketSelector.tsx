@@ -20,26 +20,24 @@ function computeLayout(
   const digits = maxTickets.toString().length;
 
   // Ratio horizontal: más ancho que alto para leer mejor los números
-  const aspectRatio = 2.2;
+  const aspectRatio = 2.0;
 
-  // Columnas adaptadas para que los números sean completamente visibles:
-  // - Rifas con 6+ dígitos: menos columnas para que quepan los números
-  // - Móvil (<500px): 4 cols max para 6 dígitos, 3 para 7+
-  // - Escritorio (>=500px): 6 cols max para 6 dígitos, 5 para 7+
+  // Columnas adaptadas para que los números sean completamente visibles sin confusiones:
+  // - Rifas con 6+ dígitos: Bajamos a 3 columnas en móvil para dar máximo espacio lateral
   let cols: number;
   if (containerWidth < 500) {
-    cols = digits >= 7 ? 3 : digits >= 6 ? 4 : 5;
+    cols = digits >= 6 ? 3 : 5;
   } else {
-    cols = digits >= 7 ? 5 : digits >= 6 ? 6 : 7;
+    cols = digits >= 6 ? 5 : 7;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Fuente ajustada al ancho real del botón para máxima legibilidad
+  // Fuente ajustada para ser lo más grande posible dentro del botón
   let fontSize = '11px';
-  if (digits >= 7) fontSize = btnW >= 60 ? '10px' : '9px';
-  else if (digits >= 6) fontSize = btnW >= 55 ? '11px' : '10px';
-  else if (digits >= 5) fontSize = btnW >= 50 ? '12px' : '11px';
-  else fontSize = btnW >= 50 ? '13px' : '12px';
+  if (digits >= 7) fontSize = btnW >= 100 ? '13px' : btnW >= 80 ? '11px' : '10px';
+  else if (digits >= 6) fontSize = btnW >= 100 ? '14px' : btnW >= 80 ? '12px' : '11px';
+  else if (digits >= 5) fontSize = btnW >= 80 ? '15px' : '13px';
+  else fontSize = btnW >= 60 ? '16px' : '14px';
 
   return { cols, fontSize, aspectRatio };
 }

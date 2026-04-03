@@ -19,6 +19,7 @@ interface CheckoutModalProps {
   initialSettings?: any;
   /** Precio total ya calculado (con descuento de tier). Si se omite, se usa selectedTickets.length * pricePerTicket */
   overrideTotal?: number;
+  totalTickets?: number;
 }
 
 // Steps: 1=Datos, 2=Pago+Comprobante, 3=Confirmado, 4=Final
@@ -49,6 +50,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   raffleTitle,
   initialSettings,
   overrideTotal,
+  totalTickets = 100,
 }) => {
   const [step, setStep] = useState<CheckoutStep>(1);
   const [formData, setFormData] = useState({ name: '', phone: '', state: '' });
@@ -253,8 +255,9 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
 
     // Tickets (sorted, padded)
     const ticketsSorted = [...selectedTickets].sort((a, b) => a - b);
+    const maxDigits = totalTickets.toString().length;
     const ticketsLines = ticketsSorted
-      .map(n => `🎟 ${n.toString().padStart(6, '0')}`)
+      .map(n => `🎟 ${n.toString().padStart(maxDigits, '0')}`)
       .join('\n');
 
     // Total formateado
@@ -616,7 +619,7 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   <p className="text-sm font-black text-slate-800 mt-0.5">
                     {selectedTickets.length} boleto{selectedTickets.length !== 1 ? 's' : ''}
                     <span className="text-slate-400 font-medium ml-2 text-xs">
-                      #{selectedTickets.slice(0, 3).map(n => n.toString().padStart(3, '0')).join(' #')}
+                      #{selectedTickets.slice(0, 3).map(n => n.toString().padStart(totalTickets.toString().length, '0')).join(' #')}
                       {selectedTickets.length > 3 ? ` +${selectedTickets.length - 3} más` : ''}
                     </span>
                   </p>
@@ -858,8 +861,8 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                 </div>
                 <div className="flex -space-x-2">
                   {selectedTickets.slice(0, 3).map(n => (
-                    <div key={n} className="w-8 h-8 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 shadow-sm">
-                      #{n.toString().padStart(3, '0')}
+                    <div key={n} className="w-10 h-10 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-sm">
+                      #{n.toString().padStart(totalTickets.toString().length, '0')}
                     </div>
                   ))}
                   {selectedTickets.length > 3 && (
@@ -880,8 +883,8 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {createdPurchase.tickets.filter((t: any) => t.isGift).map((t: any) => (
-                      <div key={t.number} className="bg-white px-2 py-1 rounded-lg border border-blue-50 text-[9px] font-black text-blue-500 shadow-sm">
-                        #{t.number.toString().padStart(3, '0')}
+                      <div key={t.number} className="bg-white px-2 py-1 rounded-lg border border-blue-50 text-[10px] font-black text-blue-500 shadow-sm">
+                        #{t.number.toString().padStart(totalTickets.toString().length, '0')}
                       </div>
                     ))}
                   </div>
