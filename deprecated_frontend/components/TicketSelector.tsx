@@ -7,7 +7,7 @@ import { PromoTier } from '../types.ts';
 import CountdownTimer from './CountdownTimer.tsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const GAP = 8;
+const GAP = 6;
 const OVERSCAN = 3;
 
 /**
@@ -20,26 +20,22 @@ function computeLayout(
   const digits = maxTickets.toString().length;
   const isMultiLevel = digits >= 6;
 
-  // Ratio ajustado para compactar verticalmente y que quepan ~7 filas
-  // - 2 niveles (6+ dígitos): más cuadrado pero con suficiente ancho
-  // - 1 nivel (< 6 dígitos): rectangular
-  const aspectRatio = isMultiLevel ? 1.35 : 1.7;
+  // Ratio muy agresivo para compactar y forzar las 7 filas
+  const aspectRatio = isMultiLevel ? 1.7 : 2.1;
 
   let cols: number;
   if (containerWidth < 500) {
-    // Móvil: 4 columnas para 6+ dígitos (2 niveles) o 6 para el resto
     cols = isMultiLevel ? 4 : 6;
   } else {
-    // Escritorio
     cols = isMultiLevel ? 6 : 8;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  let fontSize = '11px';
+  let fontSize = '10px';
   if (isMultiLevel) {
-    fontSize = btnW >= 80 ? '13px' : btnW >= 60 ? '11px' : '10px';
+    fontSize = btnW >= 80 ? '12px' : '10px';
   } else {
-    fontSize = btnW >= 60 ? '14px' : btnW >= 45 ? '12px' : '11px';
+    fontSize = btnW >= 60 ? '13px' : '11px';
   }
 
   return { cols, fontSize, aspectRatio };
@@ -147,11 +143,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
-  // Estado inicial inteligente: Ajustado para mayor densidad
+  // Estado inicial ultra-compacto
   const [columnsCount, setColumnsCount] = useState(4);
-  const [rowHeight, setRowHeight] = useState(50);
-  const [ticketFontSize, setTicketFontSize] = useState('11px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.4);
+  const [rowHeight, setRowHeight] = useState(42);
+  const [ticketFontSize, setTicketFontSize] = useState('10px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.7);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -507,7 +503,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             <p className="text-slate-400 text-xs font-bold animate-pulse">Cargando boletos...</p>
           </div>
         ) : (
-          <div ref={scrollContainerRef} className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
               {virtualizer.getVirtualItems().map(virtualRow => {
                 const startIdx = virtualRow.index * columnsCount;
