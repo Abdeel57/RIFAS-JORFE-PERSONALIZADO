@@ -18,29 +18,28 @@ function computeLayout(
   maxTickets: number,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
-
-  // Si son 6 dígitos o más, usamos un diseño casi cuadrado (2 líneas de texto)
   const isMultiLevel = digits >= 6;
-  const aspectRatio = isMultiLevel ? 1.15 : 1.8;
 
-  // Forzamos columnas para ganar espacio horizontal
+  // Ratio ajustado para compactar verticalmente y que quepan ~7 filas
+  // - 2 niveles (6+ dígitos): más cuadrado pero con suficiente ancho
+  // - 1 nivel (< 6 dígitos): rectangular
+  const aspectRatio = isMultiLevel ? 1.35 : 1.7;
+
   let cols: number;
   if (containerWidth < 500) {
-    // Reducimos una "fila" visual (columnas) para que todo quepa perfectamente
-    cols = digits >= 6 ? 3 : 5;
+    // Móvil: 4 columnas para 6+ dígitos (2 niveles) o 6 para el resto
+    cols = isMultiLevel ? 4 : 6;
   } else {
-    cols = digits >= 6 ? 5 : 7;
+    // Escritorio
+    cols = isMultiLevel ? 6 : 8;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Fuente ajustada para el diseño de 2 niveles
-  let fontSize = '12px';
+  let fontSize = '11px';
   if (isMultiLevel) {
-    // En 2 niveles el texto puede ser un poco más grande proporcionalmente
-    fontSize = btnW >= 90 ? '14px' : btnW >= 70 ? '12px' : '11px';
+    fontSize = btnW >= 80 ? '13px' : btnW >= 60 ? '11px' : '10px';
   } else {
-    if (digits >= 5) fontSize = btnW >= 80 ? '14px' : '12px';
-    else fontSize = btnW >= 60 ? '15px' : '13px';
+    fontSize = btnW >= 60 ? '14px' : btnW >= 45 ? '12px' : '11px';
   }
 
   return { cols, fontSize, aspectRatio };
@@ -148,11 +147,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
-  // Estado inicial inteligente: Menos columnas por defecto para evitar saltos visuales
-  const [columnsCount, setColumnsCount] = useState(3);
-  const [rowHeight, setRowHeight] = useState(60);
-  const [ticketFontSize, setTicketFontSize] = useState('14px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.15);
+  // Estado inicial inteligente: Ajustado para mayor densidad
+  const [columnsCount, setColumnsCount] = useState(4);
+  const [rowHeight, setRowHeight] = useState(50);
+  const [ticketFontSize, setTicketFontSize] = useState('11px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.4);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
