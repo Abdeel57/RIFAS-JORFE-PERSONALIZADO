@@ -20,22 +20,23 @@ function computeLayout(
   const digits = maxTickets.toString().length;
   const isMultiLevel = digits >= 6;
 
-  // Ratio muy agresivo para compactar y forzar las 7 filas
-  const aspectRatio = isMultiLevel ? 1.7 : 2.1;
+  // Ratio para forzar 7+ filas con 3 columnas
+  const aspectRatio = isMultiLevel ? 2.1 : 2.2;
 
   let cols: number;
   if (containerWidth < 500) {
-    cols = isMultiLevel ? 4 : 6;
+    // Regresamos a 3 columnas para máxima claridad en 6 dígitos
+    cols = isMultiLevel ? 3 : 5;
   } else {
-    cols = isMultiLevel ? 6 : 8;
+    cols = isMultiLevel ? 5 : 7;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  let fontSize = '10px';
+  let fontSize = '12px';
   if (isMultiLevel) {
-    fontSize = btnW >= 80 ? '12px' : '10px';
+    fontSize = btnW >= 100 ? '16px' : btnW >= 80 ? '14px' : '13px';
   } else {
-    fontSize = btnW >= 60 ? '13px' : '11px';
+    fontSize = btnW >= 60 ? '15px' : '13px';
   }
 
   return { cols, fontSize, aspectRatio };
@@ -89,9 +90,9 @@ const TicketItem = React.memo(({
       `}
     >
       {padded.length >= 6 ? (
-        <div className="flex flex-col items-center justify-center leading-[0.8] py-1">
-          <span className="opacity-70 text-[0.85em] font-bold">{padded.slice(0, 3)}</span>
-          <span className="font-black">{padded.slice(3)}</span>
+        <div className="flex flex-col items-center justify-center leading-[0.75] py-1 font-black">
+          <span className="tracking-tighter">{padded.slice(0, 3)}</span>
+          <span className="tracking-tighter">{padded.slice(3)}</span>
         </div>
       ) : (
         padded
@@ -143,11 +144,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
-  // Estado inicial ultra-compacto
-  const [columnsCount, setColumnsCount] = useState(4);
-  const [rowHeight, setRowHeight] = useState(42);
-  const [ticketFontSize, setTicketFontSize] = useState('10px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.7);
+  // Estado inicial optimizado para 3 columnas y 7+ filas
+  const [columnsCount, setColumnsCount] = useState(3);
+  const [rowHeight, setRowHeight] = useState(55);
+  const [ticketFontSize, setTicketFontSize] = useState('14px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(2.0);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
