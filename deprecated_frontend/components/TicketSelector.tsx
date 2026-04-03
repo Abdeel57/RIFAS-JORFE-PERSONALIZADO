@@ -18,23 +18,24 @@ function computeLayout(
   maxTickets: number,
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
-  const isMultiLevel = digits >= 6;
 
-  // Ratio para forzar 7+ filas con 3 columnas
-  const aspectRatio = isMultiLevel ? 2.1 : 2.2;
+  // Estética Original: Rectángulo en una sola línea
+  // Ratio calculado para que quepan ~7-8 filas en móvil
+  const aspectRatio = 2.2;
 
   let cols: number;
   if (containerWidth < 500) {
-    // Regresamos a 3 columnas para máxima claridad en 6 dígitos
-    cols = isMultiLevel ? 3 : 5;
+    // 4 columnas es el punto ideal para 6 dígitos en una línea
+    cols = digits >= 6 ? 4 : 5;
   } else {
-    cols = isMultiLevel ? 5 : 7;
+    cols = digits >= 6 ? 6 : 8;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
+  // Fuente legible y uniforme
   let fontSize = '12px';
-  if (isMultiLevel) {
-    fontSize = btnW >= 100 ? '16px' : btnW >= 80 ? '14px' : '13px';
+  if (digits >= 6) {
+    fontSize = btnW >= 80 ? '14px' : '12px';
   } else {
     fontSize = btnW >= 60 ? '15px' : '13px';
   }
@@ -76,8 +77,8 @@ const TicketItem = React.memo(({
       disabled={isUnavailable}
       style={{ width: '100%', aspectRatio: `${aspectRatio} / 1`, fontSize }}
       className={`
-        flex items-center justify-center font-black rounded-lg
-        transition-colors duration-150 relative leading-none tracking-tighter
+        flex items-center justify-center font-bold rounded-lg
+        transition-colors duration-150 relative leading-none tracking-tight
         ${status === 'sold'
           ? 'bg-slate-50 text-slate-100 cursor-not-allowed'
           : status === 'reserved'
@@ -89,14 +90,7 @@ const TicketItem = React.memo(({
                 : 'bg-white text-black border border-black hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600'}
       `}
     >
-      {padded.length >= 6 ? (
-        <div className="flex flex-col items-center justify-center leading-[0.75] py-1 font-black">
-          <span className="tracking-tighter">{padded.slice(0, 3)}</span>
-          <span className="tracking-tighter">{padded.slice(3)}</span>
-        </div>
-      ) : (
-        padded
-      )}
+      {padded}
     </button>
   );
 });
@@ -144,11 +138,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
-  // Estado inicial optimizado para 3 columnas y 7+ filas
-  const [columnsCount, setColumnsCount] = useState(3);
-  const [rowHeight, setRowHeight] = useState(55);
-  const [ticketFontSize, setTicketFontSize] = useState('14px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(2.0);
+  // Estado inicial estético: 4 columnas, rectangular
+  const [columnsCount, setColumnsCount] = useState(4);
+  const [rowHeight, setRowHeight] = useState(48);
+  const [ticketFontSize, setTicketFontSize] = useState('13px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(2.2);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -594,15 +588,8 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 </div>
                 <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                   {selectedTickets.sort((a, b) => a - b).map(num => (
-                    <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-lg py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm min-h-[54px]">
-                      {num.toString().padStart(totalTickets.toString().length, '0').length >= 6 ? (
-                        <div className="flex flex-col items-center leading-[0.8]">
-                          <span className="text-slate-400 font-bold text-[9px]">{num.toString().padStart(totalTickets.toString().length, '0').slice(0, 3)}</span>
-                          <span className="text-black font-black text-[12px]">{num.toString().padStart(totalTickets.toString().length, '0').slice(3)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-black font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
-                      )}
+                    <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-lg py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm min-h-[44px]">
+                      <span className="text-black font-bold text-[12px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
                       <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                     </div>
                   ))}
