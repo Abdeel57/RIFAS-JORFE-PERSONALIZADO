@@ -380,7 +380,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
         <CountdownTimer targetDate={drawDate} />
       )}
 
-      <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-4 md:p-6 space-y-6 relative overflow-hidden w-[95%] mx-auto">
+      <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-2 md:p-6 space-y-2 relative overflow-hidden w-[97%] mx-auto">
         {isAnimating && (
           <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
             <div className="text-5xl animate-bounce mb-4">🎰</div>
@@ -440,8 +440,8 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
           </div>
         )}
 
-        <div className="text-center">
-          <h2 className="text-xl font-black text-slate-800 tracking-[0.05em] uppercase">ELIGE TUS BOLETOS</h2>
+        <div className="text-center py-1">
+          <h2 className="text-sm font-black text-slate-800 tracking-[0.05em] uppercase">ELIGE TUS BOLETOS</h2>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -455,26 +455,26 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 placeholder={isDiscoveryMode ? "Busca terminaciones ej. '777'..." : "Busca un número..."}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-base font-bold text-slate-600"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50/50 border border-slate-100 rounded-2xl focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-slate-600"
               />
             </div>
 
             {!searchTerm && isDiscoveryMode && (
               <button
                 onClick={() => { soundService.playSelect(); generateRandomDiscovery(statusMap); }}
-                className="h-[52px] bg-white border border-slate-100 px-4 rounded-2xl flex items-center gap-2 hover:bg-slate-50 transition-all active:scale-95 group shadow-sm"
+                className="h-[42px] bg-white border border-slate-100 px-3 rounded-2xl flex items-center gap-2 hover:bg-slate-50 transition-all active:scale-95 group shadow-sm"
               >
                 <div className={isDiscoveryLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}>
-                  <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline">Regenerar</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline">Regenerar</span>
               </button>
             )}
 
             <div className="relative">
               <button
                 onClick={() => { soundService.playSelect(); setIsMachineOpen(!isMachineOpen); }}
-                className={`h-[52px] px-4 rounded-2xl font-black text-xs uppercase transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
+                className={`h-[42px] px-3 rounded-2xl font-black text-[10px] uppercase transition-all flex items-center gap-2 border shadow-lg relative overflow-hidden group ${isMachineOpen ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-transparent text-white'}`}
               >
                 {!isMachineOpen && <div className="absolute inset-0 bg-[length:300%_auto] animate-rainbow-bg opacity-90 group-hover:opacity-100 transition-opacity" style={{ backgroundImage: 'linear-gradient(90deg, #ff0000, #ff6600, #ffdd00, #00cc00, #0088ff, #6600ff, #ff0099, #ff0000)' }} />}
                 <span className="relative z-10 flex items-center gap-2 drop-shadow-md">🎰 <span className="hidden sm:inline">Suerte</span></span>
@@ -503,7 +503,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
             <p className="text-slate-400 text-xs font-bold animate-pulse">Cargando boletos...</p>
           </div>
         ) : (
-          <div ref={scrollContainerRef} className="max-h-[65vh] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-4 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div ref={scrollContainerRef} className="max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar-light border-y border-slate-50 py-1.5 touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
               {virtualizer.getVirtualItems().map(virtualRow => {
                 const startIdx = virtualRow.index * columnsCount;
