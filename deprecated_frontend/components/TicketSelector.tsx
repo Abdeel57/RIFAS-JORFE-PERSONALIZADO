@@ -19,25 +19,29 @@ function computeLayout(
 ): { cols: number; fontSize: string; aspectRatio: number } {
   const digits = maxTickets.toString().length;
 
-  // Ratio horizontal: más ancho que alto para leer mejor los números
-  const aspectRatio = 2.0;
+  // Si son 6 dígitos o más, usamos un diseño casi cuadrado (2 líneas de texto)
+  const isMultiLevel = digits >= 6;
+  const aspectRatio = isMultiLevel ? 1.15 : 1.8;
 
-  // Columnas adaptadas para que los números sean completamente visibles sin confusiones:
-  // - Rifas con 6+ dígitos: Bajamos a 3 columnas en móvil para dar máximo espacio lateral
+  // Forzamos columnas para ganar espacio horizontal
   let cols: number;
   if (containerWidth < 500) {
+    // Reducimos una "fila" visual (columnas) para que todo quepa perfectamente
     cols = digits >= 6 ? 3 : 5;
   } else {
     cols = digits >= 6 ? 5 : 7;
   }
   const btnW = (containerWidth - (cols - 1) * GAP) / cols;
 
-  // Fuente ajustada para ser lo más grande posible dentro del botón
-  let fontSize = '11px';
-  if (digits >= 7) fontSize = btnW >= 100 ? '13px' : btnW >= 80 ? '11px' : '10px';
-  else if (digits >= 6) fontSize = btnW >= 100 ? '14px' : btnW >= 80 ? '12px' : '11px';
-  else if (digits >= 5) fontSize = btnW >= 80 ? '15px' : '13px';
-  else fontSize = btnW >= 60 ? '16px' : '14px';
+  // Fuente ajustada para el diseño de 2 niveles
+  let fontSize = '12px';
+  if (isMultiLevel) {
+    // En 2 niveles el texto puede ser un poco más grande proporcionalmente
+    fontSize = btnW >= 90 ? '14px' : btnW >= 70 ? '12px' : '11px';
+  } else {
+    if (digits >= 5) fontSize = btnW >= 80 ? '14px' : '12px';
+    else fontSize = btnW >= 60 ? '15px' : '13px';
+  }
 
   return { cols, fontSize, aspectRatio };
 }
@@ -76,8 +80,8 @@ const TicketItem = React.memo(({
       disabled={isUnavailable}
       style={{ width: '100%', aspectRatio: `${aspectRatio} / 1`, fontSize }}
       className={`
-        flex items-center justify-center font-black rounded-md
-        transition-colors duration-150 relative leading-none tracking-tight
+        flex items-center justify-center font-black rounded-lg
+        transition-colors duration-150 relative leading-none tracking-tighter
         ${status === 'sold'
           ? 'bg-slate-50 text-slate-100 cursor-not-allowed'
           : status === 'reserved'
@@ -89,7 +93,14 @@ const TicketItem = React.memo(({
                 : 'bg-white text-black border border-black hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600'}
       `}
     >
-      {padded}
+      {padded.length >= 6 ? (
+        <div className="flex flex-col items-center justify-center leading-[0.8] py-1">
+          <span className="opacity-70 text-[0.85em] font-bold">{padded.slice(0, 3)}</span>
+          <span className="font-black">{padded.slice(3)}</span>
+        </div>
+      ) : (
+        padded
+      )}
     </button>
   );
 });
@@ -137,10 +148,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Estado inicial inteligente: Más columnas y alto reducido para el diseño rectangular
-  const [columnsCount, setColumnsCount] = useState(8);
-  const [rowHeight, setRowHeight] = useState(40);
-  const [ticketFontSize, setTicketFontSize] = useState('12px');
-  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.5);
+  // Estado inicial inteligente: Menos columnas por defecto para evitar saltos visuales
+  const [columnsCount, setColumnsCount] = useState(3);
+  const [rowHeight, setRowHeight] = useState(60);
+  const [ticketFontSize, setTicketFontSize] = useState('14px');
+  const [ticketAspectRatio, setTicketAspectRatio] = useState(1.15);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -586,8 +598,15 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
                 </div>
                 <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto pr-1 custom-scrollbar-light">
                   {selectedTickets.sort((a, b) => a - b).map(num => (
-                    <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-md py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm">
-                      <span className="text-black font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
+                    <div key={num} onClick={e => { e.stopPropagation(); toggleTicket(num, 'available'); }} className="group bg-white border border-black rounded-lg py-2 px-1 flex flex-col items-center justify-center transition-all hover:bg-red-50 relative cursor-pointer active:scale-90 shadow-sm min-h-[54px]">
+                      {num.toString().padStart(totalTickets.toString().length, '0').length >= 6 ? (
+                        <div className="flex flex-col items-center leading-[0.8]">
+                          <span className="text-slate-400 font-bold text-[9px]">{num.toString().padStart(totalTickets.toString().length, '0').slice(0, 3)}</span>
+                          <span className="text-black font-black text-[12px]">{num.toString().padStart(totalTickets.toString().length, '0').slice(3)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-black font-black text-[11px]">#{num.toString().padStart(totalTickets.toString().length, '0')}</span>
+                      )}
                       <span className="text-red-400 text-[8px] font-bold uppercase mt-0.5 group-hover:block hidden">Quitar</span>
                     </div>
                   ))}

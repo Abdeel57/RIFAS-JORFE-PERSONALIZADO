@@ -861,8 +861,15 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                 </div>
                 <div className="flex -space-x-2">
                   {selectedTickets.slice(0, 3).map(n => (
-                    <div key={n} className="w-10 h-10 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-sm">
-                      #{n.toString().padStart(totalTickets.toString().length, '0')}
+                    <div key={n} className="w-11 h-11 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-sm flex-shrink-0">
+                      {n.toString().padStart(totalTickets.toString().length, '0').length >= 6 ? (
+                        <div className="flex flex-col items-center leading-[0.8] scale-90">
+                          <span className="opacity-60 text-[9px]">{n.toString().padStart(totalTickets.toString().length, '0').slice(0, 3)}</span>
+                          <span className="font-black text-[12px]">{n.toString().padStart(totalTickets.toString().length, '0').slice(3)}</span>
+                        </div>
+                      ) : (
+                        `#${n.toString().padStart(totalTickets.toString().length, '0')}`
+                      )}
                     </div>
                   ))}
                   {selectedTickets.length > 3 && (
@@ -883,8 +890,15 @@ Me gustaría que verifiquen mi comprobante manualmente para confirmar mis boleto
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {createdPurchase.tickets.filter((t: any) => t.isGift).map((t: any) => (
-                      <div key={t.number} className="bg-white px-2 py-1 rounded-lg border border-blue-50 text-[10px] font-black text-blue-500 shadow-sm">
-                        #{t.number.toString().padStart(totalTickets.toString().length, '0')}
+                      <div key={t.number} className="bg-white px-3 py-1.5 rounded-xl border border-blue-50 text-[10px] font-black text-blue-500 shadow-sm">
+                        {t.number.toString().padStart(totalTickets.toString().length, '0').length >= 6 ? (
+                          <div className="flex flex-col items-center leading-[0.85]">
+                            <span className="opacity-60 text-[8px] font-bold">{t.number.toString().padStart(totalTickets.toString().length, '0').slice(0, 3)}</span>
+                            <span className="text-[11px]">{t.number.toString().padStart(totalTickets.toString().length, '0').slice(3)}</span>
+                          </div>
+                        ) : (
+                          `#${t.number.toString().padStart(totalTickets.toString().length, '0')}`
+                        )}
                       </div>
                     ))}
                   </div>
