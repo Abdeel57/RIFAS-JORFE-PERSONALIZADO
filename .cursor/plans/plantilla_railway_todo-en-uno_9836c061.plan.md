@@ -4,19 +4,19 @@ overview: Unificar frontend, admin y backend en un solo despliegue Railway, elim
 todos:
   - id: dockerfile-frontend
     content: Modificar Dockerfile para incluir build del frontend y config.json
-    status: completed
+    status: pending
   - id: backend-serve-frontend
     content: "Backend: servir frontend en /, reordenar rutas, eliminar hardcodes CORS"
-    status: completed
+    status: pending
   - id: frontend-api-url
     content: "Frontend: eliminar DEFAULT_API hardcodeado y preconnect en index.html"
-    status: completed
+    status: pending
   - id: admin-frontend-url
     content: "Admin: getFrontendBaseUrl usar window.location.origin en producción"
-    status: completed
+    status: pending
   - id: docs-template
     content: Crear docs/DEPLOY_TEMPLATE_RAILWAY.md con guía de despliegue
-    status: completed
+    status: pending
 isProject: false
 ---
 

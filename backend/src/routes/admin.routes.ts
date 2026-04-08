@@ -30,6 +30,11 @@ import {
     deleteAdmin,
     setAdminPlan,
 } from '../controllers/admin/admin.controller';
+import {
+    listPromoCodes,
+    createPromoCode,
+    deletePromoCode,
+} from '../controllers/admin/promoCode.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -56,6 +61,18 @@ router.get('/auth/check', async (_req, res) => {
         res.status(500).json({ error: e.message, hint: 'Revisa DATABASE_URL' });
     }
 });
+
+// Promo Codes — accesibles sin JWT (protegidos por CORS + secret header)
+const PROMO_SECRET = process.env.PROMO_ADMIN_SECRET || 'pollos-admin-2024';
+const checkPromoSecret = (req: any, res: any, next: any) => {
+    if (req.headers['x-admin-key'] !== PROMO_SECRET) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+    }
+    next();
+};
+router.get('/promo-codes', checkPromoSecret, listPromoCodes);
+router.post('/promo-codes', checkPromoSecret, createPromoCode);
+router.delete('/promo-codes/:id', checkPromoSecret, deletePromoCode);
 
 // Todas las rutas siguientes requieren autenticación
 router.use(authenticateAdmin);

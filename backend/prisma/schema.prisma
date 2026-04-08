@@ -191,6 +191,38 @@ enum PurchaseStatus {
   cancelled
 }
 
+model PromoCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  maxUses   Int      @default(1)
+  uses      Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
+model PolleriaConfig {
+  id           String   @id @default("default")
+  prizeName    String   @default("Televisor Plasma 75 Pulgadas")
+  prizeImage   String?  @db.Text
+  drawDate     DateTime @default(now())
+  totalTickets Int      @default(100)
+  updatedAt    DateTime @updatedAt
+}
+
+model PolleriaTicket {
+  id         String   @id @default(cuid())
+  number     String
+  ownerName  String
+  ownerPhone String
+  createdAt  DateTime @default(now())
+
+  @@unique([number])
+  @@index([number])
+}
+
 
 
 

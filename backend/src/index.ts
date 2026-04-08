@@ -87,6 +87,10 @@ if (process.env.RAILWAY_PUBLIC_DOMAIN) {
   allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
   allowedOrigins.push(`http://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
 }
+// Dominio propio de la pollería
+allowedOrigins.push('https://gallinasypollosalinados.com');
+allowedOrigins.push('https://www.gallinasypollosalinados.com');
+
 // Regex: permitir cualquier subdominio de netlify.app y railway.app
 const allowedOriginPatterns: RegExp[] = [/\.netlify\.app$/i, /\.railway\.app$/i];
 
@@ -152,6 +156,8 @@ try {
   const comprobanteRoutes = require('./routes/comprobante.routes').default;
   const adminRoutes = require('./routes/admin.routes').default;
   const imagesRoutes = require('./routes/images.routes').default;
+  const promoCodesRoutes = require('./routes/promoCodes.routes').default;
+  const polleriaRoutes = require('./routes/polleria.routes').default;
 
   app.use('/api/raffles', raffleRoutes);
   app.use('/api/purchases', purchaseRoutes);
@@ -159,6 +165,8 @@ try {
   app.use('/api/comprobante', comprobanteRoutes);
   app.use('/api/images', imagesRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/promo-codes', promoCodesRoutes);
+  app.use('/api/polleria', polleriaRoutes);
   app.use('/api/settings', settingsRoutes);
 
   // GET /api/logo — Sirve el logo del cliente para og:image (WhatsApp, Facebook). Público.
