@@ -822,7 +822,7 @@ const Raffles = () => {
                     </div>
                     {promoForm.description && (
                       <div className="px-4 py-3 bg-red-600">
-                        <p className="text-white text-sm text-center font-medium leading-relaxed">{promoForm.description}</p>
+                        <p className="text-white text-sm text-center font-medium leading-relaxed whitespace-pre-wrap">{promoForm.description}</p>
                       </div>
                     )}
                   </div>

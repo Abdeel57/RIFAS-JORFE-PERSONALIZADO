@@ -521,7 +521,7 @@ const App: React.FC = () => {
                   className="px-4 py-1.5 md:py-2"
                 >
                   <p
-                    className="text-white/90 text-center font-semibold leading-snug"
+                    className="text-white/90 text-center font-semibold leading-snug whitespace-pre-wrap"
                     style={{ fontSize: 'clamp(10px, 2.8vw, 13px)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
                   >
                     {featuredRaffle.promoDescription}

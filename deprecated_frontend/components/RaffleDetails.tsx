@@ -316,7 +316,7 @@ const RaffleDetails: React.FC<RaffleDetailsProps> = ({
           <h3 className="text-3xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
             Conoce cada <span className="italic" style={{ color: 'var(--brand-primary)' }}>Detalle</span>
           </h3>
-          <p className="text-slate-500 text-sm md:text-xl leading-relaxed max-w-4xl font-medium">
+          <p className="text-slate-500 text-sm md:text-xl leading-relaxed max-w-4xl font-medium whitespace-pre-wrap">
             {raffle.description}
           </p>
         </div>
