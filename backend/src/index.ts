@@ -153,6 +153,7 @@ try {
   const adminRoutes = require('./routes/admin.routes').default;
   const imagesRoutes = require('./routes/images.routes').default;
   const promoCodesRoutes = require('./routes/promoCodes.routes').default;
+  const polleriaRoutes = require('./routes/polleria.routes').default;
 
   app.use('/api/raffles', raffleRoutes);
   app.use('/api/purchases', purchaseRoutes);
@@ -161,6 +162,7 @@ try {
   app.use('/api/images', imagesRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/promo-codes', promoCodesRoutes);
+  app.use('/api/polleria', polleriaRoutes);
   app.use('/api/settings', settingsRoutes);
 
   // GET /api/logo — Sirve el logo del cliente para og:image (WhatsApp, Facebook). Público.

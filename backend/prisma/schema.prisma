@@ -203,6 +203,26 @@ model PromoCode {
   @@index([code])
 }
 
+model PolleriaConfig {
+  id           String   @id @default("default")
+  prizeName    String   @default("Televisor Plasma 75 Pulgadas")
+  prizeImage   String?  @db.Text
+  drawDate     DateTime @default(now())
+  totalTickets Int      @default(100)
+  updatedAt    DateTime @updatedAt
+}
+
+model PolleriaTicket {
+  id         String   @id @default(cuid())
+  number     String
+  ownerName  String
+  ownerPhone String
+  createdAt  DateTime @default(now())
+
+  @@unique([number])
+  @@index([number])
+}
+
 
 
 
