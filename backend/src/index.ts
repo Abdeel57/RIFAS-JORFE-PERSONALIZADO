@@ -87,6 +87,10 @@ if (process.env.RAILWAY_PUBLIC_DOMAIN) {
   allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
   allowedOrigins.push(`http://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
 }
+// Dominio propio de la pollería
+allowedOrigins.push('https://gallinasypollosalinados.com');
+allowedOrigins.push('https://www.gallinasypollosalinados.com');
+
 // Regex: permitir cualquier subdominio de netlify.app y railway.app
 const allowedOriginPatterns: RegExp[] = [/\.netlify\.app$/i, /\.railway\.app$/i];
 
