@@ -127,6 +127,27 @@ export const adminService = {
     return response.data.data;
   },
 
+  // Associations (Asociaciones Apoyadoras)
+  async getAssociations() {
+    const response = await api.get('/admin/associations');
+    return response.data.data;
+  },
+
+  async createAssociation(data: { name: string; description: string; logoUrl: string; websiteUrl: string; order?: number; isActive?: boolean }) {
+    const response = await api.post('/admin/associations', data);
+    return response.data.data;
+  },
+
+  async updateAssociation(id: string, data: Partial<{ name: string; description: string; logoUrl: string; websiteUrl: string; order: number; isActive: boolean }>) {
+    const response = await api.put(`/admin/associations/${id}`, data);
+    return response.data.data;
+  },
+
+  async deleteAssociation(id: string) {
+    const response = await api.delete(`/admin/associations/${id}`);
+    return response.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

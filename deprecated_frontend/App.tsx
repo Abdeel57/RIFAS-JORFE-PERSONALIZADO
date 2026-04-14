@@ -9,11 +9,16 @@ const VerifyTickets = lazy(() => import('./components/VerifyTickets.tsx'));
 const TermsAndConditions = lazy(() => import('./components/TermsAndConditions.tsx'));
 const SupportChat = lazy(() => import('./components/SupportChat.tsx'));
 const ComprobanteDigital = lazy(() => import('./components/ComprobanteDigital.tsx'));
+const AssociationDetail = lazy(() => import('./components/AssociationDetail.tsx'));
+const BottomTrustBanner = lazy(() => import('./components/BottomTrustBanner.tsx'));
+const TerrenosPage = lazy(() => import('./components/TerrenosPage.tsx'));
+const FinanciamientoPage = lazy(() => import('./components/FinanciamientoPage.tsx'));
+const ContactoPage = lazy(() => import('./components/ContactoPage.tsx'));
 import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
 import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
 import { pixelService } from './services/pixelService.ts';
-import { Raffle } from './types.ts';
+import { Raffle, Association } from './types.ts';
 
 interface BrandSettings {
   siteName: string;
@@ -72,7 +77,8 @@ function getComprobantePurchaseId(): string | null {
 
 const App: React.FC = () => {
   const [comprobantePurchaseId, setComprobantePurchaseId] = useState<string | null>(() => getComprobantePurchaseId());
-  const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms'>('raffle');
+  const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms' | 'asociacion' | 'terrenos' | 'financiamiento' | 'contacto'>('raffle');
+  const [selectedAssociation, setSelectedAssociation] = useState<Association | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [refreshTicketsAt, setRefreshTicketsAt] = useState<number>(0);
   const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
@@ -650,6 +656,33 @@ const App: React.FC = () => {
               <VerifyTickets />
             </div>
           </Suspense>
+        ) : activeView === 'asociacion' && selectedAssociation ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <AssociationDetail
+                association={selectedAssociation}
+                onBack={() => { setActiveView('raffle'); setSelectedAssociation(null); }}
+              />
+            </div>
+          </Suspense>
+        ) : activeView === 'terrenos' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <TerrenosPage onBack={() => setActiveView('raffle')} />
+            </div>
+          </Suspense>
+        ) : activeView === 'financiamiento' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <FinanciamientoPage onBack={() => setActiveView('raffle')} />
+            </div>
+          </Suspense>
+        ) : activeView === 'contacto' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <ContactoPage onBack={() => setActiveView('raffle')} />
+            </div>
+          </Suspense>
         ) : (
           <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -680,23 +713,17 @@ const App: React.FC = () => {
         <SupportChat isOpen={isSupportChatOpen} onClose={() => setIsSupportChatOpen(false)} />
       </Suspense>
 
-      {/* ── Badge Flotante Sorteos Seguros ── */}
+      {/* ── Badge / Carrusel flotante (Sorteos Seguros → Asociaciones) ── */}
       {activeView === 'raffle' && !isCheckoutOpen && !isSupportChatOpen && (
-        <div className="fixed bottom-4 left-0 right-0 z-[55] flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-3 duration-300">
-          <div className="pointer-events-auto flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-blue-100 rounded-full pl-2 pr-6 py-1.5 shadow-lg shadow-blue-100/50">
-            {/* Ícono verificado */}
-            <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            {/* Textos */}
-            <div className="leading-tight text-center">
-              <p className="text-[11px] font-black text-blue-700 uppercase tracking-wide leading-none whitespace-nowrap">Éstos sorteos son seguros</p>
-              <p className="text-[9px] font-bold text-blue-400 mt-0.5 leading-none whitespace-nowrap">Sorteos en base a la Lotería Nacional</p>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={null}>
+          <BottomTrustBanner
+            onAssociationClick={(assoc) => {
+              setSelectedAssociation(assoc);
+              setActiveView('asociacion');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        </Suspense>
       )}
 
       <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10 pb-28 md:pb-32">
@@ -754,6 +781,38 @@ const App: React.FC = () => {
                 </a>
               );
             })()}
+          </div>
+
+          {/* ── Botones de secciones ── */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => { setActiveView('terrenos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 9999, padding: '7px 14px', fontSize: 11, fontWeight: 800, color: '#0369a1', cursor: 'pointer', letterSpacing: '0.03em' }}
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Terrenos
+            </button>
+            <button
+              onClick={() => { setActiveView('financiamiento'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9999, padding: '7px 14px', fontSize: 11, fontWeight: 800, color: '#15803d', cursor: 'pointer', letterSpacing: '0.03em' }}
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l1.5 1M13 16l1.5-1M13 16H9m5-3h3l2 3" />
+              </svg>
+              Financiamiento
+            </button>
+            <button
+              onClick={() => { setActiveView('contacto'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 9999, padding: '7px 14px', fontSize: 11, fontWeight: 800, color: '#7c3aed', cursor: 'pointer', letterSpacing: '0.03em' }}
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Contacto
+            </button>
           </div>
 
           <div className="pt-6 border-t border-slate-50 w-full flex flex-col items-center gap-4">

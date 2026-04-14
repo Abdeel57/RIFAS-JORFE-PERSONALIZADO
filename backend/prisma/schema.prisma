@@ -223,6 +223,20 @@ model PolleriaTicket {
   @@index([number])
 }
 
+model Association {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @db.Text
+  logoUrl     String   @db.Text
+  websiteUrl  String
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
 
 
 

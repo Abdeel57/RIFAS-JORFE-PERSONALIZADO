@@ -191,6 +191,10 @@ class ApiService {
     return this.request<any>(`/comprobante/${purchaseId}`);
   }
 
+  async getAssociations() {
+    return this.request<any[]>('/associations');
+  }
+
   async getSettings() {
     const cacheKey = 'settings';
     const cached = getCached<any>(cacheKey);

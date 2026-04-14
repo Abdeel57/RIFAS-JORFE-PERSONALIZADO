@@ -79,8 +79,10 @@ if (process.env.FRONTEND_URL) {
 // Local y desarrollo
 allowedOrigins.push('http://localhost:3000');
 allowedOrigins.push('http://localhost:5173');
+allowedOrigins.push('http://localhost:5174');
 allowedOrigins.push('http://127.0.0.1:3000');
 allowedOrigins.push('http://127.0.0.1:5173');
+allowedOrigins.push('http://127.0.0.1:5174');
 
 // Agregar dinámicamente el host actual (Railway)
 if (process.env.RAILWAY_PUBLIC_DOMAIN) {
@@ -168,6 +170,10 @@ try {
   app.use('/api/promo-codes', promoCodesRoutes);
   app.use('/api/polleria', polleriaRoutes);
   app.use('/api/settings', settingsRoutes);
+
+  // Asociaciones públicas
+  const { getPublicAssociations } = require('./controllers/associations.controller');
+  app.get('/api/associations', getPublicAssociations);
 
   // GET /api/logo — Sirve el logo del cliente para og:image (WhatsApp, Facebook). Público.
   app.get('/api/logo', async (req, res) => {

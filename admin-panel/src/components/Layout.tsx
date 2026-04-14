@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   LogOut,
   AlertTriangle,
+  Building2,
 } from 'lucide-react';
 
 const Layout = () => {
@@ -53,6 +54,7 @@ const Layout = () => {
   const navItems = [
     { path: '/', label: 'Órdenes', icon: Home },
     { path: '/raffles', label: 'Rifas', icon: Ticket },
+    { path: '/associations', label: 'Asociaciones', icon: Building2 },
     { path: '/settings', label: 'Ajustes', icon: SettingsIcon },
   ];
 

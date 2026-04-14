@@ -1,4 +1,12 @@
 
+export interface Association {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl: string;
+  websiteUrl: string;
+}
+
 export interface PromoTier {
   qty: number;
   price: number;

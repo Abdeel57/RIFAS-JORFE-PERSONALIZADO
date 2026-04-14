@@ -35,6 +35,12 @@ import {
     createPromoCode,
     deletePromoCode,
 } from '../controllers/admin/promoCode.controller';
+import {
+    getAssociations,
+    createAssociation,
+    updateAssociation,
+    deleteAssociation,
+} from '../controllers/admin/association.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -103,6 +109,12 @@ router.put('/purchases/:id/status', updatePurchaseStatus);
 router.get('/users', getUsers);
 router.get('/users/:id', getUserById);
 router.put('/users/:id', updateUserController);
+
+// Associations (Asociaciones Apoyadoras)
+router.get('/associations', getAssociations);
+router.post('/associations', createAssociation);
+router.put('/associations/:id', updateAssociation);
+router.delete('/associations/:id', deleteAssociation);
 
 // Admin Users (Management) - SOLO SUPER ADMIN
 router.get('/admin-users', isSuperAdmin, getAdmins);
