@@ -29,7 +29,7 @@ const EMPTY_FORM = {
 };
 
 export default function Associations() {
-    const confirm = useConfirm();
+    const { showConfirm } = useConfirm();
     const [associations, setAssociations] = useState<Association[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -132,21 +132,15 @@ export default function Associations() {
         }
     };
 
-    const handleDelete = async (a: Association) => {
-        const ok = await confirm({
-            title: 'Eliminar asociación',
+    const handleDelete = (a: Association) => {
+        showConfirm({
             message: `¿Eliminar "${a.name}"? Esta acción no se puede deshacer.`,
-            confirmLabel: 'Eliminar',
-            variant: 'danger',
+            onConfirm: async () => {
+                await adminService.deleteAssociation(a.id);
+                toast.success('Asociación eliminada');
+                load();
+            },
         });
-        if (!ok) return;
-        try {
-            await adminService.deleteAssociation(a.id);
-            toast.success('Asociación eliminada');
-            load();
-        } catch {
-            toast.error('Error al eliminar');
-        }
     };
 
     const handleToggle = async (a: Association) => {
