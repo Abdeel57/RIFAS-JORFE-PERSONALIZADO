@@ -59,8 +59,7 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
       },
     });
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const imageUrl = `${baseUrl}/api/images/${stored.id}`;
+    const imageUrl = `/api/images/${stored.id}`;
 
     res.status(201).json({
       success: true,
