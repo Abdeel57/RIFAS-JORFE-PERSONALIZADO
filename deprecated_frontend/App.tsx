@@ -12,8 +12,11 @@ const ComprobanteDigital = lazy(() => import('./components/ComprobanteDigital.ts
 const AssociationDetail = lazy(() => import('./components/AssociationDetail.tsx'));
 const BottomTrustBanner = lazy(() => import('./components/BottomTrustBanner.tsx'));
 const TerrenosPage = lazy(() => import('./components/TerrenosPage.tsx'));
+const SeminuevosPage = lazy(() => import('./components/SeminuevosPage.tsx'));
 const FinanciamientoPage = lazy(() => import('./components/FinanciamientoPage.tsx'));
 const ContactoPage = lazy(() => import('./components/ContactoPage.tsx'));
+const CausasSocialesPage = lazy(() => import('./components/CausasSocialesPage.tsx'));
+const FAQPage = lazy(() => import('./components/FAQPage.tsx'));
 import { RaffleSkeleton, TicketSkeleton } from './components/SkeletonLoader.tsx';
 import { soundService } from './services/soundService.ts';
 import { apiService } from './services/apiService.ts';
@@ -77,7 +80,7 @@ function getComprobantePurchaseId(): string | null {
 
 const App: React.FC = () => {
   const [comprobantePurchaseId, setComprobantePurchaseId] = useState<string | null>(() => getComprobantePurchaseId());
-  const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms' | 'asociacion' | 'terrenos' | 'financiamiento' | 'contacto'>('raffle');
+  const [activeView, setActiveView] = useState<'raffle' | 'verify' | 'terms' | 'asociacion' | 'terrenos' | 'seminuevos' | 'financiamiento' | 'contacto' | 'causas' | 'faq'>('raffle');
   const [selectedAssociation, setSelectedAssociation] = useState<Association | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [refreshTicketsAt, setRefreshTicketsAt] = useState<number>(0);
@@ -304,14 +307,14 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 scroll-smooth antialiased">
       {/* ── Navbar "Liquid Glass" ────────────────────────────────── */}
       <div
-        className="fixed top-0 left-0 right-0 z-50 px-3 py-3 md:px-4 md:py-5 flex justify-center pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        className="fixed top-0 left-0 right-0 z-50 px-3 pt-3 pb-2 md:px-6 md:pt-5 md:pb-3 flex flex-col items-center gap-2 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
         style={{
           transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)',
           opacity: isNavbarVisible ? 1 : 0
         }}
       >
         <nav
-          className="pointer-events-auto relative w-full max-w-2xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
+          className="pointer-events-auto relative w-full max-w-2xl md:max-w-5xl bg-white/55 backdrop-blur-[20px] border border-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-2xl md:rounded-[2rem] h-14 md:h-16 overflow-visible"
           style={{ display: 'flex', alignItems: 'center', paddingLeft: 8, paddingRight: 8, gap: 0 }}
         >
           {/* Glassmorphism inner gradient */}
@@ -445,6 +448,106 @@ const App: React.FC = () => {
             </button>
           </div>
         </nav>
+
+        {/* ── Franja de secciones (botones visibles, sin colapsar) ── */}
+        <div style={{ position: 'relative', width: '100%', maxWidth: 672 }} className="md:max-w-5xl">
+          {/* fade-hint derecha → indica que hay más botones al desplazar */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 4, width: 32,
+            background: 'linear-gradient(to right, transparent, rgba(248,250,255,0.9))',
+            zIndex: 2, pointerEvents: 'none', borderRadius: '0 9999px 9999px 0',
+          }} />
+          <div
+            className="pointer-events-auto flex items-center gap-2 overflow-x-auto nav-sections-strip"
+            style={{ paddingBottom: 4, paddingLeft: 2, paddingRight: 28 }}
+          >
+            {[
+              {
+                view: 'terrenos' as const,
+                label: 'Desarrollos',
+                labelFull: 'Desarrollos campestres',
+                color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc',
+                icon: (
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                ),
+              },
+              {
+                view: 'seminuevos' as const,
+                label: 'Seminuevos',
+                labelFull: 'Vehículos seminuevos',
+                color: '#92400e', bg: '#fef3c7', border: '#fcd34d',
+                icon: (
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l1.5 1M13 16l1.5-1M13 16H9m5-3h3l2 3" />
+                  </svg>
+                ),
+              },
+              {
+                view: 'causas' as const,
+                label: 'Causas sociales',
+                labelFull: 'Causas sociales',
+                color: '#166534', bg: '#dcfce7', border: '#86efac',
+                icon: (
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                ),
+              },
+              {
+                view: 'faq' as const,
+                label: 'Preguntas',
+                labelFull: 'Preguntas frecuentes',
+                color: '#5b21b6', bg: '#ede9fe', border: '#c4b5fd',
+                icon: (
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+              },
+            ].map(btn => {
+              const isActive = activeView === btn.view;
+              return (
+                <button
+                  key={btn.view}
+                  onClick={() => {
+                    setActiveView(btn.view);
+                    window.scrollTo({ top: 0, behavior: 'instant' as any });
+                  }}
+                  title={btn.labelFull}
+                  style={{
+                    flexShrink: 0,
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    minHeight: 32,
+                    background: isActive ? btn.bg : 'rgba(255,255,255,0.72)',
+                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                    border: `1.5px solid ${isActive ? btn.border : 'rgba(255,255,255,0.85)'}`,
+                    borderRadius: 9999,
+                    padding: '0 12px',
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    color: isActive ? btn.color : '#64748b',
+                    cursor: 'pointer',
+                    letterSpacing: '0.01em',
+                    boxShadow: isActive
+                      ? `0 2px 10px ${btn.color}28, 0 1px 3px rgba(0,0,0,0.06)`
+                      : '0 1px 4px rgba(0,0,0,0.06)',
+                    transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span style={{ color: isActive ? btn.color : '#94a3b8', flexShrink: 0, lineHeight: 0 }}>
+                    {btn.icon}
+                  </span>
+                  {btn.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
 
       {/* ── PROMO BANNER (sticky, below navbar) ── */}
@@ -539,10 +642,10 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* Dynamic spacer: taller when promo is shown */}
+      {/* Dynamic spacer: taller when promo is shown; +40px extra for the sections strip row */}
       <div className={activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen
-        ? [featuredRaffle.promoDescription ? 'h-36 md:h-44' : 'h-28 md:h-36'].join(' ')
-        : 'h-20 md:h-28'
+        ? [featuredRaffle.promoDescription ? 'h-48 md:h-56' : 'h-40 md:h-48'].join(' ')
+        : 'h-32 md:h-40'
       } />
 
 
@@ -683,6 +786,31 @@ const App: React.FC = () => {
               <ContactoPage onBack={() => setActiveView('raffle')} />
             </div>
           </Suspense>
+        ) : activeView === 'seminuevos' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <SeminuevosPage onBack={() => setActiveView('raffle')} />
+            </div>
+          </Suspense>
+        ) : activeView === 'causas' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <CausasSocialesPage
+                onBack={() => setActiveView('raffle')}
+                onAssociationClick={(assoc) => {
+                  setSelectedAssociation(assoc);
+                  setActiveView('asociacion');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </div>
+          </Suspense>
+        ) : activeView === 'faq' ? (
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 -mx-4 md:-mx-6 lg:-mx-8">
+              <FAQPage onBack={() => setActiveView('raffle')} />
+            </div>
+          </Suspense>
         ) : (
           <Suspense fallback={<div className="h-96 animate-pulse bg-white rounded-[2rem]" />}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -722,11 +850,15 @@ const App: React.FC = () => {
               setActiveView('asociacion');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            onNavigate={(view) => {
+              setActiveView(view as any);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           />
         </Suspense>
       )}
 
-      <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10 pb-28 md:pb-32">
+      <footer className="bg-white border-t border-slate-100 mt-8 py-8 md:py-10 pb-56 md:pb-36">
         <div className="max-w-md mx-auto px-4 flex flex-col items-center text-center space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 justify-center cursor-pointer" onClick={() => handleViewChange('raffle')}>
