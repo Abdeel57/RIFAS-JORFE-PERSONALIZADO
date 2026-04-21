@@ -101,6 +101,7 @@ interface TicketSelectorProps {
   totalTickets: number;
   pricePerTicket: number;
   onCheckout: (tickets: number[], effectiveTotal?: number) => void;
+  onSelectionChange?: (hasTickets: boolean) => void;
   refreshTrigger?: number;
   isVirtual?: boolean;
   luckyNumbers?: number[];
@@ -115,6 +116,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   totalTickets,
   pricePerTicket,
   onCheckout,
+  onSelectionChange,
   refreshTrigger,
   luckyNumbers = [5, 10, 20, 50],
   promoTiers,
@@ -131,6 +133,11 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   const [isLoadingTickets, setIsLoadingTickets] = useState(true);
   const [discoveryTickets, setDiscoveryTickets] = useState<number[]>([]);
   const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(false);
+
+  // Notifica al padre cuando cambia si hay boletos seleccionados (para ocultar el banner de aliados)
+  useEffect(() => {
+    onSelectionChange?.(selectedTickets.length > 0);
+  }, [selectedTickets.length]);
 
   // Modo Descubrimiento si > 25,000 boletos (umbral reducido para mejor performance móvil)
   const isDiscoveryMode = useMemo(() => totalTickets > 25000, [totalTickets]);

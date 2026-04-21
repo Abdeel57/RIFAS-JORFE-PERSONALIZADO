@@ -98,6 +98,7 @@ const App: React.FC = () => {
 
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [hasTicketsSelected, setHasTicketsSelected] = useState(false);
 
   const raffleDropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -718,6 +719,7 @@ const App: React.FC = () => {
                             totalTickets={featuredRaffle.totalTickets}
                             pricePerTicket={featuredRaffle.ticketPrice}
                             onCheckout={handleCheckout}
+                            onSelectionChange={setHasTicketsSelected}
                             refreshTrigger={refreshTicketsAt}
                             isVirtual={featuredRaffle.isVirtual}
                             luckyNumbers={featuredRaffle.luckyMachineNumbers}
@@ -842,7 +844,7 @@ const App: React.FC = () => {
       </Suspense>
 
       {/* ── Badge / Carrusel flotante (Sorteos Seguros → Asociaciones) ── */}
-      {activeView === 'raffle' && !isCheckoutOpen && !isSupportChatOpen && (
+      {activeView === 'raffle' && !isCheckoutOpen && !isSupportChatOpen && !hasTicketsSelected && (
         <Suspense fallback={null}>
           <BottomTrustBanner
             onAssociationClick={(assoc) => {
