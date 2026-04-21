@@ -97,37 +97,41 @@ const App: React.FC = () => {
   const [rawSettings, setRawSettings] = useState<any>(null);
 
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [hasTicketsSelected, setHasTicketsSelected] = useState(false);
+
+  // useRef: no dispara re-renders, por eso el listener se registra UNA sola vez
+  const lastScrollYRef = React.useRef(0);
+  const rafIdRef = React.useRef<number | null>(null);
 
   const raffleDropdownRef = React.useRef<HTMLDivElement>(null);
 
-  // Scroll listener para ocultar/mostrar el navbar
+  // Scroll listener — throttled con rAF para que corra máximo 1 vez por frame
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      if (rafIdRef.current !== null) return;
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const currentScrollY = window.scrollY;
+        const prev = lastScrollYRef.current;
 
-      // Umbral mínimo para evitar parpadeos en el borde superior
-      if (currentScrollY < 10) {
-        setIsNavbarVisible(true);
-        setLastScrollY(currentScrollY);
-        return;
-      }
+        if (currentScrollY < 10) {
+          setIsNavbarVisible(true);
+        } else if (currentScrollY > prev && currentScrollY > 100) {
+          setIsNavbarVisible(false);
+        } else if (currentScrollY < prev) {
+          setIsNavbarVisible(true);
+        }
 
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down y ya pasamos 100px
-        setIsNavbarVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up
-        setIsNavbarVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
+        lastScrollYRef.current = currentScrollY;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, []); // deps vacíos → se registra UNA vez, nunca se desmonta innecesariamente
 
   useEffect(() => {
     const onHashChange = () => {
@@ -276,6 +280,10 @@ const App: React.FC = () => {
     setSelectedTicketsToBuy(tickets);
     setOverrideTotal(effectiveTotal);
     setIsCheckoutOpen(true);
+  }, []);
+
+  const handleSelectionChange = useCallback((hasTickets: boolean) => {
+    setHasTicketsSelected(hasTickets);
   }, []);
 
   const handleViewChange = (view: 'raffle' | 'verify' | 'terms') => {
@@ -719,7 +727,7 @@ const App: React.FC = () => {
                             totalTickets={featuredRaffle.totalTickets}
                             pricePerTicket={featuredRaffle.ticketPrice}
                             onCheckout={handleCheckout}
-                            onSelectionChange={setHasTicketsSelected}
+                            onSelectionChange={handleSelectionChange}
                             refreshTrigger={refreshTicketsAt}
                             isVirtual={featuredRaffle.isVirtual}
                             luckyNumbers={featuredRaffle.luckyMachineNumbers}
