@@ -47,6 +47,24 @@ import {
     updateCommercialAlly,
     deleteCommercialAlly,
 } from '../controllers/admin/commercialAlly.controller';
+import {
+    getLandDevelopments,
+    createLandDevelopment,
+    updateLandDevelopment,
+    deleteLandDevelopment,
+} from '../controllers/admin/landDevelopment.controller';
+import {
+    getUsedVehicles,
+    createUsedVehicle,
+    updateUsedVehicle,
+    deleteUsedVehicle,
+} from '../controllers/admin/usedVehicle.controller';
+import {
+    getFaqs,
+    createFaq,
+    updateFaq,
+    deleteFaq,
+} from '../controllers/admin/faq.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -127,6 +145,24 @@ router.get('/commercial-allies', getCommercialAllies);
 router.post('/commercial-allies', createCommercialAlly);
 router.put('/commercial-allies/:id', updateCommercialAlly);
 router.delete('/commercial-allies/:id', deleteCommercialAlly);
+
+// Land Developments (Desarrollos / Terrenos)
+router.get('/land-developments', getLandDevelopments);
+router.post('/land-developments', createLandDevelopment);
+router.put('/land-developments/:id', updateLandDevelopment);
+router.delete('/land-developments/:id', deleteLandDevelopment);
+
+// Used Vehicles (Vehículos Seminuevos)
+router.get('/used-vehicles', getUsedVehicles);
+router.post('/used-vehicles', createUsedVehicle);
+router.put('/used-vehicles/:id', updateUsedVehicle);
+router.delete('/used-vehicles/:id', deleteUsedVehicle);
+
+// FAQ Items (Preguntas Frecuentes)
+router.get('/faqs', getFaqs);
+router.post('/faqs', createFaq);
+router.put('/faqs/:id', updateFaq);
+router.delete('/faqs/:id', deleteFaq);
 
 // Admin Users (Management) - SOLO SUPER ADMIN
 router.get('/admin-users', isSuperAdmin, getAdmins);

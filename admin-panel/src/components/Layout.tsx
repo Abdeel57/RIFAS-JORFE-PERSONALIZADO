@@ -11,6 +11,9 @@ import {
   AlertTriangle,
   Building2,
   Handshake,
+  TreePine,
+  Car,
+  HelpCircle,
 } from 'lucide-react';
 
 const Layout = () => {
@@ -57,6 +60,9 @@ const Layout = () => {
     { path: '/raffles', label: 'Rifas', icon: Ticket },
     { path: '/associations', label: 'Asociaciones', icon: Building2 },
     { path: '/commercial-allies', label: 'Aliados', icon: Handshake },
+    { path: '/land-developments', label: 'Desarrollos', icon: TreePine },
+    { path: '/used-vehicles', label: 'Seminuevos', icon: Car },
+    { path: '/faqs', label: 'FAQ', icon: HelpCircle },
     { path: '/settings', label: 'Ajustes', icon: SettingsIcon },
   ];
 

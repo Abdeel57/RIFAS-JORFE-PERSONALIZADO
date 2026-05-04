@@ -191,6 +191,60 @@ export const adminService = {
     return response.data;
   },
 
+  // Land Developments (Desarrollos / Terrenos)
+  async getLandDevelopments() {
+    const response = await api.get('/admin/land-developments');
+    return response.data.data;
+  },
+  async createLandDevelopment(data: { name: string; location: string; description: string; price: string; imageUrl?: string | null; order?: number; isActive?: boolean }) {
+    const response = await api.post('/admin/land-developments', data);
+    return response.data.data;
+  },
+  async updateLandDevelopment(id: string, data: Partial<{ name: string; location: string; description: string; price: string; imageUrl: string | null; order: number; isActive: boolean }>) {
+    const response = await api.put(`/admin/land-developments/${id}`, data);
+    return response.data.data;
+  },
+  async deleteLandDevelopment(id: string) {
+    const response = await api.delete(`/admin/land-developments/${id}`);
+    return response.data;
+  },
+
+  // Used Vehicles (Vehículos Seminuevos)
+  async getUsedVehicles() {
+    const response = await api.get('/admin/used-vehicles');
+    return response.data.data;
+  },
+  async createUsedVehicle(data: { name: string; modelYear: string; mileage: string; description: string; price: string; imageUrl?: string | null; order?: number; isActive?: boolean }) {
+    const response = await api.post('/admin/used-vehicles', data);
+    return response.data.data;
+  },
+  async updateUsedVehicle(id: string, data: Partial<{ name: string; modelYear: string; mileage: string; description: string; price: string; imageUrl: string | null; order: number; isActive: boolean }>) {
+    const response = await api.put(`/admin/used-vehicles/${id}`, data);
+    return response.data.data;
+  },
+  async deleteUsedVehicle(id: string) {
+    const response = await api.delete(`/admin/used-vehicles/${id}`);
+    return response.data;
+  },
+
+  // FAQ Items (Preguntas Frecuentes)
+  async getFaqs() {
+    const response = await api.get('/admin/faqs');
+    return response.data.data;
+  },
+  async createFaq(data: { question: string; answer: string; order?: number; isActive?: boolean }) {
+    const response = await api.post('/admin/faqs', data);
+    return response.data.data;
+  },
+  async updateFaq(id: string, data: Partial<{ question: string; answer: string; order: number; isActive: boolean }>) {
+    const response = await api.put(`/admin/faqs/${id}`, data);
+    return response.data.data;
+  },
+  async deleteFaq(id: string) {
+    const response = await api.delete(`/admin/faqs/${id}`);
+    return response.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

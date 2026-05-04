@@ -255,6 +255,49 @@ model CommercialAlly {
   @@index([isActive, order])
 }
 
+model LandDevelopment {
+  id          String   @id @default(cuid())
+  name        String
+  location    String   // Ej: "Hermosillo, Sonora"
+  description String   @db.Text
+  price       String   // Ej: "Desde $XXX,XXX MXN"
+  imageUrl    String?  @db.Text
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
+model UsedVehicle {
+  id          String   @id @default(cuid())
+  name        String
+  modelYear   String   // Ej: "2020"
+  mileage     String   // Ej: "45,000 km"
+  description String   @db.Text
+  price       String
+  imageUrl    String?  @db.Text
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
+model FaqItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
 
 
 

@@ -11,6 +11,9 @@ import Users from './pages/Users';
 import Settings from './pages/Settings';
 import Associations from './pages/Associations';
 import CommercialAllies from './pages/CommercialAllies';
+import LandDevelopments from './pages/LandDevelopments';
+import UsedVehicles from './pages/UsedVehicles';
+import Faqs from './pages/Faqs';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -56,6 +59,9 @@ function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="associations" element={<Associations />} />
           <Route path="commercial-allies" element={<CommercialAllies />} />
+          <Route path="land-developments" element={<LandDevelopments />} />
+          <Route path="used-vehicles" element={<UsedVehicles />} />
+          <Route path="faqs" element={<Faqs />} />
         </Route>
       </Routes>
     </BrowserRouter>

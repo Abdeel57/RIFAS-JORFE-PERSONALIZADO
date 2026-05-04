@@ -1,47 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const FAQS = [
-  {
-    q: '¿Cómo funciona el sorteo?',
-    a: 'Elige los números de boleto que deseas, realiza tu pago y recibirás un comprobante digital. El sorteo se realiza con base en el resultado oficial de la Lotería Nacional en la fecha indicada.',
-  },
-  {
-    q: '¿Cómo sé si gané?',
-    a: 'Puedes verificar tus boletos en la sección "Verificar" de nuestra página ingresando tu número de teléfono. También te notificaremos directamente por WhatsApp si resultaste ganador.',
-  },
-  {
-    q: '¿Cuáles son los métodos de pago?',
-    a: 'Aceptamos transferencia bancaria, depósito en efectivo, tarjeta de débito/crédito y pago en efectivo. Los detalles de pago se muestran al momento de proceder al checkout.',
-  },
-  {
-    q: '¿Es seguro participar?',
-    a: 'Sí. Todos nuestros sorteos están basados en el resultado oficial de la Lotería Nacional, lo que garantiza transparencia total e imparcialidad. Publicamos todos los resultados y comprobantes públicamente.',
-  },
-  {
-    q: '¿Cómo recibo mi premio si gano?',
-    a: 'El ganador es contactado directamente por WhatsApp para coordinar la entrega del premio. Se requiere identificación oficial al momento de la entrega.',
-  },
-  {
-    q: '¿Puedo comprar boletos para otra persona?',
-    a: 'Sí, puedes comprar boletos como regalo. Solo asegúrate de registrar los datos correctos al momento de la compra.',
-  },
-  {
-    q: '¿Qué pasa si el sorteo se cancela o pospone?',
-    a: 'En caso de cancelación definitiva, todos los pagos serán reembolsados en su totalidad. Si el sorteo se pospone, los boletos mantienen su validez para la nueva fecha.',
-  },
-  {
-    q: '¿Cuándo se realizan los sorteos?',
-    a: 'La fecha y hora exacta del sorteo se muestra en la página principal antes de que compres tu boleto. Siempre sabrás cuándo se realiza antes de participar.',
-  },
-  {
-    q: '¿Cuántos boletos puedo comprar?',
-    a: 'Puedes comprar todos los boletos que desees, sujeto a disponibilidad. No hay límite máximo por persona.',
-  },
-  {
-    q: '¿Dónde puedo ver los resultados del sorteo?',
-    a: 'Los resultados se publican en nuestra página y en nuestras redes sociales en cuanto se conocen. También puedes verificar en la sección "Verificar" de la página.',
-  },
+interface Faq {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+const FALLBACK_FAQS: Faq[] = [
+  { id: 'fb-1', question: '¿Cómo funciona el sorteo?', answer: 'Elige los números de boleto que deseas, realiza tu pago y recibirás un comprobante digital. El sorteo se realiza con base en el resultado oficial de la Lotería Nacional.' },
+  { id: 'fb-2', question: '¿Cómo sé si gané?', answer: 'Puedes verificar tus boletos en la sección "Verificar". También te notificaremos directamente por WhatsApp si resultaste ganador.' },
+  { id: 'fb-3', question: '¿Es seguro participar?', answer: 'Sí. Todos nuestros sorteos están basados en el resultado oficial de la Lotería Nacional, garantizando transparencia total.' },
 ];
+
+async function fetchFaqs(): Promise<Faq[] | null> {
+  const urls = ['/api/faqs', 'http://localhost:3001/api/faqs'];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json?.success && Array.isArray(json.data)) return json.data;
+    } catch { /* try next */ }
+  }
+  return null;
+}
 
 interface Props {
   onBack: () => void;
@@ -49,6 +31,15 @@ interface Props {
 
 const FAQPage: React.FC<Props> = ({ onBack }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [items, setItems] = useState<Faq[] | null>(null);
+
+  useEffect(() => {
+    fetchFaqs().then(data => {
+      setItems(data === null ? FALLBACK_FAQS : data);
+    });
+  }, []);
+
+  const loading = items === null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50/30">
@@ -90,35 +81,50 @@ const FAQPage: React.FC<Props> = ({ onBack }) => {
         </div>
 
         {/* Accordion */}
-        <div className="space-y-2">
-          {FAQS.map((faq, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors"
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 animate-pulse">
+                <div className="h-3 bg-slate-100 rounded w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
+            <p className="text-slate-400 font-bold text-sm">Aún no hay preguntas configuradas.</p>
+            <p className="text-slate-300 text-xs mt-1">Contáctanos directamente por WhatsApp si tienes dudas.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((faq, i) => (
+              <div
+                key={faq.id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
               >
-                <span className="text-sm font-black text-slate-800 leading-snug">{faq.q}</span>
-                <svg
-                  className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-300 ${openIndex === i ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
+                <button
+                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                  className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {openIndex === i && (
-                <div className="px-5 pb-4 border-t border-slate-50">
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed pt-3">{faq.a}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                  <span className="text-sm font-black text-slate-800 leading-snug">{faq.question}</span>
+                  <svg
+                    className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-300 ${openIndex === i ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2.5"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openIndex === i && (
+                  <div className="px-5 pb-4 border-t border-slate-50">
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed pt-3 whitespace-pre-line">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         <p className="text-[10px] text-slate-300 text-center font-medium pb-8">
           ¿No encontraste tu respuesta? Contáctanos directamente por WhatsApp.
