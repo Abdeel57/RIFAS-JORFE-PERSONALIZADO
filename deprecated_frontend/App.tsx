@@ -578,14 +578,15 @@ const App: React.FC = () => {
           `}</style>
 
           <div
-            className="fixed left-0 right-0 z-40 px-3 md:px-6 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+            className={`fixed left-0 right-0 z-40 px-3 md:px-6 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+              isNavbarVisible ? 'top-[74px] md:top-[140px]' : 'top-[15px]'
+            }`}
             style={{
-              top: isNavbarVisible ? '74px' : '15px',
               animation: 'promo-enter 0.4s cubic-bezier(0.34,1.35,0.64,1) both',
             }}
           >
             <div
-              className="overflow-hidden shadow-lg shadow-orange-900/20"
+              className="overflow-hidden shadow-lg shadow-orange-900/20 mx-auto max-w-2xl md:max-w-5xl"
               style={{ borderRadius: '1.25rem' }}
             >
               {/* ── gradient title bar ── */}
@@ -651,10 +652,10 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* Dynamic spacer: taller when promo is shown; +40px extra for the sections strip row */}
+      {/* Dynamic spacer: taller when promo is shown; mobile values intactos, desktop ajustado al promo en top:140px */}
       <div className={activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen
-        ? [featuredRaffle.promoDescription ? 'h-48 md:h-56' : 'h-40 md:h-48'].join(' ')
-        : 'h-32 md:h-40'
+        ? [featuredRaffle.promoDescription ? 'h-48 md:h-64' : 'h-40 md:h-56'].join(' ')
+        : 'h-32 md:h-44'
       } />
 
 
