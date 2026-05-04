@@ -460,14 +460,14 @@ const App: React.FC = () => {
 
         {/* ── Franja de secciones (botones visibles, sin colapsar) ── */}
         <div style={{ position: 'relative', width: '100%', maxWidth: 672 }} className="md:max-w-5xl">
-          {/* fade-hint derecha → indica que hay más botones al desplazar */}
-          <div style={{
+          {/* fade-hint derecha → solo en mobile para indicar scroll horizontal */}
+          <div className="md:hidden" style={{
             position: 'absolute', top: 0, right: 0, bottom: 4, width: 32,
             background: 'linear-gradient(to right, transparent, rgba(248,250,255,0.9))',
             zIndex: 2, pointerEvents: 'none', borderRadius: '0 9999px 9999px 0',
           }} />
           <div
-            className="pointer-events-auto flex items-center gap-2 overflow-x-auto nav-sections-strip"
+            className="pointer-events-auto flex items-center gap-2 overflow-x-auto nav-sections-strip md:justify-center md:overflow-visible md:!pr-2"
             style={{ paddingBottom: 4, paddingLeft: 2, paddingRight: 28 }}
           >
             {[
