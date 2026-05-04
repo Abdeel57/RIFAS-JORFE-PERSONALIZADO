@@ -10,6 +10,7 @@ import Purchases from './pages/Purchases';
 import Users from './pages/Users';
 import Settings from './pages/Settings';
 import Associations from './pages/Associations';
+import CommercialAllies from './pages/CommercialAllies';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -54,6 +55,7 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="settings" element={<Settings />} />
           <Route path="associations" element={<Associations />} />
+          <Route path="commercial-allies" element={<CommercialAllies />} />
         </Route>
       </Routes>
     </BrowserRouter>

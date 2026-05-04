@@ -2,22 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Association } from '../types.ts';
 
 interface CommercialAlly {
-  key: string;
+  id?: string;
+  key?: string;
   name: string;
   shortName: string;
-  /** Deja vacío hasta integrar el logo real; muestra iniciales como placeholder */
   logoUrl: string;
   targetView: string;
   accentColor: string;
   gradientFrom: string;
   gradientTo: string;
   badgeLabel: string;
-  sectionLabel: string;
 }
 
-// ── Aliados comerciales ────────────────────────────────────────────────────────
-// Cuando tengas los logos reales, reemplaza logoUrl con la ruta o URL del archivo.
-const COMMERCIAL_ALLIES: CommercialAlly[] = [
+// Fallback hardcoded por si el backend no responde (mismo formato que el API)
+const FALLBACK_ALLIES: CommercialAlly[] = [
   {
     key: 'villas',
     name: 'Villas de Guadalupe',
@@ -28,7 +26,6 @@ const COMMERCIAL_ALLIES: CommercialAlly[] = [
     gradientFrom: '#bbf7d0',
     gradientTo: '#86efac',
     badgeLabel: 'Desarrollos',
-    sectionLabel: 'Terrenos y desarrollos campestres',
   },
   {
     key: 'red',
@@ -40,10 +37,8 @@ const COMMERCIAL_ALLIES: CommercialAlly[] = [
     gradientFrom: '#fecaca',
     gradientTo: '#fca5a5',
     badgeLabel: 'Seminuevos',
-    sectionLabel: 'Vehículos seminuevos de calidad',
   },
 ];
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
   onAssociationClick: (association: Association) => void;
@@ -65,11 +60,34 @@ async function fetchAssociations(): Promise<Association[]> {
   return [];
 }
 
+/** Devuelve null si NUNCA pudo obtener respuesta exitosa (red/404 → usar fallback);
+ *  devuelve [] o [items...] si la API respondió OK (admin sí lo configuró, aunque vacío). */
+async function fetchCommercialAllies(): Promise<CommercialAlly[] | null> {
+  const urls = ['/api/commercial-allies', 'http://localhost:3001/api/commercial-allies'];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json?.success && Array.isArray(json.data)) return json.data;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 const BottomTrustBanner: React.FC<Props> = ({ onAssociationClick, onNavigate }) => {
   const [phase, setPhase] = useState<'badge' | 'out' | 'banner'>('badge');
   const [associations, setAssociations] = useState<Association[]>([]);
+  const [allies, setAllies] = useState<CommercialAlly[]>([]);
 
-  useEffect(() => { fetchAssociations().then(setAssociations); }, []);
+  useEffect(() => {
+    fetchAssociations().then(setAssociations);
+    fetchCommercialAllies().then(data => {
+      // null = no se pudo conectar al backend → usa fallback
+      // [] o [items] = el admin lo configuró (respeta su decisión, aunque sea vaciar)
+      setAllies(data === null ? FALLBACK_ALLIES : data);
+    });
+  }, []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('out'),    BADGE_DURATION);
@@ -162,7 +180,9 @@ const BottomTrustBanner: React.FC<Props> = ({ onAssociationClick, onNavigate }) 
 
           {/* ══════════════════════════════════════════
               BLOQUE 1 — ALIADOS COMERCIALES (protagonistas)
+              Solo se renderiza si el admin configuró al menos uno
           ══════════════════════════════════════════ */}
+          {allies.length > 0 && (
           <div style={{ padding: '8px 10px 6px' }}>
             {/* Etiqueta de sección */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
@@ -182,9 +202,9 @@ const BottomTrustBanner: React.FC<Props> = ({ onAssociationClick, onNavigate }) 
 
             {/* Cards de aliados — dos columnas iguales */}
             <div style={{ display: 'flex', gap: 8 }}>
-              {COMMERCIAL_ALLIES.map(ally => (
+              {allies.map(ally => (
                 <button
-                  key={ally.key}
+                  key={ally.id || ally.key || ally.name}
                   onClick={() => onNavigate(ally.targetView)}
                   className="trust-ally-card"
                   style={{
@@ -273,9 +293,12 @@ const BottomTrustBanner: React.FC<Props> = ({ onAssociationClick, onNavigate }) 
               ))}
             </div>
           </div>
+          )}
 
-          {/* Separador */}
-          <div style={{ height: 1, background: '#f1f5f9', marginLeft: 10, marginRight: 10 }} />
+          {/* Separador (solo si hay aliados arriba) */}
+          {allies.length > 0 && (
+            <div style={{ height: 1, background: '#f1f5f9', marginLeft: 10, marginRight: 10 }} />
+          )}
 
           {/* ══════════════════════════════════════════
               BLOQUE 2 — ASOCIACIONES CIVILES (socios)

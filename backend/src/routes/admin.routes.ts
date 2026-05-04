@@ -41,6 +41,12 @@ import {
     updateAssociation,
     deleteAssociation,
 } from '../controllers/admin/association.controller';
+import {
+    getCommercialAllies,
+    createCommercialAlly,
+    updateCommercialAlly,
+    deleteCommercialAlly,
+} from '../controllers/admin/commercialAlly.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -115,6 +121,12 @@ router.get('/associations', getAssociations);
 router.post('/associations', createAssociation);
 router.put('/associations/:id', updateAssociation);
 router.delete('/associations/:id', deleteAssociation);
+
+// Commercial Allies (Aliados Comerciales)
+router.get('/commercial-allies', getCommercialAllies);
+router.post('/commercial-allies', createCommercialAlly);
+router.put('/commercial-allies/:id', updateCommercialAlly);
+router.delete('/commercial-allies/:id', deleteCommercialAlly);
 
 // Admin Users (Management) - SOLO SUPER ADMIN
 router.get('/admin-users', isSuperAdmin, getAdmins);

@@ -148,6 +148,49 @@ export const adminService = {
     return response.data;
   },
 
+  // Commercial Allies (Aliados Comerciales)
+  async getCommercialAllies() {
+    const response = await api.get('/admin/commercial-allies');
+    return response.data.data;
+  },
+
+  async createCommercialAlly(data: {
+    name: string;
+    shortName: string;
+    logoUrl: string;
+    targetView: string;
+    badgeLabel: string;
+    accentColor?: string;
+    gradientFrom?: string;
+    gradientTo?: string;
+    order?: number;
+    isActive?: boolean;
+  }) {
+    const response = await api.post('/admin/commercial-allies', data);
+    return response.data.data;
+  },
+
+  async updateCommercialAlly(id: string, data: Partial<{
+    name: string;
+    shortName: string;
+    logoUrl: string;
+    targetView: string;
+    badgeLabel: string;
+    accentColor: string;
+    gradientFrom: string;
+    gradientTo: string;
+    order: number;
+    isActive: boolean;
+  }>) {
+    const response = await api.put(`/admin/commercial-allies/${id}`, data);
+    return response.data.data;
+  },
+
+  async deleteCommercialAlly(id: string) {
+    const response = await api.delete(`/admin/commercial-allies/${id}`);
+    return response.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

@@ -237,6 +237,24 @@ model Association {
   @@index([isActive, order])
 }
 
+model CommercialAlly {
+  id           String   @id @default(cuid())
+  name         String
+  shortName    String   // Iniciales mostradas como placeholder cuando no hay logo
+  logoUrl      String   @db.Text
+  targetView   String   // Vista interna a la que redirige: terrenos, seminuevos, causas, faq, financiamiento, contacto
+  badgeLabel   String   // Texto del badge debajo del nombre (ej: "Desarrollos", "Seminuevos")
+  accentColor  String   @default("#3b82f6")
+  gradientFrom String   @default("#dbeafe")
+  gradientTo   String   @default("#bfdbfe")
+  order        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
 
 
 

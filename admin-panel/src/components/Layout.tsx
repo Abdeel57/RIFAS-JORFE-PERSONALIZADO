@@ -10,6 +10,7 @@ import {
   LogOut,
   AlertTriangle,
   Building2,
+  Handshake,
 } from 'lucide-react';
 
 const Layout = () => {
@@ -55,6 +56,7 @@ const Layout = () => {
     { path: '/', label: 'Órdenes', icon: Home },
     { path: '/raffles', label: 'Rifas', icon: Ticket },
     { path: '/associations', label: 'Asociaciones', icon: Building2 },
+    { path: '/commercial-allies', label: 'Aliados', icon: Handshake },
     { path: '/settings', label: 'Ajustes', icon: SettingsIcon },
   ];
 
