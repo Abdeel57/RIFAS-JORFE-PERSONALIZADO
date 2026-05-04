@@ -579,7 +579,7 @@ const App: React.FC = () => {
 
           <div
             className={`fixed left-0 right-0 z-40 px-3 md:px-6 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-              isNavbarVisible ? 'top-[74px] md:top-[140px]' : 'top-[15px]'
+              isNavbarVisible ? 'top-[122px] md:top-[140px]' : 'top-[15px]'
             }`}
             style={{
               animation: 'promo-enter 0.4s cubic-bezier(0.34,1.35,0.64,1) both',
@@ -652,9 +652,9 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* Dynamic spacer: taller when promo is shown; mobile values intactos, desktop ajustado al promo en top:140px */}
+      {/* Dynamic spacer: ajustado para que el contenido no quede tapado por el promo (top:122px mobile / 140px desktop) */}
       <div className={activeView === 'raffle' && featuredRaffle && featuredRaffle.promoTitle && !isCheckoutOpen && !isSupportChatOpen
-        ? [featuredRaffle.promoDescription ? 'h-48 md:h-64' : 'h-40 md:h-56'].join(' ')
+        ? [featuredRaffle.promoDescription ? 'h-64 md:h-64' : 'h-52 md:h-56'].join(' ')
         : 'h-32 md:h-44'
       } />
 
