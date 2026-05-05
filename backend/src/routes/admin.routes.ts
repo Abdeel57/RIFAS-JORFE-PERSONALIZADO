@@ -65,6 +65,10 @@ import {
     updateFaq,
     deleteFaq,
 } from '../controllers/admin/faq.controller';
+import {
+    getPageCta,
+    upsertPageCta,
+} from '../controllers/admin/pageCta.controller';
 import { uploadImage } from '../controllers/image.controller';
 import { uploadImageMiddleware } from '../middleware/upload.middleware';
 import { getVapidPublicKey, sendPushToAdmins } from '../services/pushNotificationService';
@@ -163,6 +167,10 @@ router.get('/faqs', getFaqs);
 router.post('/faqs', createFaq);
 router.put('/faqs/:id', updateFaq);
 router.delete('/faqs/:id', deleteFaq);
+
+// Page CTAs (configuración de botones por sección)
+router.get('/page-ctas/:section', getPageCta);
+router.put('/page-ctas/:section', upsertPageCta);
 
 // Admin Users (Management) - SOLO SUPER ADMIN
 router.get('/admin-users', isSuperAdmin, getAdmins);

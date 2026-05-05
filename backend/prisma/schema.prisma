@@ -298,6 +298,20 @@ model FaqItem {
   @@index([isActive, order])
 }
 
+// Configuración de los botones CTA (WhatsApp + URL info) por página/sección.
+// Una fila por sección (terrenos, seminuevos, etc).
+model PageCta {
+  id              String   @id @default(cuid())
+  section         String   @unique  // 'terrenos', 'seminuevos', etc.
+  whatsappPhone   String?  // Solo dígitos, ej: "526621234567"
+  whatsappMessage String?  @db.Text
+  infoUrl         String?  @db.Text
+  primaryLabel    String?  // Etiqueta opcional para el botón primario
+  secondaryLabel  String?  // Etiqueta opcional para el botón secundario
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 
 
 

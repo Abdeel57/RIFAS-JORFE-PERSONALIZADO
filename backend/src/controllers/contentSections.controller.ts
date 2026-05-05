@@ -58,3 +58,27 @@ export const getPublicFaqs = async (_req: Request, res: Response) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+const ALLOWED_SECTIONS = ['terrenos', 'seminuevos'] as const;
+
+export const getPublicPageCta = async (req: Request, res: Response) => {
+    try {
+        const { section } = req.params;
+        if (!ALLOWED_SECTIONS.includes(section as any)) {
+            return res.status(400).json({ success: false, message: 'Sección inválida' });
+        }
+        const cta = await prisma.pageCta.findUnique({
+            where: { section },
+            select: {
+                whatsappPhone: true,
+                whatsappMessage: true,
+                infoUrl: true,
+                primaryLabel: true,
+                secondaryLabel: true,
+            },
+        });
+        res.json({ success: true, data: cta });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

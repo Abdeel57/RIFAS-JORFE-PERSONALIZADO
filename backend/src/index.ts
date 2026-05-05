@@ -179,15 +179,17 @@ try {
   const { getPublicCommercialAllies } = require('./controllers/commercialAllies.controller');
   app.get('/api/commercial-allies', getPublicCommercialAllies);
 
-  // Secciones de contenido públicas (Desarrollos, Vehículos, FAQs)
+  // Secciones de contenido públicas (Desarrollos, Vehículos, FAQs, CTAs)
   const {
     getPublicLandDevelopments,
     getPublicUsedVehicles,
     getPublicFaqs,
+    getPublicPageCta,
   } = require('./controllers/contentSections.controller');
   app.get('/api/land-developments', getPublicLandDevelopments);
   app.get('/api/used-vehicles', getPublicUsedVehicles);
   app.get('/api/faqs', getPublicFaqs);
+  app.get('/api/page-ctas/:section', getPublicPageCta);
 
   // GET /api/logo — Sirve el logo del cliente para og:image (WhatsApp, Facebook). Público.
   app.get('/api/logo', async (req, res) => {

@@ -1,9 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
-// ── Configura estos valores según tu negocio ──────────────────────────────────
-const WHATSAPP_TERRENOS = 'https://wa.me/XXXXXXXXXX?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20sobre%20los%20terrenos%20disponibles';
-const INFO_URL_TERRENOS = 'https://PLACEHOLDER.com';
-// ─────────────────────────────────────────────────────────────────────────────
+import React, { useState, useEffect, useMemo } from 'react';
 
 interface LandDevelopment {
   id: string;
@@ -12,6 +7,14 @@ interface LandDevelopment {
   description: string;
   price: string;
   imageUrl?: string | null;
+}
+
+interface PageCta {
+  whatsappPhone?: string | null;
+  whatsappMessage?: string | null;
+  infoUrl?: string | null;
+  primaryLabel?: string | null;
+  secondaryLabel?: string | null;
 }
 
 // Fallback (si el backend no responde, mostramos al menos algo)
@@ -33,21 +36,47 @@ async function fetchDevelopments(): Promise<LandDevelopment[] | null> {
   return null;
 }
 
+async function fetchPageCta(section: string): Promise<PageCta | null> {
+  const urls = [`/api/page-ctas/${section}`, `http://localhost:3001/api/page-ctas/${section}`];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json?.success) return json.data;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 interface Props {
   onBack: () => void;
 }
 
 const TerrenosPage: React.FC<Props> = ({ onBack }) => {
   const [items, setItems] = useState<LandDevelopment[] | null>(null);
+  const [cta, setCta] = useState<PageCta | null>(null);
 
   useEffect(() => {
     fetchDevelopments().then(data => {
-      // null = backend no respondió → fallback. [] = admin no configuró nada → respeta y muestra empty.
       setItems(data === null ? FALLBACK_DEVELOPMENTS : data);
     });
+    fetchPageCta('terrenos').then(setCta);
   }, []);
 
   const loading = items === null;
+
+  // Construye URL de WhatsApp con teléfono + mensaje
+  const whatsappUrl = useMemo(() => {
+    const phone = cta?.whatsappPhone?.trim();
+    if (!phone) return null;
+    const message = cta?.whatsappMessage?.trim() || 'Hola, me interesa información sobre los terrenos disponibles';
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  }, [cta]);
+
+  const infoUrl = cta?.infoUrl?.trim() || null;
+  const primaryLabel = cta?.primaryLabel?.trim() || 'Agendar Cita por WhatsApp';
+  const secondaryLabel = cta?.secondaryLabel?.trim() || 'Ver Más Información';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
@@ -134,27 +163,33 @@ const TerrenosPage: React.FC<Props> = ({ onBack }) => {
           )}
         </div>
 
-        {/* CTAs */}
-        <div className="space-y-3 pt-2">
-          <button
-            onClick={() => window.open(WHATSAPP_TERRENOS, '_blank')}
-            className="w-full flex items-center justify-center gap-3 py-4 text-white font-black text-sm rounded-2xl shadow-lg transition-all active:scale-95"
-            style={{ background: '#25d366', boxShadow: '0 8px 24px rgba(37,211,102,0.25)' }}
-          >
-            <img src="/whatsapp-logo.png" alt="WhatsApp" className="w-5 h-5 object-contain" />
-            Agendar Cita por WhatsApp
-          </button>
+        {/* CTAs — solo se muestran los botones que estén configurados en el admin */}
+        {(whatsappUrl || infoUrl) && (
+          <div className="space-y-3 pt-2">
+            {whatsappUrl && (
+              <button
+                onClick={() => window.open(whatsappUrl, '_blank')}
+                className="w-full flex items-center justify-center gap-3 py-4 text-white font-black text-sm rounded-2xl shadow-lg transition-all active:scale-95"
+                style={{ background: '#25d366', boxShadow: '0 8px 24px rgba(37,211,102,0.25)' }}
+              >
+                <img src="/whatsapp-logo.png" alt="WhatsApp" className="w-5 h-5 object-contain" />
+                {primaryLabel}
+              </button>
+            )}
 
-          <button
-            onClick={() => window.open(INFO_URL_TERRENOS, '_blank')}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 font-black text-sm rounded-2xl transition-all active:scale-95"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Ver Más Información
-          </button>
-        </div>
+            {infoUrl && (
+              <button
+                onClick={() => window.open(infoUrl, '_blank')}
+                className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 font-black text-sm rounded-2xl transition-all active:scale-95"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                {secondaryLabel}
+              </button>
+            )}
+          </div>
+        )}
 
         <p className="text-[10px] text-slate-300 text-center font-medium pb-8">
           Nuestro equipo te atenderá en horario de oficina. Los precios son referenciales y pueden variar.

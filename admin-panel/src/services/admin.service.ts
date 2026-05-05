@@ -245,6 +245,22 @@ export const adminService = {
     return response.data;
   },
 
+  // Page CTAs (configuración de botones por sección)
+  async getPageCta(section: string) {
+    const response = await api.get(`/admin/page-ctas/${section}`);
+    return response.data.data; // puede ser null si no se ha configurado
+  },
+  async savePageCta(section: string, data: {
+    whatsappPhone?: string;
+    whatsappMessage?: string;
+    infoUrl?: string;
+    primaryLabel?: string;
+    secondaryLabel?: string;
+  }) {
+    const response = await api.put(`/admin/page-ctas/${section}`, data);
+    return response.data.data;
+  },
+
   // Settings
   async getSettings() {
     const response = await api.get('/settings');

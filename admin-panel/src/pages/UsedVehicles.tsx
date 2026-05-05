@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
+import PageCtaConfig from '../components/PageCtaConfig';
 import {
     Plus, Trash2, Pencil, X, Save, Loader2, Car,
     ToggleLeft, ToggleRight, ImageIcon, Calendar, Gauge, DollarSign,
@@ -115,6 +116,9 @@ export default function UsedVehicles() {
                     <Plus size={16} strokeWidth={3} /> Nuevo vehículo
                 </button>
             </div>
+
+            {/* Configuración de botones CTA */}
+            <PageCtaConfig section="seminuevos" sectionLabel="Seminuevos" accentColor="amber" />
 
             {loading ? (
                 <div className="flex items-center justify-center py-20"><Loader2 size={28} className="animate-spin text-blue-400" /></div>
