@@ -7,6 +7,7 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { adminService } from '../services/admin.service';
 import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/Skeleton';
+import RouletteSpinner from '../components/RouletteSpinner';
 import {
   Plus, Pencil, Trash2, Ticket, ChevronRight, X, ArrowLeft,
   Image, DollarSign, Calendar, Hash, FileText, Video, CheckCircle2, Loader2, Upload,
@@ -199,40 +200,25 @@ const Raffles = () => {
     setVisibleCount(1000);
   }, [ticketSearch]);
 
-  const handleStartRoulette = async () => {
+  // Abre la ruleta SVG profesional (componente separado)
+  const handleStartRoulette = () => {
     if (!winnerModalRaffle) return;
     const soldTickets = ticketsList.filter(t => t.status === 'sold');
 
     if (soldTickets.length === 0) {
-      toast.error('No hay boletos pagados');
+      toast.error('Aún no hay boletos pagados en esta rifa. La ruleta solo selecciona entre participantes que ya compraron.', { duration: 5000 });
       return;
     }
 
-    setIsRolling(true);
     setRouletteWinner(null);
+    setIsRolling(true); // muestra la ruleta SVG
+  };
 
-    let iterations = 0;
-    const maxIterations = 30;
-    let delay = 60;
-
-    const roll = () => {
-      const randomIdx = Math.floor(Math.random() * soldTickets.length);
-      setRouletteWinner(soldTickets[randomIdx]);
-      iterations++;
-
-      if (iterations < maxIterations) {
-        // Efecto de frenado (Easing)
-        if (iterations > 20) delay += 60;
-        else if (iterations > 12) delay += 20;
-
-        setTimeout(roll, delay);
-      } else {
-        setIsRolling(false);
-        toast.success('¡Tenemos un ganador!', { icon: '🏆' });
-      }
-    };
-
-    roll();
+  // Callback cuando la ruleta termina de girar y selecciona ganador
+  const handleRouletteResult = (winnerTicket: any) => {
+    setIsRolling(false);
+    setRouletteWinner(winnerTicket);
+    toast.success('¡Tenemos un ganador!', { icon: '🏆' });
   };
 
   const confirmWinnerFinal = async (ticket: any) => {
@@ -1576,16 +1562,7 @@ const Raffles = () => {
                       </div>
                     )}
 
-                    {isRolling && (
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="flex gap-2">
-                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
-                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.1s]" />
-                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.2s]" />
-                        </div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Girando la suerte...</p>
-                      </div>
-                    )}
+                    {/* Cuando isRolling=true, se muestra el RouletteSpinner full-screen (debajo) */}
                   </div>
                 )}
 
@@ -1659,6 +1636,18 @@ const Raffles = () => {
             </motion.div>
           </div>
         </AnimatePresence>,
+        document.body
+      )}
+
+      {/* ── RULETA SVG PROFESIONAL (overlay sobre el modal de selección de ganador) ── */}
+      {winnerModalRaffle && createPortal(
+        <RouletteSpinner
+          isOpen={isRolling}
+          tickets={ticketsList.filter(t => t.status === 'sold')}
+          raffleTitle={winnerModalRaffle.title}
+          onResult={handleRouletteResult}
+          onClose={() => setIsRolling(false)}
+        />,
         document.body
       )}
 
