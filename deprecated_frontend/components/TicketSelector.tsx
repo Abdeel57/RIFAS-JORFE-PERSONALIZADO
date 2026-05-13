@@ -5,9 +5,50 @@ import { soundService } from '../services/soundService.ts';
 import { apiService } from '../services/apiService.ts';
 import { PromoTier } from '../types.ts';
 import CountdownTimer from './CountdownTimer.tsx';
+import RuletazoModal from './RuletazoModal.tsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GAP = 6;
+
+// ─── Persistencia de selección en localStorage ──────────────────────────────
+// Para que si el usuario sale a hacer una transferencia, sus boletos seleccionados
+// siguen ahí al volver. Expira después de 24h.
+const STORAGE_KEY_PREFIX = 'nao_selected_tickets_';
+const SELECTION_EXPIRY_HOURS = 24;
+
+function loadStoredSelection(raffleId: string): number[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PREFIX + raffleId);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    if (!data?.tickets || !Array.isArray(data.tickets)) return [];
+    const ageHrs = (Date.now() - (data.timestamp || 0)) / (1000 * 60 * 60);
+    if (ageHrs > SELECTION_EXPIRY_HOURS) {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + raffleId);
+      return [];
+    }
+    return data.tickets.filter((t: any) => typeof t === 'number' && t > 0);
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredSelection(raffleId: string, tickets: number[]) {
+  try {
+    if (tickets.length === 0) {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + raffleId);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY_PREFIX + raffleId, JSON.stringify({
+      tickets,
+      timestamp: Date.now(),
+    }));
+  } catch { /* silent — quota / private mode */ }
+}
+
+function clearStoredSelection(raffleId: string) {
+  try { localStorage.removeItem(STORAGE_KEY_PREFIX + raffleId); } catch {}
+}
 const OVERSCAN = 3;
 
 /**
@@ -123,10 +164,13 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   showCountdown,
   drawDate
 }) => {
-  const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
+  // Restaura selección previa desde localStorage (si el usuario salió a hacer transferencia)
+  const [selectedTickets, setSelectedTickets] = useState<number[]>(() => loadStoredSelection(raffleId));
   const [searchTerm, setSearchTerm] = useState('');
   const [isMachineOpen, setIsMachineOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isRuletazoOpen, setIsRuletazoOpen] = useState(false);
+  const [ruletazoCount, setRuletazoCount] = useState(0);
   const [isTrayExpanded, setIsTrayExpanded] = useState(false);
   const [lastLuckyNumbers, setLastLuckyNumbers] = useState<number[]>([]);
   const [statusMap, setStatusMap] = useState<Map<number, string>>(new Map());
@@ -138,6 +182,40 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
   useEffect(() => {
     onSelectionChange?.(selectedTickets.length > 0);
   }, [selectedTickets.length]);
+
+  // Persiste selección en localStorage cada vez que cambia (para que sobreviva
+  // a recargas / al salir a hacer transferencia bancaria)
+  useEffect(() => {
+    saveStoredSelection(raffleId, selectedTickets);
+  }, [selectedTickets, raffleId]);
+
+  // Cuando llega el statusMap por primera vez, filtra los boletos restaurados
+  // que ya no estén disponibles (alguien más los compró mientras el usuario estaba fuera)
+  const didFilterRestoredRef = useRef(false);
+  useEffect(() => {
+    if (didFilterRestoredRef.current) return;
+    if (statusMap.size === 0 || selectedTickets.length === 0) return;
+    didFilterRestoredRef.current = true;
+    const stillAvailable = selectedTickets.filter(t => {
+      const s = statusMap.get(t) || 'available';
+      return s === 'available';
+    });
+    if (stillAvailable.length !== selectedTickets.length) {
+      setSelectedTickets(stillAvailable);
+    }
+  }, [statusMap, selectedTickets]);
+
+  // Limpia selección y storage cuando una compra se completa exitosamente
+  // (App.tsx incrementa refreshTrigger después de un purchase exitoso)
+  const prevRefreshTriggerRef = useRef(refreshTrigger);
+  useEffect(() => {
+    const prev = prevRefreshTriggerRef.current;
+    if (prev !== refreshTrigger && refreshTrigger && refreshTrigger > 0 && prev !== undefined) {
+      setSelectedTickets([]);
+      clearStoredSelection(raffleId);
+    }
+    prevRefreshTriggerRef.current = refreshTrigger;
+  }, [refreshTrigger, raffleId]);
 
   // Modo Descubrimiento si > 25,000 boletos (umbral reducido para mejor performance móvil)
   const isDiscoveryMode = useMemo(() => totalTickets > 25000, [totalTickets]);
@@ -299,28 +377,21 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
     });
   }, [isAnimating]);
 
-  const runLuckyMachine = (count: number) => {
+  // Abre el modal de ruletazo con la cantidad solicitada
+  const openRuletazo = (count: number) => {
     setIsMachineOpen(false);
-    setIsAnimating(true);
     setIsTrayExpanded(false);
-    soundService.playMachineRoll();
+    setRuletazoCount(count);
+    setIsRuletazoOpen(true);
+  };
 
-    setTimeout(() => {
-      const lucky: number[] = [];
-      let attempts = 0;
-      while (lucky.length < count && attempts < 2000) {
-        attempts++;
-        const num = Math.floor(Math.random() * totalTickets) + 1;
-        if (!selectedSet.has(num) && (statusMap.get(num) || 'available') === 'available') {
-          if (!lucky.includes(num)) lucky.push(num);
-        }
-      }
-      setLastLuckyNumbers(lucky);
-      setSelectedTickets(prev => [...prev, ...lucky]);
-      setIsAnimating(false);
-      soundService.playJackpot();
-      setTimeout(() => setLastLuckyNumbers([]), 3000);
-    }, 1200);
+  // Callback cuando la ruleta termina: añade los ganadores y resalta brevemente
+  const handleRuletazoComplete = (winners: number[]) => {
+    setIsRuletazoOpen(false);
+    if (winners.length === 0) return;
+    setLastLuckyNumbers(winners);
+    setSelectedTickets(prev => [...prev, ...winners]);
+    setTimeout(() => setLastLuckyNumbers([]), 3000);
   };
 
   // ── Tier pricing logic ──
@@ -381,6 +452,17 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
       {showCountdown && drawDate && (
         <CountdownTimer targetDate={drawDate} />
       )}
+
+      {/* Modal de Ruletazo (ruleta giratoria profesional) */}
+      <RuletazoModal
+        isOpen={isRuletazoOpen}
+        count={ruletazoCount}
+        totalTickets={totalTickets}
+        selectedSet={selectedSet}
+        statusMap={statusMap}
+        onComplete={handleRuletazoComplete}
+        onCancel={() => setIsRuletazoOpen(false)}
+      />
 
       <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-2 md:p-6 space-y-2 relative overflow-hidden w-[97%] mx-auto">
         {isAnimating && (
@@ -484,7 +566,7 @@ const TicketSelector: React.FC<TicketSelectorProps> = ({
               {isMachineOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-40 p-1 grid grid-cols-2 gap-1 animate-in slide-in-from-top-2">
                   {luckyNumbers.map(qty => (
-                    <button key={qty} onClick={() => runLuckyMachine(qty)} className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all">+{qty}</button>
+                    <button key={qty} onClick={() => openRuletazo(qty)} className="py-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-black text-sm transition-all">+{qty}</button>
                   ))}
                 </div>
               )}
