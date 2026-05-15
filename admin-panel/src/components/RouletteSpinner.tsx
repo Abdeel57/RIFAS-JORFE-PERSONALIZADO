@@ -20,7 +20,7 @@ type Stage = 'idle' | 'preparing' | 'spinning' | 'reveal' | 'done';
 
 const SEGMENT_COUNT = 16;
 const SEGMENT_COLORS = ['#2563EB', '#7c3aed', '#db2777', '#f59e0b', '#10b981', '#06b6d4', '#ef4444', '#8b5cf6'];
-const SPIN_DURATION_MS = 5500; // duración de la animación de giro
+const SPIN_DURATION_MS = 9500; // duración de la animación de giro
 
 const RouletteSpinner: React.FC<Props> = ({ isOpen, tickets, onResult, onClose, raffleTitle }) => {
     const [stage, setStage] = useState<Stage>('idle');
@@ -62,7 +62,7 @@ const RouletteSpinner: React.FC<Props> = ({ isOpen, tickets, onResult, onClose, 
         const t1 = window.setTimeout(() => {
             // === Etapa 2: SPINNING (5500ms) ===
             // Rotación final con un montón de vueltas + offset random
-            const finalRotation = 1800 + Math.random() * 1080; // 5-8 vueltas
+            const finalRotation = 2880 + Math.random() * 1440; // 8-12 vueltas
             setRotation(finalRotation);
             setStage('spinning');
 
@@ -262,7 +262,7 @@ const RouletteSpinner: React.FC<Props> = ({ isOpen, tickets, onResult, onClose, 
                                     style={{
                                         width: '46%',
                                         height: '46%',
-                                        borderColor: stage === 'reveal' || stage === 'done' ? '#16a34a' : '#0f172a',
+                                        borderColor: stage === 'reveal' || stage === 'done' ? '#16a34a' : '#e2e8f0',
                                         boxShadow: stage === 'reveal' || stage === 'done'
                                             ? '0 0 32px rgba(22, 163, 74, 0.5), inset 0 2px 8px rgba(0,0,0,0.08)'
                                             : 'inset 0 2px 8px rgba(0,0,0,0.12)',
@@ -296,8 +296,6 @@ const RouletteSpinner: React.FC<Props> = ({ isOpen, tickets, onResult, onClose, 
                                 </motion.div>
                             </div>
 
-                            {/* Eje central */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-900 z-20 shadow-md border-2 border-white" />
                         </div>
                     </div>
 
