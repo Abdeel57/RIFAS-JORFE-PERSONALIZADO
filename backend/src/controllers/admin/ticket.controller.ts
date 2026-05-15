@@ -69,7 +69,9 @@ export const getTickets = async (req: Request, res: Response, next: NextFunction
         select: { id: true, title: true, isVirtual: true, totalTickets: true },
       });
 
-      if (raffle) {
+      // En rifas virtuales los boletos solo existen en BD cuando están apartados/vendidos;
+      // no rellenar miles de filas "available" sintéticas (rompe boletería y sorteo).
+      if (raffle && !raffle.isVirtual) {
         // Construir un Set de los números de boleto que ya existen en la BD
         const existingNumbers = new Set(tickets.map((t: any) => t.number));
 

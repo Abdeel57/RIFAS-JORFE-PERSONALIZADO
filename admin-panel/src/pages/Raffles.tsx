@@ -184,6 +184,8 @@ const Raffles = () => {
   const [winnerTarget, setWinnerTarget] = useState<any>(null);
   const [visibleCount, setVisibleCount] = useState(500);
   const [winnerModalRaffle, setWinnerModalRaffle] = useState<any>(null);
+  const [winnerTicketsList, setWinnerTicketsList] = useState<any[]>([]);
+  const [isLoadingWinnerTickets, setIsLoadingWinnerTickets] = useState(false);
   const [winnerMethod, setWinnerMethod] = useState<'manual' | 'random' | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [rouletteWinner, setRouletteWinner] = useState<any>(null);
@@ -203,9 +205,12 @@ const Raffles = () => {
   // Abre la ruleta SVG profesional (componente separado)
   const handleStartRoulette = () => {
     if (!winnerModalRaffle) return;
-    const soldTickets = ticketsList.filter(t => t.status === 'sold');
+    if (isLoadingWinnerTickets) {
+      toast.error('Cargando boletos pagados, espera un momento...');
+      return;
+    }
 
-    if (soldTickets.length === 0) {
+    if (winnerTicketsList.length === 0) {
       toast.error('Aún no hay boletos pagados en esta rifa. La ruleta solo selecciona entre participantes que ya compraron.', { duration: 5000 });
       return;
     }
@@ -422,6 +427,27 @@ const Raffles = () => {
     } finally {
       setIsLoadingTickets(false);
     }
+  };
+
+  const loadWinnerTickets = async (raffleId: string) => {
+    setIsLoadingWinnerTickets(true);
+    setWinnerTicketsList([]);
+    try {
+      const data = await adminService.getTickets({ raffleId, status: 'sold' });
+      setWinnerTicketsList(data);
+    } catch (e) {
+      toast.error('Error al cargar boletos participantes');
+      setWinnerTicketsList([]);
+    } finally {
+      setIsLoadingWinnerTickets(false);
+    }
+  };
+
+  const openWinnerModal = (raffle: any) => {
+    setWinnerModalRaffle(raffle);
+    setWinnerMethod(null);
+    setRouletteWinner(null);
+    loadWinnerTickets(raffle.id);
   };
 
   const handleSetWinner = async (ticket: any) => {
@@ -730,10 +756,7 @@ const Raffles = () => {
                                           <Megaphone size={16} className="text-orange-500" /> Promoción
                                         </button>
                                         <button
-                                          onClick={() => {
-                                            setWinnerModalRaffle(raffle);
-                                            loadTickets(raffle.id);
-                                          }}
+                                          onClick={() => openWinnerModal(raffle)}
                                           className="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                                         >
                                           <Trophy size={16} className="text-amber-500" /> Ganador
@@ -1539,9 +1562,14 @@ const Raffles = () => {
                     {!isRolling && !rouletteWinner && (
                       <button
                         onClick={handleStartRoulette}
-                        className="btn-primary w-full max-w-xs h-14 flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest"
+                        disabled={isLoadingWinnerTickets}
+                        className="btn-primary w-full max-w-xs h-14 flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest disabled:opacity-50"
                       >
-                        <Play size={18} /> Iniciar Ruletazo
+                        {isLoadingWinnerTickets ? (
+                          <><Loader2 size={18} className="animate-spin" /> Cargando...</>
+                        ) : (
+                          <><Play size={18} /> Iniciar Ruletazo</>
+                        )}
                       </button>
                     )}
 
@@ -1581,14 +1609,19 @@ const Raffles = () => {
                     </div>
 
                     <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar space-y-2">
-                      {ticketsList.filter(t => t.status === 'sold' && (t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase()))).length === 0 ? (
+                      {isLoadingWinnerTickets ? (
+                        <motion.div className="py-10 text-center text-slate-300">
+                          <Loader2 size={32} className="mx-auto mb-2 animate-spin opacity-40" />
+                          <p className="text-xs font-bold uppercase">Cargando boletos pagados...</p>
+                        </motion.div>
+                      ) : winnerTicketsList.filter(t => t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase())).length === 0 ? (
                         <div className="py-10 text-center text-slate-300">
                           <AlertCircle size={32} className="mx-auto mb-2 opacity-20" />
                           <p className="text-xs font-bold uppercase">No se encontraron boletos pagados</p>
                         </div>
                       ) : (
-                        ticketsList
-                          .filter(t => t.status === 'sold' && (t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase())))
+                        winnerTicketsList
+                          .filter(t => t.number.toString().includes(ticketSearch) || t.purchase?.user?.name?.toLowerCase().includes(ticketSearch.toLowerCase()))
                           .slice(0, 50)
                           .map(t => (
                             <button
@@ -1620,7 +1653,9 @@ const Raffles = () => {
                   <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-amber-400" />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {ticketsList.filter(t => t.status === 'sold').length} Boletos pagados participan
+                      {isLoadingWinnerTickets
+                        ? 'Cargando participantes...'
+                        : `${winnerTicketsList.length} Boletos pagados participan`}
                     </span>
                   </div>
                   {winnerMethod && (
@@ -1643,7 +1678,7 @@ const Raffles = () => {
       {winnerModalRaffle && createPortal(
         <RouletteSpinner
           isOpen={isRolling}
-          tickets={ticketsList.filter(t => t.status === 'sold')}
+          tickets={winnerTicketsList}
           raffleTitle={winnerModalRaffle.title}
           onResult={handleRouletteResult}
           onClose={() => setIsRolling(false)}
